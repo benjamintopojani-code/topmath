@@ -17,21 +17,25 @@ export async function onRequestGet(context) {
       `)
       .all();
 
-   return new Response(JSON.stringify({
-  ok: true,
-  source: 'Cloudflare D1',
-  students: results
-}), {
-  headers: {
-    'Content-Type': 'application/json; charset=utf-8'
-  }
-});
     return new Response(JSON.stringify({
-  ok: false,
-  error: error instanceof Error ? error.message : String(error)
-}), {
-  status: 500,
-  headers: {
-    'Content-Type': 'application/json; charset=utf-8'
+      ok: true,
+      source: 'Cloudflare D1',
+      students: results
+    }), {
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8'
+      }
+    });
+
+  } catch (error) {
+    return new Response(JSON.stringify({
+      ok: false,
+      error: error instanceof Error ? error.message : String(error)
+    }), {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8'
+      }
+    });
   }
-});
+}
