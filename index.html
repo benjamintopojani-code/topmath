@@ -15,3 +15,4 @@ function randCode(used=new Set()){let v='';do{v=String(Math.floor(1000+Math.rand
 function ensureInitialCodes(){let x=state(),changed=false,used=new Set(Object.values(x).map(v=>v?.main).filter(Boolean));Object.keys(STUDENTS).forEach(id=>{if(!Object.prototype.hasOwnProperty.call(x,id)){const c=randCode(used);used.add(c);x[id]={main:c};changed=true}});if(changed)localStorage.setItem(CODE_STORAGE,JSON.stringify(x));return x}
 let st=ensureInitialCodes();document.getElementById('demoCodes').innerHTML=Object.entries(STUDENTS).map(([id,s])=>`<div class="demo-code">${s.first} ${s.name}<b>${st[id]?.main||'Aucun code'}</b></div>`).join('');
 </script></body></html>
+    <!-- redeploy D1 -->
