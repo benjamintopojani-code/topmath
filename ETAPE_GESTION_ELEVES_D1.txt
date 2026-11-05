@@ -1,0 +1,10 @@
+TOP’MATH — GESTION DES ÉLÈVES D1
+
+Réglages > Gestion des élèves
+- Ajouter un élève
+- Modifier nom, prénom, date de naissance
+- Affecter à une classe D1
+- Phase, secteur, groupe professionnel, métier
+- La filière NORMAL / ECO est déterminée par la classe
+
+Les compétences et évaluations déjà enregistrées ne sont pas supprimées lors d’une modification d’identité/classe.

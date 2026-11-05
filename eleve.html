@@ -1,0 +1,80 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Top’Math — Élève</title><style id="topmath-critical-style">
+
+:root{--blue:#0b5bd3;--blue2:#173b77;--bg:#eef5ff;--text:#1d2633;--muted:#687386;--border:#dbe6f5;--green:#168c5a;--orange:#d97706;--red:#c2413b;--shadow:0 8px 24px rgba(25,55,95,.10)}
+*{box-sizing:border-box}html,body{margin:0;min-width:0}body{font-family:Arial,Helvetica,sans-serif;background:linear-gradient(180deg,#eef5ff,#f8fbff 46%,#fff);color:var(--text)}button,input,select{font:inherit}button{cursor:pointer}.topbar{position:sticky;top:0;z-index:30;background:linear-gradient(135deg,var(--blue2),var(--blue));color:white;padding:11px 14px;box-shadow:0 2px 12px rgba(0,0,0,.13)}.topbar-inner{max-width:1180px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:12px}.brand{font-size:24px;font-weight:900;text-align:center}.brand small{display:block;font-size:12px;opacity:.85}.linkbtn,.primary,.secondary,.success,.danger{min-height:44px;border-radius:12px;padding:10px 14px;font-weight:900;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;border:0}.primary{background:var(--blue);color:white}.secondary{background:#f2f6fb;color:var(--blue2);border:1px solid #cbd8e9}.success{background:var(--green);color:#fff}.danger{background:var(--red);color:#fff}.ghost{color:#fff;border:1px solid rgba(255,255,255,.45);background:rgba(255,255,255,.12);border-radius:11px;padding:9px 12px;text-decoration:none;font-weight:800}main{max-width:1180px;margin:auto;padding:18px 12px 40px}.card{background:white;border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:var(--shadow);margin-bottom:14px}.muted{color:var(--muted)}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.pill{display:inline-flex;padding:5px 9px;border-radius:999px;background:#eef5ff;color:#174e98;font-size:13px;font-weight:800}.tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px;margin:14px 0}.tabs button{min-height:58px;border:1px solid #cfdaea;background:#fff;color:var(--blue2);border-radius:14px;padding:8px;font-weight:900}.tabs button.active{background:var(--blue);color:#fff}.panel{display:none}.panel.active{display:block}.field{display:grid;gap:6px}.field label{font-weight:900;color:var(--blue2)}select,input{min-height:44px;border:1px solid #cbd8e9;border-radius:11px;padding:9px 11px;background:#fff}.selectbar{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}.list{display:grid;gap:10px}.row{border:1px solid var(--border);border-radius:14px;padding:13px;background:#fff;display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}.status-valid{background:#d8f0d8}.status-progress{background:#ffe4b0}.modal{position:fixed;inset:0;background:rgba(10,24,45,.55);display:none;align-items:flex-start;justify-content:center;padding:12px;overflow:auto;z-index:100}.modal.active{display:flex}.modal-shell{width:min(1000px,100%);background:white;border-radius:18px;padding:12px}.modal-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;position:sticky;top:0;background:white;padding:4px 0 10px;z-index:2}.pages{display:grid;gap:14px}.pages img{width:100%;display:block;background:#fff;border:1px solid #ccd5e3;border-radius:8px}.login{max-width:620px;margin:30px auto;text-align:center}.code{font-size:28px;letter-spacing:.18em;text-align:center;width:100%;max-width:360px}.student-nav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:14px 0}.student-nav button{min-height:60px;border:1px solid #cfdaea;background:#fff;color:var(--blue2);border-radius:14px;font-weight:900;padding:8px}.student-nav button.active{background:var(--blue);color:#fff}.student-panel{display:none}.student-panel.active{display:block}.demo-codes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:16px}.demo-code{border:1px solid #d4e0ee;border-radius:12px;padding:10px;background:#f8fbff}.demo-code b{display:block;font-size:20px;color:var(--blue2)}
+@media(max-width:850px){.grid{grid-template-columns:1fr 1fr}.tabs{grid-template-columns:repeat(2,1fr)}.student-nav{grid-template-columns:repeat(2,1fr)}}@media(max-width:560px){.grid,.selectbar,.demo-codes{grid-template-columns:1fr}.brand{font-size:20px}.topbar-inner{align-items:flex-start}.row{align-items:flex-start}}
+.teacher-gate{position:fixed;inset:0;z-index:500;background:linear-gradient(180deg,#eaf3ff,#f8fbff 55%,#fff);display:flex;align-items:center;justify-content:center;padding:18px;overflow:auto}.auth-card{width:min(520px,100%);background:#fff;border:1px solid var(--border);border-radius:20px;padding:22px;box-shadow:0 18px 50px rgba(25,55,95,.16)}.auth-card h2{margin:12px 0}.auth-brand{color:var(--blue2);margin-bottom:10px}.teacher-code-display{font-size:34px;letter-spacing:.22em;font-weight:900;text-align:center;color:var(--blue2);background:#eef5ff;border:2px dashed #9fbee9;border-radius:14px;padding:14px;margin:12px 0 18px}.wide-btn{width:100%;margin-top:14px}.text-link-btn{border:0;background:transparent;color:var(--blue);font-weight:900;padding:12px 4px}.error-msg{color:var(--red);font-weight:800;min-height:22px;margin-top:8px}.recovery-question{font-size:18px;font-weight:900;color:var(--blue2);background:#f3f7fd;border-radius:12px;padding:12px}.small-note{font-size:12px;margin-bottom:0}.tabs{grid-template-columns:repeat(6,minmax(0,1fr))}@media(max-width:850px){.tabs{grid-template-columns:repeat(2,1fr)}}
+
+</style></head><body><header class="topbar"><div class="topbar-inner"><a class="ghost" href="index.html">← Accueil</a><div class="brand">Top’Math <small>Espace élève — démo</small></div><button id="logout" class="ghost" style="display:none">Déconnexion</button></div></header><main><section id="login" class="card login"><h1>Bienvenue sur Top’Math</h1><p class="muted">Entre ton code personnel.</p><input id="code" class="code" inputmode="numeric" maxlength="6" placeholder="6742"><div style="margin-top:12px"><button id="loginBtn" class="primary">Se connecter</button></div><div id="loginMsg" style="color:var(--red);font-weight:800;margin-top:10px"></div><div id="demoCodes" class="demo-codes"></div></section>
+<section id="space" style="display:none"><div class="card"><h1 id="hello"></h1><div><span id="phase" class="pill"></span> <span id="class" class="pill"></span></div></div><div class="student-nav"><button class="active" data-p="today">Mon travail du jour</button><button data-p="practice">Je m’entraîne</button><button data-p="evaluations">Mes évaluations</button><button data-p="progress">Ma progression</button><button data-p="agenda">Mon agenda</button><button data-p="results">Mes résultats</button><button data-p="live">Top’Math Live</button><button data-p="settings">Réglages</button></div><section id="p-today" class="student-panel active"><div class="card"><h2>Mon travail du jour</h2><div class="grid"><div class="card" style="box-shadow:none"><strong>G301 — Angles</strong><p class="muted">Entraînement proposé par l’enseignant.</p><button class="secondary">Commencer</button></div><div class="card" style="box-shadow:none"><strong>N303 — Division</strong><p class="muted">Révision libre.</p><button class="secondary">Commencer</button></div></div></div></section><section id="p-practice" class="student-panel"><div class="card"><h2>Je m’entraîne</h2><p class="muted">Les entraînements ne valident jamais une compétence officielle.</p><div class="grid"><div class="card" style="box-shadow:none"><strong>G301</strong><p>Mesurer un angle</p></div><div class="card" style="box-shadow:none"><strong>N303</strong><p>Calculer un quotient</p></div><div class="card" style="box-shadow:none"><strong>S304</strong><p>Aire d’un carré</p></div></div></div></section><section id="p-evaluations" class="student-panel"><div class="card"><h2>Mes évaluations</h2><div id="evalBox"></div></div></section><section id="p-progress" class="student-panel"><div class="card"><h2>Ma progression</h2><div id="progress"></div></div></section><section id="p-agenda" class="student-panel"><div class="card"><h2>Mon agenda</h2><div id="agenda"></div></div></section><section id="p-results" class="student-panel"><div class="card"><h2>Mes résultats</h2><div id="results" class="list"></div></div></section><section id="p-live" class="student-panel"><div class="card"><h2>Top’Math Live</h2><p class="muted">Mode de démonstration.</p><input class="code" placeholder="Code de partie"></div></section><section id="p-settings" class="student-panel"><div class="card"><h2>Réglages</h2><p class="muted">Sauvegarde / restauration des données de l’élève.</p><button id="exportBtn" class="primary">Télécharger mes données</button> <label class="secondary" style="cursor:pointer">Charger mes données<input id="importFile" type="file" accept=".json" hidden></label></div></section></section></main>
+<script>
+const SEED_STUDENTS={"6742": {"id": "lucas", "name": "Martin", "first": "Lucas", "class": "Maçonnerie Démo", "phase": "Phase 3", "birth": "14/03/2010", "sector": "Construction", "group": "Maçonnerie", "job": "Maçon", "progress": {"N303": [["05/09/26", "", ""], "En cours"], "Q301": [["02/09/26", "16/09/26", "30/09/26"], "Validé"], "G301": [["02/09/26", "16/09/26", "30/09/26"], "Validé"], "S304": [["04/09/26", "18/09/26", ""], "En cours"]}, "results": [["30/09/26", "G301 — Évaluation 3", "9/10"], ["18/09/26", "S304 — Évaluation 2", "8/10"], ["16/09/26", "Q301 — Évaluation 2", "10/10"]]}, "2097": {"id": "sarah", "name": "Bernard", "first": "Sarah", "class": "Maçonnerie Démo", "phase": "Phase 3", "birth": "22/11/2009", "sector": "Construction", "group": "Maçonnerie", "job": "Maçon", "progress": {"N303": [["07/09/26", "21/09/26", "05/10/26"], "Validé"], "Q301": [["03/09/26", "17/09/26", ""], "En cours"], "G301": [["10/09/26", "24/09/26", ""], "En cours"], "S305": [["12/09/26", "", ""], "En cours"]}, "results": [["05/10/26", "N303 — Évaluation 3", "8/10"], ["24/09/26", "G301 — Évaluation 2", "9/10"], ["17/09/26", "Q301 — Évaluation 2", "8/10"]]}, "3584": {"id": "adam", "name": "Leroy", "first": "Adam", "class": "Maçonnerie Démo", "phase": "Phase 3", "birth": "05/06/2010", "sector": "Construction", "group": "Maçonnerie", "job": "Maçon", "progress": {"Q301": [["03/09/26", "17/09/26", ""], "En cours"], "G301": [["04/09/26", "18/09/26", "02/10/26"], "Validé"], "S304": [["06/09/26", "20/09/26", "04/10/26"], "Validé"]}, "results": [["04/10/26", "S304 — Évaluation 3", "9/10"], ["02/10/26", "G301 — Évaluation 3", "10/10"], ["17/09/26", "Q301 — Évaluation 2", "7/10"]]}};
+const SCHOOL_KEY='topmath_school_state_test_vierge_v3';
+const CODE_STORAGE='topmath_demo_codes_v4';
+let currentId=null;
+
+function defaultSchoolState(){
+  const profiles={},enrollments={};
+  Object.entries(SEED_STUDENTS).forEach(([id,s])=>{
+    profiles[id]={id,slug:s.id,first:s.first,name:s.name,birth:s.birth||'',sector:s.sector||'',group:s.group||'',job:s.job||''};
+    enrollments[id]={class:s.class,phase:s.phase,progress:s.progress||{},results:s.results||[]};
+  });
+  return {active:'2026-2027',profiles,years:{'2026-2027':{archived:false,classes:[{name:'Maçonnerie Démo',phase:'Phase 3'},{name:'Construction A',phase:'Phase 1'},{name:'ÉCO',phase:'Phase 2'}],enrollments}}};
+}
+function schoolState(){
+  try{const s=JSON.parse(localStorage.getItem(SCHOOL_KEY)||'null');if(s&&s.years&&s.profiles&&s.active)return s}catch(e){}
+  const s=defaultSchoolState();localStorage.setItem(SCHOOL_KEY,JSON.stringify(s));return s;
+}
+function codeState(){return JSON.parse(localStorage.getItem(CODE_STORAGE)||'{}')}
+function randCode(used=new Set()){let v='';do{v=String(Math.floor(1000+Math.random()*9000))}while(used.has(v));return v}
+function ensureInitialCodes(){
+  const st=schoolState();let x=codeState(),changed=false,used=new Set(Object.values(x).map(v=>v?.main).filter(Boolean));
+  Object.keys(st.profiles).forEach(id=>{if(!Object.prototype.hasOwnProperty.call(x,id)){const c=randCode(used);used.add(c);x[id]={main:c};changed=true}});
+  if(changed)localStorage.setItem(CODE_STORAGE,JSON.stringify(x));return x;
+}
+function resolveCode(code){
+  const x=ensureInitialCodes(),st=schoolState(),year=st.years[st.active];
+  return Object.keys(year.enrollments||{}).find(id=>x[id]?.main===code)||null;
+}
+function currentStudent(){
+  const st=schoolState(),p=st.profiles[currentId],en=st.years[st.active]?.enrollments[currentId];
+  return p&&en?{...p,...en,schoolYear:st.active}:null;
+}
+function login(){
+  const id=resolveCode(document.getElementById('code').value.trim());
+  if(!id){document.getElementById('loginMsg').textContent='Code inconnu ou élève non inscrit dans l’année active.';return}
+  currentId=id;document.getElementById('login').style.display='none';document.getElementById('space').style.display='block';document.getElementById('logout').style.display='inline-flex';render();
+}
+document.getElementById('loginBtn').onclick=login;
+document.getElementById('code').onkeydown=e=>{if(e.key==='Enter')login()};
+document.getElementById('logout').onclick=()=>location.reload();
+document.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.student-panel').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('[data-p]').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');document.getElementById('p-'+b.dataset.p).classList.add('active');
+  if(b.dataset.p==='evaluations')renderEval();
+});
+function render(){
+  const s=currentStudent();if(!s)return;
+  document.getElementById('hello').textContent='Bonjour, '+s.first+' '+s.name;
+  document.getElementById('phase').textContent=s.phase;
+  document.getElementById('class').textContent=s.class+' • '+s.schoolYear;
+  const entries=Object.entries(s.progress||{});
+  const ps=entries.length?entries.map(([c,v])=>`<div class="row"><div><strong>${c}</strong><div class="muted">Éval. 1 : ${v[0][0]||'—'} • Éval. 2 : ${v[0][1]||'—'} • Éval. 3 : ${v[0][2]||'—'}</div></div><span class="pill ${v[1]==='Validé'?'status-valid':'status-progress'}">${v[1]}</span></div>`).join(''):'<div class="row"><div><strong>Nouvelle année scolaire</strong><div class="muted">Aucune compétence évaluée pour le moment.</div></div></div>';
+  document.getElementById('progress').innerHTML='<div class="list">'+ps+'</div>';
+  const results=s.results||[];
+  document.getElementById('results').innerHTML=results.length?results.map(r=>`<div class="row"><div><strong>${r[1]}</strong><div class="muted">${r[0]}</div></div><b>${r[2]}</b></div>`).join(''):'<div class="row"><strong>Aucun résultat cette année</strong></div>';
+  const next=entries.filter(([c,v])=>v[1]!=='Validé').map(([c,v])=>`<div class="row"><strong>${c}</strong><span class="muted">Prochaine passation à programmer</span></div>`).join('');
+  document.getElementById('agenda').innerHTML='<div class="list">'+(next||'<p>Aucune évaluation à prévoir.</p>')+'</div>';
+  renderEval();
+}
+function renderEval(){
+  const e=JSON.parse(localStorage.getItem('topmath_open_eval')||'null'),box=document.getElementById('evalBox'),s=currentStudent();
+  if(e&&e.opened&&(e.target===currentId||(e.target==='ALL'&&e.className===s.class)))box.innerHTML=`<div class="row"><div><strong>${e.comp}</strong><div class="muted">Évaluation ouverte par l’enseignant.</div></div><button class="success">Commencer</button></div>`;
+  else box.innerHTML='<div class="row"><div><strong>Aucune évaluation ouverte</strong><div class="muted">L’enseignant doit ouvrir une évaluation en classe.</div></div></div>';
+}
+document.getElementById('exportBtn').onclick=()=>{
+  const s=currentStudent(),blob=new Blob([JSON.stringify({student:s},null,2)],{type:'application/json'}),u=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=u;a.download='TopMath_'+s.first+'_'+s.name+'_'+s.schoolYear+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),500);
+};
+</script></body></html>

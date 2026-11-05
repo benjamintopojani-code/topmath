@@ -1,0 +1,2 @@
+Correction iPad / Edge : la feuille de style principale est intégrée directement dans les pages HTML.
+Le dossier assets reste présent pour les autres ressources (fiches, modèles, images, etc.).

@@ -1,0 +1,11 @@
+Top'Math D1 — ajout date de naissance
+
+1. Déployer ce dossier avec :
+   npx wrangler pages deploy . --project-name=topmath
+2. Ouvrir https://topmath.pages.dev/enseignant.html
+3. Mes classes > classe > élève > Vue d'ensemble
+4. Saisir la date de naissance puis cliquer sur « Enregistrer la date ».
+5. Ouvrir « Fiche officielle » : la date doit y apparaître.
+
+Cette étape écrit uniquement le champ birth_date de l'élève dans la base topmath-dev.
+Les compétences/évaluations restent en lecture seule.

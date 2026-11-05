@@ -1,0 +1,5 @@
+TopMath – référentiels complets automatiques
+
+Cette version charge automatiquement dans D1 les référentiels officiels complets NORMAL et ECO pour les phases 1, 2 et 3.
+Le suivi filtre ensuite automatiquement selon la phase et la filière de chaque classe.
+Aucune compétence ne doit être activée manuellement.

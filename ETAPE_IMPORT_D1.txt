@@ -1,0 +1,10 @@
+Top'Math — Import Excel/CSV vers D1
+
+Format : Prénom | Nom | Classe | Phase
+- Aperçu avant import
+- Détection des classes existantes
+- Création automatique des classes manquantes
+- Choix NORMAL / ÉCO pour chaque nouvelle classe
+- Détection des doublons dans la classe
+- Génération automatique d'un code élève personnel
+- Enregistrement dans Cloudflare D1

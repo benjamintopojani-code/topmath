@@ -1,0 +1,15 @@
+TOP'MATH — ETAPE D1 : MES CLASSES EN LECTURE SEULE
+
+Cette version :
+- lit l'année active, les classes et les élèves via /api/roster depuis Cloudflare D1 ;
+- utilise D1 uniquement dans « Mes classes » ;
+- n'écrit encore rien dans D1 ;
+- garde le localStorage comme secours si D1 ou Internet est indisponible ;
+- ne migre pas encore les compétences, évaluations ni PDF afin de préserver le moteur validé.
+
+Déploiement :
+  npx wrangler pages deploy . --project-name=topmath
+
+Vérification :
+  https://topmath.pages.dev/api/roster
+  https://topmath.pages.dev/enseignant.html

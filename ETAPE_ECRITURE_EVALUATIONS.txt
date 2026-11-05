@@ -1,0 +1,11 @@
+TOP'MATH — ÉTAPE D1 : ÉCRITURE DES ÉVALUATIONS OFFICIELLES
+
+Cette version active une seule écriture pédagogique dans D1 :
+- Suivi des compétences > Modifier D1
+- ajouter/modifier les dates Eval. 1 / Eval. 2 / Eval. 3
+- annuler une évaluation en vidant sa date via le bouton d'annulation
+
+Une évaluation annulée est conservée dans D1 avec is_cancelled=1 et ne compte plus dans la validation.
+Après enregistrement, Top'Math recharge D1 : Mes classes, Suivi, Évaluations à prévoir et fiche officielle utilisent alors les nouvelles données.
+
+Le reste des fonctions d'administration n'est pas encore migré vers D1.
