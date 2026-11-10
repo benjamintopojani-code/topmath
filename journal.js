@@ -42,21 +42,23 @@ function render(c,slot){
  let periods=[...new Set([...available,'1','2','3','4','5','6','7','8','9'])].sort((a,b)=>Number(a)-Number(b));
  const oldDate=$('journalDate')?.value||date,oldPeriod=$('journalPeriod')?.value||cur||periods[0];
  const chosenPeriod=(slot&&slot.classe===c&&cur)?cur:oldPeriod;
- $('view').innerHTML='<div class="attendance-course-head"><div class="attendance-course-eyebrow">JOURNAL DE CLASSE</div><h2>'+esc(c)+'</h2><div class="muted small">'+(slot&&slot.classe===c?esc(slot.start+' – '+slot.end):'Classe sélectionnée')+'</div></div>'+
+ $('view').innerHTML='<div class="journal-compact-head"><div><div class="attendance-course-eyebrow">JOURNAL DE CLASSE</div><h2>'+esc(c)+'</h2><div class="muted small">'+esc(slot&&slot.classe===c&&slot.start?slot.start+' – '+slot.end:'Cours sélectionné')+'</div></div><details class="journal-settings" id="journalSettings"><summary aria-label="Réglages du journal" title="Réglages">⚙️ <span>Réglages</span></summary><div class="journal-settings-body">'+
  '<div class="row"><div><label for="journalDate">Date</label><input type="date" id="journalDate" value="'+esc(oldDate)+'"></div><div><label for="journalPeriod">Période</label><select id="journalPeriod">'+periods.map(p=>'<option value="'+esc(p)+'"'+(chosenPeriod===p?' selected':'')+'>Période '+esc(p)+'</option>').join('')+'</select></div></div>'+
  '<div class="journal-toolbar"><span class="muted small">Taille du texte</span><button type="button" id="journalSmaller" aria-label="Réduire le texte">A−</button><strong id="journalSize"></strong><button type="button" id="journalBigger" aria-label="Agrandir le texte">A+</button></div>'+
- '<label for="journalEditor">Travail réalisé durant ce cours</label><textarea id="journalEditor" class="journal-editor" rows="12" placeholder="Écrire ici le contenu du cours, les activités réalisées, les consignes, les devoirs…"></textarea>'+
- '<p class="muted small" id="journalSaveState" role="status"></p>'+
- '<div class="actions"><button type="button" class="btn-primary" id="journalSave">Enregistrer ce cours</button><button type="button" id="journalPrint">Imprimer / Enregistrer en PDF</button><button type="button" id="journalExport">Exporter en texte</button><button type="button" id="journalBackup">Sauvegarder tous mes journaux (JSON)</button></div>'+
- '<div class="notice small" style="margin-top:18px">Ce journal est sauvegardé uniquement dans ce navigateur. Il ne remplace pas le journal officiel et n’est pas synchronisé entre appareils. Gardez une sauvegarde régulière.</div>';
+ '<div class="actions"><button type="button" id="journalPrint">Imprimer / Enregistrer en PDF</button><button type="button" id="journalExport">Exporter en texte</button><button type="button" id="journalBackup">Sauvegarder tous mes journaux (JSON)</button></div>'+
+ '<p class="muted small">Les notes sont enregistrées automatiquement sur cet iPad. Ce journal ne remplace pas le document officiel et ne se synchronise pas entre appareils.</p></div></details></div>'+
+ '<label for="journalEditor" class="journal-writing-label">Notes du cours</label><textarea id="journalEditor" class="journal-editor" rows="17" placeholder="Écrire ici ce que nous avons fait aujourd’hui…"></textarea>'+
+ '<p class="muted small" id="journalSaveState" role="status"></p>';
  const update=()=>refresh(c,slot,$('journalDate').value,$('journalPeriod').value);
  $('journalDate').addEventListener('change',()=>{if($('journalEditor').value!==lastHtml)persistPrevious(c);update();});
  $('journalPeriod').addEventListener('change',()=>{if($('journalEditor').value!==lastHtml)persistPrevious(c);update();});
- $('journalSave').addEventListener('click',()=>persist(c));
+
  $('journalBigger').addEventListener('click',()=>{store.fontSize=Math.min(32,store.fontSize+2);saved();$('journalEditor').style.fontSize=store.fontSize+'px';$('journalSize').textContent=store.fontSize+' px';});
  $('journalSmaller').addEventListener('click',()=>{store.fontSize=Math.max(14,store.fontSize-2);saved();$('journalEditor').style.fontSize=store.fontSize+'px';$('journalSize').textContent=store.fontSize+' px';});
- $('journalEditor').addEventListener('input',()=>{$('journalSaveState').textContent='Modifications non enregistrées';});
- $('journalExport').addEventListener('click',()=>{persist(c);dl('topmath-journal-'+oldDate+'-'+c.replace(/[^a-z0-9-]/gi,'-')+'.txt',c+' · '+$('journalDate').value+' · Période '+$('journalPeriod').value+'\n\n'+$('journalEditor').value,'text/plain;charset=utf-8');});
+ let autoSaveTimer;
+ $('journalEditor').addEventListener('input',()=>{$('journalSaveState').textContent='Enregistrement…';clearTimeout(autoSaveTimer);autoSaveTimer=setTimeout(()=>persist(c),700);});
+ $('journalEditor').addEventListener('blur',()=>{clearTimeout(autoSaveTimer);if($('journalEditor').value!==lastHtml)persist(c);});
+ $('journalExport').addEventListener('click',()=>{persist(c);dl('topmath-journal-'+$('journalDate').value+'-'+c.replace(/[^a-z0-9-]/gi,'-')+'.txt',c+' · '+$('journalDate').value+' · Période '+$('journalPeriod').value+'\n\n'+$('journalEditor').value,'text/plain;charset=utf-8');});
  $('journalBackup').addEventListener('click',()=>dl('topmath-journaux-sauvegarde-'+nowDate()+'.json',JSON.stringify({format:KEY,exported:new Date().toISOString(),...store},null,2),'application/json;charset=utf-8'));
  $('journalPrint').addEventListener('click',()=>{persist(c);const w=window.open('','_blank');if(!w){alert('Autorisez les fenêtres pour imprimer.');return;}const h='<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Journal de classe</title><style>body{font:17px Arial,sans-serif;margin:30mm 20mm;color:#222}h1{font-size:24px}pre{font:inherit;white-space:pre-wrap;overflow-wrap:anywhere}</style></head><body><h1>Journal de classe — '+esc(c)+'</h1><p>'+esc($('journalDate').value)+' · Période '+esc($('journalPeriod').value)+'</p><hr><pre>'+esc($('journalEditor').value)+'</pre></body></html>';w.document.write(h);w.document.close();w.focus();setTimeout(()=>w.print(),250);});
  refresh(c,slot,oldDate,chosenPeriod);
