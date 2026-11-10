@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#102c54"><title>Top'Math — Mon horaire</title>
+<style>
+:root{font-family:Arial,Helvetica,sans-serif;color:#183657;background:#f2f6fc;font-size:16px}
+*{box-sizing:border-box}body{margin:0}header{background:#112f58;color:#fff;padding:15px max(16px,calc((100vw - 1100px)/2));display:flex;align-items:center;justify-content:space-between;gap:15px}header strong{font-size:1.1rem;letter-spacing:.03em}header a{color:#fff;text-decoration:none;font-weight:700;background:#ffffff1e;padding:9px 14px;border-radius:8px}main{max-width:1100px;margin:auto;padding:20px 13px 70px}
+h1{font-size:1.5rem;margin:0 0 7px}p{line-height:1.48}.intro{color:#516984;margin:4px 0 18px}.card{background:#fff;border:1px solid #d1e0f0;border-radius:14px;box-shadow:0 3px 14px #1c49700b;padding:17px}
+.toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:13px}.toolbar .hint{font-size:.9rem;color:#536b88}.mini{font-size:.79rem;color:#59718c}.scroll-note{display:none;color:#59718c;font-size:.82rem;margin:0 0 9px}
+.gridwrap{overflow-x:auto;overscroll-behavior-x:contain;border:1px solid #dbe5f1;border-radius:12px}
+table{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed;min-width:710px}thead th{background:#eaf2fc;font-size:.89rem;color:#28547f;padding:13px 5px;border-bottom:1px solid #d2e1f2;position:sticky;top:0;z-index:2}thead th:first-child{width:65px}tbody th{font-size:.82rem;background:#f3f7fc;color:#355d87;border-right:1px solid #e1eaf5;border-bottom:1px solid #e4ebf4;width:65px}tbody td{padding:4px;border-bottom:1px solid #e4ebf4;border-left:1px solid #edf1f7;vertical-align:top;height:87px}
+.slot{width:100%;min-height:77px;border:1px dashed #cad9eb;border-radius:9px;background:#fafcff;color:#506b8b;padding:9px 6px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;font:inherit;touch-action:manipulation}.slot .plus{font-size:1.25rem;font-weight:400}.slot.filled{border:1px solid #9ebfe7;background:#eaf3ff;color:#173f72}.slot.filled.upper{background:#e9f5f1;border-color:#add7c8;color:#22594d}.slot strong{font-size:.93rem;line-height:1.25;overflow-wrap:anywhere}.slot small{font-size:.72rem}.slot:focus-visible{outline:3px solid #2b73c7;outline-offset:2px}
+.actions{display:flex;gap:10px;flex-wrap:wrap}.primary,button.action{border:1px solid #2f68b5;background:#2b5eaa;color:#fff;border-radius:10px;padding:12px 15px;min-height:44px;font-size:1rem;font-weight:750;cursor:pointer}.secondary{background:#fff;color:#25588e;border:1px solid #acc8e8;border-radius:10px;padding:11px 14px;font-size:.93rem;font-weight:700;cursor:pointer}.danger{color:#a53042;background:#fff;border:1px solid #e2b0b9;padding:10px 13px;border-radius:10px;font-weight:700;cursor:pointer}
+.legend{display:flex;gap:13px;flex-wrap:wrap;align-items:center;padding:12px 3px 3px;color:#506b85;font-size:.83rem}.swatch{display:inline-block;width:13px;height:13px;border-radius:3px;margin-right:5px;vertical-align:-2px;background:#eaf3ff;border:1px solid #9ebfe7}.swatch.upper{background:#e9f5f1;border-color:#add7c8}
+dialog{border:0;border-radius:16px;width:min(470px,calc(100vw - 24px));max-height:calc(100dvh - 24px);padding:0;box-shadow:0 18px 70px #09264e55}dialog::backdrop{background:#0c234c94}.modal-head{padding:17px 20px;border-bottom:1px solid #e3ebf6;display:flex;align-items:center;justify-content:space-between;gap:12px}.modal-head h2{font-size:1.15rem;margin:0}.close{background:transparent;border:0;font-size:1.5rem;cursor:pointer;padding:5px 10px;color:#425e80}.modal-body{padding:20px;display:grid;gap:11px}label{font-size:.86rem;font-weight:750;color:#314d70}select,input{display:block;min-height:45px;width:100%;font:inherit;border:1px solid #afc4df;border-radius:9px;padding:10px;background:#fff;color:#183657}input{min-width:0}.modal-body .explain{font-size:.84rem;color:#5e7188;margin:0}.preview{background:#edf5ff;border-left:3px solid #3a78c6;color:#234f83;border-radius:6px;padding:10px;font-size:.87rem;margin:0}.modal-actions{display:flex;align-items:center;justify-content:space-between;gap:9px;flex-wrap:wrap;padding-top:8px}.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.catalog{margin-top:16px}.catalog summary{cursor:pointer;color:#1e548e;font-weight:750}.catalog form{display:flex;gap:10px;margin:12px 0 0;flex-wrap:wrap}.catalog form input{flex:1;min-width:180px}.notice{margin:14px 0;color:#456381;font-size:.85rem}
+@media(max-width:800px){.scroll-note{display:block}.gridwrap{margin-left:-3px;margin-right:-3px}header strong{font-size:1rem}.card{padding:13px}main{padding-top:16px}}
+</style></head>
+<body>
+<header><strong>TOP’MATH · MON HORAIRE</strong><a href="administratif.html" aria-label="Retour aux réglages administratifs">← Retour</a></header>
+<main>
+<h1>Mon horaire hebdomadaire</h1><p class="intro">Touche une case de l'agenda pour choisir sa classe et sa grille horaire. Les heures sont calculées automatiquement.</p>
+<section class="card" aria-label="Agenda des cours">
+ <div class="toolbar"><strong>Ma semaine · Périodes 1 à 9</strong><span class="hint" id="courseCount">Chargement…</span></div>
+ <p class="scroll-note">Fais glisser le tableau horizontalement pour voir les autres jours.</p>
+ <div class="gridwrap"><table aria-label="Horaire à modifier"><thead><tr><th scope="col">P.</th><th scope="col">Lundi</th><th scope="col">Mardi</th><th scope="col">Mercredi</th><th scope="col">Jeudi</th><th scope="col">Vendredi</th></tr></thead><tbody id="agendaBody"></tbody></table></div>
+ <div class="legend"><span><i class="swatch"></i>1re · Obs · P1</span><span><i class="swatch upper"></i>Phases 2 et 3</span><span>+ = ajouter un cours</span></div>
+</section>
+<details class="card catalog"><summary>Ajouter une classe à la liste</summary><p class="mini">Les 36 classes de forme 3 sont déjà proposées. Tu peux compléter la liste sans toucher à tes cours.</p><form id="addClassForm"><label class="sr" for="newClass">Nouvelle classe</label><input id="newClass" placeholder="Ex. : P2 HORT" maxlength="65" required><button class="secondary" type="submit">Ajouter la classe</button></form></details>
+<p class="notice" id="message" role="status">Les changements sont enregistrés sur cet appareil, dans le même horaire que Top’Math Administratif.</p>
+</main>
+<dialog id="editDialog" aria-labelledby="dialogTitle">
+ <div class="modal-head"><h2 id="dialogTitle">Modifier un cours</h2><button type="button" class="close" id="closeDialog" aria-label="Fermer">✕</button></div>
+ <form id="courseForm" class="modal-body">
+  <p class="mini" id="cellLabel"></p>
+  <label for="courseClass">Classe</label><select id="courseClass" required></select>
+  <label for="courseGroup">Grille horaire de ce cours</label><select id="courseGroup" required><option value="first">1re · Observation · Phase 1</option><option value="upper">Phases 2 et 3</option></select>
+  <p class="explain" id="wednesdayRule" hidden>Le mercredi, la grille de la 1re/Observation/Phase 1 s’applique à tous.</p>
+  <p class="preview" id="timePreview">Les heures seront calculées automatiquement.</p>
+  <div class="modal-actions"><button type="button" class="danger" id="deleteCourse" hidden>Supprimer</button><div class="actions"><button type="button" class="secondary" id="cancelEdit">Annuler</button><button type="submit" class="primary">Enregistrer</button></div></div>
+ </form>
+</dialog>
+<script>
+'use strict';
+const KEY='topmath-administratif-v1';
+const days=['','Lundi','Mardi','Mercredi','Jeudi','Vendredi'];
+const FIRST={1:['08:25','09:15'],2:['09:15','10:05'],3:['10:15','11:00'],4:['11:00','11:55'],6:['12:40','13:25'],7:['13:25','14:15'],8:['14:25','15:10'],9:['15:10','16:00']};
+const UPPER={1:['08:25','09:15'],2:['09:15','10:05'],3:['10:05','11:00'],4:['11:10','11:55'],5:['11:55','12:40'],7:['13:25','14:15'],8:['14:15','15:10'],9:['15:20','16:00']};
+const SCHOOL=['OBSA','OBSB','OBSC','OBSD','OBSE','1AGRO','2HORT','3JE','3OEH','1IND','2CM','2MECA/CAR','3FER','3PC','3PEC','3TC','1CONST','2CGO','3MAC','3PAV','1HOT','2REST','3CCC','3PCC','1ECO/TB','1ECO/TM','2TB','2TM','3ART','3AUX','3ED','1SP','2SSF','3ALC','3ALMSC','3TSN'];
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const infer=classe=>/^(?:OBS|1|P1|F1|F2)/i.test(String(classe||''))?'first':'upper';
+let data;try{data=JSON.parse(localStorage.getItem(KEY)||'null');}catch{data=null;}
+if(!data||!Array.isArray(data.slots))data={slots:[],reports:[],links:{},classCatalog:[]};
+if(!data.links)data.links={};
+if(!data.reports)data.reports=[];
+if(!Array.isArray(data.classCatalog))data.classCatalog=[];
+if(!data.classScheduleGroups)data.classScheduleGroups={};
+if(!data.periodTimesByGroup)data.periodTimesByGroup={first:Object.fromEntries(Object.entries(FIRST).map(([p,v])=>[p,{start:v[0],end:v[1]}])),upper:Object.fromEntries(Object.entries(UPPER).map(([p,v])=>[p,{start:v[0],end:v[1]}]))};
+for(const g of ['first','upper'])if(!data.periodTimesByGroup[g])data.periodTimesByGroup[g]={};
+data.classCatalog=[...new Set([...SCHOOL,...data.classCatalog])];
+let chosenDay=1,chosenPeriod=1;
+function classes(){return [...new Set([...SCHOOL,...data.classCatalog,...data.slots.map(x=>x.classe),...Object.keys(data.links),...data.reports.map(x=>x.classe)])].filter(Boolean).sort((a,b)=>a.localeCompare(b,'fr'));}
+function groupFor(x){return Number(x.day)===3?'first':x.scheduleGroup||data.classScheduleGroups[x.classe]||infer(x.classe);}
+function timing(day,period,group){return data.periodTimesByGroup[day===3?'first':group]?.[period]||null;}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(data));$('message').textContent='Horaire enregistré sur cet appareil. Retourne dans Administratif pour voir la classe en cours.';}catch(e){$('message').textContent='Impossible d’enregistrer : stockage du navigateur indisponible.';throw e;}}
+function render(){
+ const rows=[];
+ for(let p=1;p<=9;p++){let html='<tr><th scope="row">'+p+'</th>';for(let day=1;day<=5;day++){
+  const slot=data.slots.find(x=>Number(x.day)===day&&Number(x.period)===p),group=slot?groupFor(slot):'first';
+  html+='<td><button type="button" class="slot'+(slot?' filled '+(group==='upper'?'upper':''):'')+'" data-day="'+day+'" data-period="'+p+'" aria-label="'+(slot?'Modifier '+esc(slot.classe):'Ajouter un cours')+' · '+days[day]+' période '+p+'">'+(slot?'<strong>'+esc(slot.classe)+'</strong><small>'+(group==='upper'?'P2 · P3':'1re · Obs · P1')+'</small>':'<span class="plus">+</span><small>Ajouter</small>')+'</button></td>';
+ }rows.push(html+'</tr>');}
+ $('agendaBody').innerHTML=rows.join('');
+ $('courseCount').textContent=data.slots.filter(x=>Number(x.day)>=1&&Number(x.day)<=5&&Number(x.period)>=1&&Number(x.period)<=9).length+' cours enregistrés';
+}
+function preview(){
+ const day=chosenDay,group=day===3?'first':$('courseGroup').value;
+ $('courseGroup').disabled=day===3;
+ $('wednesdayRule').hidden=day!==3;
+ const time=timing(day,chosenPeriod,group);
+ $('timePreview').textContent=time?.start&&time?.end?'Heures automatiques : '+time.start+' – '+time.end:'Cette période correspond à une pause dans la grille sélectionnée : aucun cours ne peut être ajouté.';
+ $('courseForm').querySelector('button[type="submit"]').disabled=!(time?.start&&time?.end);
+}
+function openCell(day,p){
+ chosenDay=day;chosenPeriod=p;
+ const found=data.slots.find(x=>Number(x.day)===day&&Number(x.period)===p);
+ const all=classes();$('courseClass').innerHTML='<option value="">Choisir une classe</option>'+all.map(c=>'<option value="'+esc(c)+'">'+esc(c)+'</option>').join('');
+ const existing=found?.classe||'';
+ $('courseClass').value=existing;
+ $('courseGroup').value=found?groupFor(found):'first';
+ $('cellLabel').textContent=days[day]+' · Période '+p;
+ $('dialogTitle').textContent=found?'Modifier ce cours':'Ajouter un cours';
+ $('deleteCourse').hidden=!found;
+ preview();$('editDialog').showModal();
+}
+$('agendaBody').addEventListener('click',e=>{const b=e.target.closest('button[data-day][data-period]');if(b)openCell(Number(b.dataset.day),Number(b.dataset.period));});
+$('courseClass').addEventListener('change',()=>{const c=$('courseClass').value;if(c)$('courseGroup').value=data.classScheduleGroups[c]||infer(c);preview();});
+$('courseGroup').addEventListener('change',preview);
+$('closeDialog').addEventListener('click',()=>$('editDialog').close());
+$('cancelEdit').addEventListener('click',()=>$('editDialog').close());
+$('courseForm').addEventListener('submit',e=>{
+ e.preventDefault();
+ const classe=$('courseClass').value;
+ const group=chosenDay===3?'first':$('courseGroup').value;
+ const time=timing(chosenDay,chosenPeriod,group);
+ if(!classe||!time?.start||!time?.end)return;
+ const current=data.slots.find(x=>Number(x.day)===chosenDay&&Number(x.period)===chosenPeriod);
+ if(current){current.classe=classe;current.scheduleGroup=group;current.start=time.start;current.end=time.end;}
+ else data.slots.push({id:'agenda-'+Date.now()+'-'+chosenDay+'-'+chosenPeriod,day:chosenDay,period:chosenPeriod,classe,scheduleGroup:group,start:time.start,end:time.end});
+ // A choice is attached to this course, not imposed on other courses for the class.
+ save();render();$('editDialog').close();
+});
+$('deleteCourse').addEventListener('click',()=>{
+ const x=data.slots.find(s=>Number(s.day)===chosenDay&&Number(s.period)===chosenPeriod);
+ if(!x||!confirm('Supprimer '+x.classe+' du '+days[chosenDay]+', période '+chosenPeriod+' ?'))return;
+ data.slots=data.slots.filter(s=>s!==x);save();render();$('editDialog').close();
+});
+$('addClassForm').addEventListener('submit',e=>{
+ e.preventDefault();const name=$('newClass').value.trim().replace(/\s+/g,' ');
+ if(!name)return;
+ if(!classes().some(c=>c.toLocaleLowerCase('fr')===name.toLocaleLowerCase('fr')))data.classCatalog.push(name);
+ $('newClass').value='';save();$('message').textContent='Classe '+name+' ajoutée à la liste.';
+});
+render();
+</script></body></html>
