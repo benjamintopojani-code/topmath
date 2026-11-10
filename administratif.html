@@ -153,6 +153,16 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
 #adminSettings .hero h1{font-size:1.05rem}
 #adminSettings button{max-width:100%}
 @media(max-width:480px){.class-settings{padding:12px}#adminSettings{padding:8px}#adminSettings .settings-subsection-body{padding:0 10px 12px}#adminSettings .row{grid-template-columns:1fr}}
+
+/* Options avancées placées dans le même panneau, juste après « Plus d'options ». */
+.class-settings #adminSettings{width:100%;max-width:none;margin:9px 0 0;padding:10px;border:1px solid #dce6f2;border-radius:12px;background:#fbfdff}
+.class-settings #adminSettings:not([open]){display:none!important}
+.class-settings #adminSettings[open]{display:block}
+.class-settings #adminSettings .settings-content{padding:0}
+.class-settings #adminSettings .settings-advanced-heading{margin:5px 8px 10px;font-size:.96rem}
+.class-settings #adminSettings .settings-subsection{margin:7px 0;background:#fff}
+.class-settings #adminSettings .settings-subsection>summary{min-height:49px;display:list-item;align-content:center}
+@media(max-width:480px){.class-settings #adminSettings{padding:8px}.class-settings #adminSettings .settings-content>p{font-size:.78rem}}
 </style></head><body>
 <header><strong id="topbarTitle">TOP'MATH <span class="topbar-divider">·</span> ADMINISTRATIF</strong><div class="topbar-controls"><button id="topSettingsBtn" type="button" aria-label="Ouvrir les réglages" aria-expanded="false" title="Réglages">⚙️</button><a class="topbar-back" href="enseignant.html" aria-label="Retour à l’espace enseignant" title="Retour à l’espace enseignant">←</a></div></header>
 <main>
@@ -168,13 +178,6 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
  <label for="settingsPresenceLink">Présences</label><input type="url" id="settingsPresenceLink" placeholder="https://...">
  <button type="button" class="btn-primary" id="settingsSaveLinks">Enregistrer ces liens</button></div></details>
  <button type="button" id="settingsAdvanced" class="settings-advanced-btn" aria-expanded="false"><span class="settings-section-icon">03</span><span>Plus d'options<small>Horaire, cours, rapports et sauvegarde</small></span><span class="settings-chevron" aria-hidden="true">⌄</span></button>
-</section>
-<div class="grid" id="adminNav" aria-label="Rubriques administratives">
- <a class="tile" data-section-link="journal" href="journal.html">📖<strong>Journal de classe</strong><small>Ouvrir la page du journal</small></a>
- <a class="tile" data-section-link="presences" href="presences.html">👥<strong>Présences</strong><small>Ouvrir la feuille d'appel</small></a>
- <a class="tile" data-section-link="rapports" href="rapports.html">📋<strong>Rapports</strong><small>Ouvrir les suivis</small></a>
-</div>
-<section id="view" class="card" style="margin-top:16px" aria-live="polite"></section>
 <details id="adminSettings" class="card settings-panel"><summary class="visually-hidden">Réglages administratifs</summary>
  <div class="settings-content">
  <details class="settings-subsection"><summary>Autre sélection de classe</summary>
@@ -218,6 +221,14 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
  <details class="settings-subsection"><summary>Sauvegarde et réinitialisation</summary><div class="settings-subsection-body"><div class="actions"><button type="button" id="exportConfig">Exporter une sauvegarde JSON</button><button type="button" id="reset" style="color:#9d2c35">Effacer la configuration locale</button></div></div></details>
  </div>
 </details>
+</section>
+<div class="grid" id="adminNav" aria-label="Rubriques administratives">
+ <a class="tile" data-section-link="journal" href="journal.html">📖<strong>Journal de classe</strong><small>Ouvrir la page du journal</small></a>
+ <a class="tile" data-section-link="presences" href="presences.html">👥<strong>Présences</strong><small>Ouvrir la feuille d'appel</small></a>
+ <a class="tile" data-section-link="rapports" href="rapports.html">📋<strong>Rapports</strong><small>Ouvrir les suivis</small></a>
+</div>
+<section id="view" class="card" style="margin-top:16px" aria-live="polite"></section>
+
 </main>
 <script src="presences.js"></script>
 <script src="journal.js"></script>
@@ -313,7 +324,7 @@ $('settingsAdvanced').addEventListener('click',()=>{
  const advanced=$('adminSettings');advanced.open=!advanced.open;
  $('settingsAdvanced').setAttribute('aria-expanded',String(advanced.open));
  $('settingsAdvanced').querySelector('.settings-chevron').textContent=advanced.open?'⌃':'⌄';
- if(advanced.open)advanced.scrollIntoView({block:'start',behavior:'smooth'});
+
 });
 $('auto').addEventListener('click',()=>{override='';render();});
 $('slotForm').addEventListener('submit',e=>{e.preventDefault();const start=$('start').value,end=$('end').value,day=Number($('day').value),classe=$('slotClass').value.trim();if(start>=end){alert('La fin doit être après le début.');return;}if(data.slots.some(x=>x.day===day&&start<x.end&&x.start<end)){alert('Ce créneau chevauche un cours existant.');return;}data.slots.push({id:crypto.randomUUID(),day,start,end,classe});e.target.reset();save();});
