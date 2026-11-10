@@ -513,7 +513,7 @@ $('slotClass').addEventListener('change',()=>{
  previewManualSlot();
 });
 $('classCatalogForm').addEventListener('submit',e=>{
- e.preventDefault();const name=$('classCatalogInput').value.trim().replace(/\\s+/g,' ');
+ e.preventDefault();const name=$('classCatalogInput').value.trim().replace(/\s+/g,' ');
  if(!name)return;
  if(!classes().some(c=>c.toLocaleLowerCase('fr')===name.toLocaleLowerCase('fr')))data.classCatalog.push(name);
  $('classCatalogInput').value='';save();$('slotClass').value=name;
@@ -529,7 +529,7 @@ $('slotForm').addEventListener('submit',e=>{
  const existing=data.slots.find(x=>Number(x.day)===day&&Number(x.period)===period);
  if(existing&&!confirm('Remplacer '+existing.classe+' par '+classe+' pour '+days[day]+' en période '+period+' ?'))return;
  if(existing)data.slots=data.slots.filter(x=>x!==existing);
- data.classScheduleGroups[classe]=$('slotGroup').value;
+ if(day!==3)data.classScheduleGroups[classe]=group;
  data.slots.push({id:crypto.randomUUID(),day,period,classe,start:time.start,end:time.end});
  applyPeriodTimings();save();previewManualSlot();
 });
