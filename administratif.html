@@ -67,7 +67,10 @@ summary{font-weight:700;cursor:pointer;padding:8px 0}details{margin-top:20px}hr{
  <div class="actions"><button type="button" id="exportConfig">Exporter une sauvegarde JSON</button><button type="button" id="reset" style="color:#9d2c35">Effacer la configuration locale</button></div>
 </details>
 </main>
+<script src="presences.js"></script>
 <script>
+window.topmathSchedule=()=>data.slots;
+window.topmathCurrentSlot=()=>autoSlot;
 'use strict';
 const KEY='topmath-administratif-v1',days=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
 const PHOTO_COURS=[
@@ -96,7 +99,7 @@ function updateHeader(){const c=current();$('currentClass').textContent=c||'Aucu
 function external(url,label){const safe=safeUrl(url);return safe?'<a class="btn btn-primary" href="'+esc(safe)+'" target="_blank" rel="noopener noreferrer">'+esc(label)+' ↗</a>':'<p class="notice">Aucun lien configuré pour cette classe.</p>';}
 function renderView(){const c=current(),v=$('view');if(!c){v.innerHTML='<h2>Aucun cours sélectionné</h2><p class="muted">Ajoutez les cours dans la configuration, puis l’application reconnaîtra automatiquement la classe selon le jour et l’heure de l’iPad.</p>';return;}
 if(tab==='journal'){v.innerHTML='<h2>Journal de classe · '+esc(c)+'</h2><p class="muted">Accès direct à votre journal officiel pour cette classe.</p>'+external(data.links[c]?.journal,'Ouvrir le journal de classe');}
-if(tab==='presences'){v.innerHTML='<h2>Présences · '+esc(c)+'</h2><p class="muted">Accès au registre des présences de cette classe.</p>'+external(data.links[c]?.presence,'Faire les présences');}
+if(tab==='presences'){window.TopMathAttendance.render(c,autoSlot);}
 if(tab==='rapports'){const arr=data.reports.filter(x=>x.classe===c);v.innerHTML='<div class="flex"><h2>Rapports · '+esc(c)+'</h2><span class="pill">'+arr.filter(x=>!x.done).length+' à compléter</span></div>'+(arr.length?arr.map(r=>'<article class="task"><div class="flex"><strong>'+esc(r.student)+'</strong><span class="pill">'+(r.done?'Marqué terminé':'À compléter')+'</span></div><p>'+esc(r.title)+'</p><div class="actions">'+external(r.url,'Ouvrir le document')+'<button type="button" data-toggle="'+esc(r.id)+'">'+(r.done?'Marquer à faire':'Marquer terminé')+'</button><button type="button" data-remove-report="'+esc(r.id)+'">Retirer</button></div></article>').join(''):'<p class="muted">Aucun suivi demandé pour cette classe.</p>')+'<p class="muted small">Le statut « terminé » est un suivi personnel : il ne confirme pas l’envoi du formulaire officiel.</p>';}}
 function renderPeriodTimes(){
  $('periodTimes').innerHTML=Array.from({length:9},(_,i)=>{const n=i+1,v=data.periodTimes[n]||{};return '<div class="row" style="align-items:end"><div><label for="period-start-'+n+'">Période '+n+' — Début</label><input type="time" id="period-start-'+n+'" value="'+esc(v.start||'')+'"></div><div><label for="period-end-'+n+'">Période '+n+' — Fin</label><input type="time" id="period-end-'+n+'" value="'+esc(v.end||'')+'"></div></div>'}).join('');
