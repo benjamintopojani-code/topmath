@@ -125,25 +125,22 @@ function render(c,slot){
  '<label for="attFile">Importer un fichier .txt ou .csv</label><input type="file" id="attFile" accept=".csv,.txt,text/plain,text/csv">'+
  '<div class="actions"><button type="button" id="attImport">Enregistrer la liste locale</button></div>')+
  '</details>'+
- '<hr><h2>Historique et justificatifs</h2>'+
- '<div class="row"><div><label for="attStudent">Élève</label><select id="attStudent"><option value="">Tous les élèves</option>'+[...new Set([...students,...records().filter(x=>x.classe===c).map(x=>x.name)])].sort((a,b)=>a.localeCompare(b,'fr')).map(x=>'<option value="'+esc(x)+'"'+(selectedStudent===x?' selected':'')+'>'+esc(x)+'</option>').join('')+'</select></div>'+
- '<div><label for="attClasseFilter">Classe exportée</label><select id="attClasseFilter"><option value="current">Cette classe</option><option value="all">Toutes les classes</option></select></div></div>'+
- '<div class="actions"><button id="attCsv" type="button">Télécharger l’historique CSV</button><button id="attJson" type="button">Sauvegarder toutes les présences (JSON)</button><button id="attRestore" type="button">Restaurer une sauvegarde</button><input type="file" accept=".json,application/json" id="attRestoreFile" style="display:none"></div>'+
- '<div id="attHistory"></div>';
- id('view').innerHTML=html;history(c);
+ '<div class="attendance-export-panel"><button id="attPdf" class="btn-primary" type="button">Télécharger le PDF de l’historique de la classe</button><p class="muted small">Élèves à gauche · dates et périodes des cours en colonnes · format A4 paysage.</p></div>'+
+ '<details class="attendance-backup-tools"><summary>Sauvegarde technique des présences</summary><div class="actions"><button id="attJson" type="button">Sauvegarder mes données (JSON)</button><button id="attRestore" type="button">Restaurer une sauvegarde</button><input type="file" accept=".json,application/json" id="attRestoreFile" style="display:none"></div></details>';
+ id('view').innerHTML=html;
  bindRosterControls(c,slot);
 
  if(!sharedRoster&&!sharedLoading&&Date.now()-lastFetch>300000)fetchShared(c);
  id('attDate').addEventListener('change',e=>{selectedDate=e.target.value||today();render(c,slot);});
  id('attPeriod').addEventListener('change',e=>{selectedPeriod=e.target.value;render(c,slot);});
- id('attStudent').addEventListener('change',e=>{selectedStudent=e.target.value;history(c);});
+
  id('attSave').addEventListener('click',()=>saveCall(c));
  id('attAll').addEventListener('click',()=>document.querySelectorAll('[data-att-student]').forEach(x=>x.checked=x.value==='P'));
  id('attClear').addEventListener('click',()=>document.querySelectorAll('[data-att-student]').forEach(x=>x.checked=false));
  id('attRefreshCentral')?.addEventListener('click',()=>fetchShared(c,true));
  id('attImport')?.addEventListener('click',()=>{if(isCentralClass(c)){alert('La liste est gérée dans Mes classes. Actualise-la depuis cet espace.');return;}const names=rosterNames(id('attList').value);if(!names.length){alert('Aucun nom valide détecté.');return;}if(!confirm('Enregistrer '+names.length+' élèves pour '+c+' dans la liste locale uniquement ?'))return;state.rosters[c]=names;if(persist()){selectedStudent='';render(c,slot);}});
  id('attFile')?.addEventListener('change',async e=>{const f=e.target.files?.[0];if(!f)return;if(f.size>500000){alert('Fichier trop volumineux.');return;}const raw=await f.text();id('attList').value=rosterNames(raw).join('\n');});
- id('attCsv').addEventListener('click',()=>exportCSV(c));
+ id('attPdf').addEventListener('click',()=>{try{if(!window.TopMathAttendancePdf)throw Error('Module PDF indisponible. Réactualise la page.');window.TopMathAttendancePdf.download(c,roster(c),Object.values(state.sessions));}catch(err){alert('Export PDF impossible : '+(err?.message||err));}});
  id('attJson').addEventListener('click',()=>download('topmath-presences-sauvegarde-'+today()+'.json',JSON.stringify({format:'topmath-presences-v1',exported:new Date().toISOString(),rosters:state.rosters,sessions:state.sessions},null,2),'application/json;charset=utf-8'));
  id('attRestore').addEventListener('click',()=>id('attRestoreFile').click());
  id('attRestoreFile').addEventListener('change',async e=>{let f=e.target.files?.[0];if(!f)return;try{const obj=JSON.parse(await f.text());if(obj.format!=='topmath-presences-v1'||!obj.rosters||!obj.sessions||Array.isArray(obj.sessions))throw Error('Format invalide');if(!confirm('Remplacer les listes et les présences locales par la sauvegarde sélectionnée ?'))return;state={rosters:obj.rosters,sessions:obj.sessions};if(persist()){selectedStudent='';render(c,slot);}}catch(err){alert('Sauvegarde invalide : '+err.message);}});
@@ -157,20 +154,6 @@ function saveCall(c){
  const key=sessionKey(selectedDate,selectedPeriod,c);
  state.sessions[key]={date:selectedDate,period:selectedPeriod,classe:c,entries,updated:new Date().toISOString()};
  if(persist()){render(c,window.topmathCurrentSlot?.());alert('Appel enregistré sur cet iPad. Pensez à sauvegarder régulièrement vos données.');}
-}
-function history(c){
- const rows=records().filter(x=>x.classe===c&&(!selectedStudent||x.name===selectedStudent)).sort((a,b)=>b.date.localeCompare(a.date)||Number(b.periode)-Number(a.periode));
- const sessions=[...new Set(rows.map(x=>x.date+'|'+x.periode))];
- id('attHistory').innerHTML='<p class="muted small">'+sessions.length+' séance(s) trouvée(s) · '+rows.length+' ligne(s) de présence.</p>'+
- '<div style="max-height:290px;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:.9rem"><thead><tr><th style="text-align:left;padding:8px;border-bottom:1px solid #ccc">Date / Période</th><th style="text-align:left;padding:8px;border-bottom:1px solid #ccc">Élève</th><th style="text-align:left;padding:8px;border-bottom:1px solid #ccc">Statut</th></tr></thead><tbody>'+rows.slice(0,150).map(r=>'<tr><td style="padding:7px;border-bottom:1px solid #eee">'+esc(r.date)+' · P'+esc(r.periode)+'</td><td style="padding:7px;border-bottom:1px solid #eee">'+esc(r.name)+'</td><td style="padding:7px;border-bottom:1px solid #eee">'+esc(({P:'Présent',A:'Absent',S:'Stage',R:'Retard'})[r.status]||'Non renseigné')+'</td></tr>').join('')+'</tbody></table></div>'+
- (rows.length>150?'<p class="small muted">Aperçu limité à 150 lignes : l’export contient tout l’historique.</p>':'');
-}
-function exportCSV(c){
- const scope=id('attClasseFilter').value;
- const rows=records().filter(x=>(scope==='all'||x.classe===c)&&(!selectedStudent||x.name===selectedStudent)).sort((a,b)=>a.date.localeCompare(b.date)||Number(a.periode)-Number(b.periode)||a.name.localeCompare(b.name,'fr'));
- if(!rows.length){alert('Aucune présence enregistrée pour ce filtre.');return;}
- const data=[['Date','Période','Classe','Élève','Statut','Dernière modification'],...rows.map(r=>[r.date,r.periode,r.classe,r.name,({P:'Présent',A:'Absent',S:'Stage',R:'Retard'})[r.status]||'Non renseigné',r.updated])];
- download('topmath-presences-'+(scope==='all'?'toutes-classes':c.replace(/[^a-z0-9-]/gi,'-'))+'-'+today()+'.csv',csv(data),'text/csv;charset=utf-8');
 }
 document.addEventListener('change',e=>{const input=e.target.closest('input[type="checkbox"][data-att-student]');if(!input||!input.checked)return;document.querySelectorAll('[data-att-student]').forEach(other=>{if(other!==input&&other.dataset.attStudent===input.dataset.attStudent)other.checked=false;});});
 // Au retour de « Mes classes », récupérer les changements de la base commune.
