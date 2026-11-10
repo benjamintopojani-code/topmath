@@ -54,7 +54,7 @@ function syncFromDb(c,rerender){
  if(!ids.length)return false;
  const people=sharedRoster.students.filter(x=>ids.includes(String(x.class_id)));
  const names=[...new Set(people.map(x=>[x.last_name,x.first_name].filter(Boolean).join(' ').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'fr'));
- if(!names.length)return false;
+ // La liste de « Mes classes » est la référence, même si une classe devient vide.
  const old=roster(c);
  if(old.length===names.length&&old.every((v,i)=>v===names[i]))return true;
  state.rosters[c]=names;
@@ -78,6 +78,7 @@ async function fetchShared(c,force=false){
  }catch(err){sharedError=String(err.message||err);}
  finally{sharedLoading=false;if(selectedClass===c&&id('view')&&window.topmathAttendanceActive?.())render(c,window.topmathCurrentSlot?.());}
 }
+function isCentralClass(c){return Boolean(sharedRoster&&autoMap(c).length);}
 function rosterSyncPanel(c){
  if(sharedLoading)return '<p class="muted small">Synchronisation des classes depuis Top’Math en cours…</p>';
  if(!sharedRoster)return '<div class="notice small">Liste commune indisponible'+(sharedError?' : '+esc(sharedError):'')+'. Vérifiez la connexion et la base scolaire active.</div><div class="actions"><button type="button" id="attRefreshDb">Réessayer la synchronisation</button></div>';
@@ -116,12 +117,14 @@ function render(c,slot){
  '<div class="actions"><button type="button" class="btn-primary" id="attSave"'+(!students.length?' disabled':'')+'>Enregistrer la présence</button><button type="button" id="attAll"'+(!students.length?' disabled':'')+'>Tous présents</button><button type="button" id="attClear">Effacer les choix affichés</button></div>'+
  '<div class="notice small" style="margin-top:16px"><strong>Confidentialité :</strong> prototype sans authentification individuelle ni sauvegarde sécurisée. À tester avec des données fictives jusqu’à validation de l’établissement. Les données locales peuvent être perdues si Safari est réinitialisé.</div>'+
  '<details><summary>⚙️ Liaison des classes et listes Top’Math</summary><div class="task"><strong>Listes communes</strong>'+rosterSyncPanel(c)+'</div></details>'+
- '<hr><details><summary>📥 Importer ou modifier la liste des élèves</summary>'+
- '<p class="muted small">Collez un élève par ligne, ou importez un fichier TXT ou CSV (colonnes « Nom;Prénom »). Cette liste concerne uniquement la classe '+esc(c)+'.</p>'+
- '<label for="attList">Liste d’élèves (un par ligne)</label><textarea id="attList" rows="6" placeholder="Nom Prénom&#10;Nom Prénom">'+esc(students.join('\n'))+'</textarea>'+
+ '<hr><details><summary>👥 Liste des élèves · Mes classes</summary>'+
+ (isCentralClass(c)?
+ '<p class="muted small">Cette liste est synchronisée avec <strong>Top’Math → Mes classes</strong>. Pour ajouter, renommer ou déplacer un élève, modifie sa fiche dans Mes classes : sa présence sera ensuite actualisée ici. Cela évite les doublons.</p><div class="actions"><a class="btn" href="espace-enseignant.html" target="_top">Ouvrir Mes classes</a><button type="button" id="attRefreshCentral">Actualiser la liste</button></div>':
+ '<p class="notice small">Cette classe n’est pas encore associée à « Mes classes ». Cette liste locale est provisoire et <strong>ne modifie pas</strong> la base scolaire. Associe la classe dans « Liaison des classes et listes Top’Math » pour travailler sur les mêmes élèves.</p>'+
+ '<label for="attList">Liste locale (un élève par ligne)</label><textarea id="attList" rows="6" placeholder="Nom Prénom&#10;Nom Prénom">'+esc(students.join('\n'))+'</textarea>'+
  '<label for="attFile">Importer un fichier .txt ou .csv</label><input type="file" id="attFile" accept=".csv,.txt,text/plain,text/csv">'+
- '<div class="actions"><button type="button" id="attImport">Enregistrer la liste de la classe</button></div>'+
- '<p class="muted small">Remplacer une liste ne supprime pas les anciennes feuilles de présence sauvegardées.</p></details>'+
+ '<div class="actions"><button type="button" id="attImport">Enregistrer la liste locale</button></div>')+
+ '</details>'+
  '<hr><h2>Historique et justificatifs</h2>'+
  '<div class="row"><div><label for="attStudent">Élève</label><select id="attStudent"><option value="">Tous les élèves</option>'+[...new Set([...students,...records().filter(x=>x.classe===c).map(x=>x.name)])].sort((a,b)=>a.localeCompare(b,'fr')).map(x=>'<option value="'+esc(x)+'"'+(selectedStudent===x?' selected':'')+'>'+esc(x)+'</option>').join('')+'</select></div>'+
  '<div><label for="attClasseFilter">Classe exportée</label><select id="attClasseFilter"><option value="current">Cette classe</option><option value="all">Toutes les classes</option></select></div></div>'+
@@ -137,8 +140,9 @@ function render(c,slot){
  id('attSave').addEventListener('click',()=>saveCall(c));
  id('attAll').addEventListener('click',()=>document.querySelectorAll('[data-att-student]').forEach(x=>x.checked=x.value==='P'));
  id('attClear').addEventListener('click',()=>document.querySelectorAll('[data-att-student]').forEach(x=>x.checked=false));
- id('attImport').addEventListener('click',()=>{const names=rosterNames(id('attList').value);if(!names.length){alert('Aucun nom valide détecté.');return;}if(!confirm('Enregistrer '+names.length+' élèves pour '+c+' ?'))return;state.rosters[c]=names;if(persist()){selectedStudent='';render(c,slot);}});
- id('attFile').addEventListener('change',async e=>{const f=e.target.files?.[0];if(!f)return;if(f.size>500000){alert('Fichier trop volumineux.');return;}const raw=await f.text();id('attList').value=rosterNames(raw).join('\n');});
+ id('attRefreshCentral')?.addEventListener('click',()=>fetchShared(c,true));
+ id('attImport')?.addEventListener('click',()=>{if(isCentralClass(c)){alert('La liste est gérée dans Mes classes. Actualise-la depuis cet espace.');return;}const names=rosterNames(id('attList').value);if(!names.length){alert('Aucun nom valide détecté.');return;}if(!confirm('Enregistrer '+names.length+' élèves pour '+c+' dans la liste locale uniquement ?'))return;state.rosters[c]=names;if(persist()){selectedStudent='';render(c,slot);}});
+ id('attFile')?.addEventListener('change',async e=>{const f=e.target.files?.[0];if(!f)return;if(f.size>500000){alert('Fichier trop volumineux.');return;}const raw=await f.text();id('attList').value=rosterNames(raw).join('\n');});
  id('attCsv').addEventListener('click',()=>exportCSV(c));
  id('attJson').addEventListener('click',()=>download('topmath-presences-sauvegarde-'+today()+'.json',JSON.stringify({format:'topmath-presences-v1',exported:new Date().toISOString(),rosters:state.rosters,sessions:state.sessions},null,2),'application/json;charset=utf-8'));
  id('attRestore').addEventListener('click',()=>id('attRestoreFile').click());
