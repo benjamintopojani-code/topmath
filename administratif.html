@@ -195,6 +195,22 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
 .class-settings #adminSettings .settings-subsection-body{padding:12px 14px 15px;border-top:1px solid #e4ebf5}
 .class-settings #adminSettings .settings-subsection-body label{font-weight:600}
 @media(max-width:480px){.class-settings #adminSettings .settings-subsection-body{padding:10px}.class-settings #adminSettings .settings-subsection.settings-fold>summary{padding:13px}}
+
+/* Réglages : liens de classe et fiches par élève réunis */
+.settings-legacy-links{display:none!important}
+.class-link-reports{margin:13px 14px 14px;border:1px solid #d2e0f0;background:#fff;border-radius:10px;overflow:hidden}
+.class-link-reports>summary{list-style:none;padding:13px 12px;cursor:pointer;font-weight:750;color:#234c7d;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:48px}
+.class-link-reports>summary::marker{content:''}
+.class-link-reports>summary::-webkit-details-marker{display:none}
+.class-link-reports[open]>summary>span{transform:rotate(180deg)}
+.class-link-reports-body{border-top:1px solid #e4ebf5;padding:12px}
+.class-link-reports-body form{display:grid;gap:3px}
+.class-link-reports-body form>button{margin-top:12px}
+#classReportLinks{margin-top:12px}
+#classReportLinks .report-link-row{padding:10px 0;border-top:1px solid #e4ebf5;display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+#classReportLinks a{color:#175db2;text-decoration:underline;font-weight:700}
+#classReportLinks .report-link-row button{font-size:.8rem;padding:7px 10px;min-height:38px}
+@media(max-width:480px){.class-link-reports{margin:12px 10px}.class-link-reports-body{padding:10px}}
 </style></head><body>
 <header><strong id="topbarTitle">TOP'MATH <span class="topbar-divider">·</span> ADMINISTRATIF</strong><div class="topbar-controls"><button id="topSettingsBtn" type="button" aria-label="Ouvrir les réglages" aria-expanded="false" title="Réglages">⚙️</button><a class="topbar-back" href="enseignant.html" aria-label="Retour à l’espace enseignant" title="Retour à l’espace enseignant">←</a></div></header>
 <main>
@@ -204,11 +220,24 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
  <div class="settings-group"><div class="settings-section-title"><span class="settings-section-icon">01</span><span>Classe affichée</span></div>
  <label for="settingsClassChoice">Choisir une classe</label><select id="settingsClassChoice"></select><label for="settingsClassGroup">Grille horaire de cette classe</label><select id="settingsClassGroup"><option value="first">1re · Observation · Phase 1</option><option value="upper">Phases 2 et 3</option></select><p class="muted small">Le mercredi, la première grille s'applique automatiquement à toutes les classes.</p>
  <button type="button" id="settingsAuto" class="settings-auto-btn">↺ Afficher mon cours actuel</button></div>
- <details class="settings-group settings-fold"><summary><span class="settings-section-icon">02</span><span>Liens de cette classe<small>Journal et présences</small></span><span class="settings-chevron">⌄</span></summary>
+ <details class="settings-group settings-fold"><summary><span class="settings-section-icon">02</span><span>Liens de cette classe<small>Journal, présences et fiches d'élèves</small></span><span class="settings-chevron">⌄</span></summary>
  <div class="settings-short">
  <label for="settingsJournalLink">Journal de classe</label><input type="url" id="settingsJournalLink" placeholder="https://...">
  <label for="settingsPresenceLink">Présences</label><input type="url" id="settingsPresenceLink" placeholder="https://...">
- <button type="button" class="btn-primary" id="settingsSaveLinks">Enregistrer ces liens</button></div></details>
+ <button type="button" class="btn-primary" id="settingsSaveLinks">Enregistrer ces liens</button></div>
+ <details class="class-link-reports" id="classReportsMenu"><summary>Fiches de comportement par élève <span aria-hidden="true">⌄</span></summary>
+ <div class="class-link-reports-body">
+ <p class="muted small">Choisissez un élève de la classe et renseignez le lien vers sa fiche de comportement.</p>
+ <form id="reportForm">
+  <select id="reportClass" required hidden aria-label="Classe de la fiche"></select>
+  <label for="student">Élève concerné</label><input id="student" list="studentOptions" maxlength="100" required placeholder="Choisir ou saisir un élève"><datalist id="studentOptions"></datalist>
+  <label for="reportTitle">Nom de la fiche</label><input id="reportTitle" maxlength="120" required value="Fiche de comportement" placeholder="Fiche de comportement">
+  <label for="reportUrl">Lien vers la fiche de cet élève</label><input id="reportUrl" type="url" placeholder="https://..." required>
+  <button type="submit" class="btn-primary">Enregistrer la fiche de l'élève</button>
+ </form>
+ <div id="classReportLinks" aria-live="polite"></div>
+ <p class="muted small">Les liens et noms sont stockés localement. Ne saisissez des données réelles qu'après validation de l'établissement et mise en place d'un accès sécurisé.</p>
+ </div></details></details>
 <div id="adminSettings" class="settings-inline">
  <div class="settings-content">
  <details class="settings-subsection settings-legacy-class" hidden><summary>Autre sélection de classe</summary>
@@ -234,23 +263,15 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
   <div class="row"><div><label for="start">Début</label><input type="time" id="start" required></div><div><label for="end">Fin</label><input type="time" id="end" required></div></div>
   <div class="actions"><button type="submit" class="btn-primary">Ajouter le cours</button></div>
  </form><div id="slots"></div></div></details>
- <details class="settings-group settings-fold settings-subsection"><summary><span class="settings-section-icon">05</span><span>Autres classes<small>Liens par classe</small></span><span class="settings-chevron" aria-hidden="true">⌄</span></summary><div class="settings-subsection-body">
+ <details class="settings-legacy-links" hidden><summary><span class="settings-section-icon">05</span><span>Autres classes<small>Liens par classe</small></span><span class="settings-chevron" aria-hidden="true">⌄</span></summary><div class="settings-subsection-body">
  <form id="linkForm">
   <label for="linkClass">Classe</label><select id="linkClass" required></select>
   <label for="journalUrl">Lien du journal de classe</label><input type="url" id="journalUrl" placeholder="https://...">
   <label for="presenceUrl">Lien des présences</label><input type="url" id="presenceUrl" placeholder="https://...">
   <div class="actions"><button type="submit" class="btn-primary">Enregistrer les liens</button></div>
  </form></div></details>
- <details class="settings-group settings-fold settings-subsection"><summary><span class="settings-section-icon">06</span><span>Rapports<small>Associer un document</small></span><span class="settings-chevron" aria-hidden="true">⌄</span></summary><div class="settings-subsection-body">
- <form id="reportForm">
-  <label for="reportClass">Classe</label><select id="reportClass" required></select>
-  <label for="student">Élève concerné</label><input id="student" list="studentOptions" maxlength="100" required placeholder="Nom de l'élève"><datalist id="studentOptions"></datalist><p class="muted small">Les élèves de la classe liés dans « Présences » seront proposés automatiquement.</p>
-  <label for="reportTitle">Intitulé du suivi</label><input id="reportTitle" maxlength="120" required placeholder="Ex. : observation du comportement">
-  <label for="reportUrl">Lien direct du document en ligne</label><input id="reportUrl" type="url" placeholder="https://..." required>
-  <div class="actions"><button type="submit" class="btn-primary">Ajouter le rapport</button></div>
- </form>
- <p class="notice small">Attention : les noms des élèves et leurs liens de suivi restent stockés localement dans ce navigateur. Avant une utilisation réelle avec des données d'élèves, prévoir une authentification, des accès autorisés et une solution de stockage conforme aux règles de l'établissement.</p></div></details>
- <details class="settings-group settings-fold settings-subsection"><summary><span class="settings-section-icon">07</span><span>Sauvegarde<small>Exporter ou réinitialiser</small></span><span class="settings-chevron" aria-hidden="true">⌄</span></summary><div class="settings-subsection-body"><div class="actions"><button type="button" id="exportConfig">Exporter une sauvegarde JSON</button><button type="button" id="reset" style="color:#9d2c35">Effacer la configuration locale</button></div></div></details>
+
+ <details class="settings-group settings-fold settings-subsection"><summary><span class="settings-section-icon">05</span><span>Sauvegarde<small>Exporter ou réinitialiser</small></span><span class="settings-chevron" aria-hidden="true">⌄</span></summary><div class="settings-subsection-body"><div class="actions"><button type="button" id="exportConfig">Exporter une sauvegarde JSON</button><button type="button" id="reset" style="color:#9d2c35">Effacer la configuration locale</button></div></div></details>
  </div>
 </div>
 </section>
