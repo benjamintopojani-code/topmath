@@ -7,56 +7,152 @@ function pdfText(v){
 }
 const esc=s=>pdfText(s).replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)');
 function makePdf(entries,start,end){
- const A4W=595.28,A4H=841.89,LM=47,RM=47,TOP=56,BOTTOM=54;
- const objects=['<< /Type /Catalog /Pages 2 0 R >>','', '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>','<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>'];
- let pages=[],lines=[],y=TOP,dayBefore='',pageNum=0;
- const tx=(x,v,size=10,bold=false)=>{lines.push('BT /F'+(bold?'2':'1')+' '+size+' Tf '+x.toFixed(2)+' '+(A4H-y).toFixed(2)+' Td ('+esc(v)+') Tj ET');};
- const rule=()=>{lines.push('0.78 0.84 0.91 RG 0.7 w '+LM+' '+(A4H-y).toFixed(2)+' m '+(A4W-RM)+' '+(A4H-y).toFixed(2)+' l S 0 0 0 RG');};
- const head=()=>{y=TOP;tx(LM,"TOP'MATH  /  JOURNAL DE CLASSE",15,true);y+=20;tx(LM,'Annee scolaire : '+start.slice(0,4)+' - '+(Number(start.slice(0,4))+1),10,true);y+=16;tx(LM,'Du '+format(start)+' au '+format(end)+'  /  Toutes les classes',9);y+=18;rule();y+=20;};
- const page=()=>{
-  if(!lines.length)return;
-  y=A4H-34;tx(LM,'Document personnel  -  Export du '+new Date().toLocaleDateString('fr-BE'),8);
-  tx(A4W-RM-54,'Page '+(pageNum+1),8);
-  const stream='0 0 0 RG\n'+lines.join('\n')+'\n';
-  const id=objects.length+1,cid=id+1;pages.push(id);objects.push('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 '+A4W+' '+A4H+'] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents '+cid+' 0 R >>');
-  objects.push('<< /Length '+stream.length+' >>\nstream\n'+stream+'endstream');
-  lines=[];pageNum++;
- };
- const ensure=(height)=>{if(y+height>A4H-BOTTOM){page();head();dayBefore='';}};
- const wrap=(value,max)=>{
-  const out=[];
-  for(const paragraph of String(value??'').replace(/\r/g,'').split('\n')){
-   if(!paragraph.trim()){out.push('');continue;}
-   let line='';
-   for(const word of paragraph.split(/\s+/).filter(Boolean)){
-    if((line+' '+word).length>max&&line){out.push(line);line='';}
-    if(word.length>max){if(line){out.push(line);line='';}for(let i=0;i<word.length;i+=max)out.push(word.slice(i,i+max));}
-    else line+=(line?' ':'')+word;
-   }
-   if(line)out.push(line);
-  }
-  return out.length?out:[''];
- };
- const format=s=>{const d=String(s||'').split('-');return d.length===3?d[2]+'/'+d[1]+'/'+d[0]:String(s);};
- const weekdays=['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
- const dayLabel=date=>{const d=new Date(date+'T12:00:00');return weekdays[d.getDay()]+' '+format(date);};
- head();
- const classes=[...new Set(entries.map(x=>x.classe||'Classe non precisee'))].sort((a,b)=>a.localeCompare(b,'fr'));
- tx(LM,'AIDE-MEMOIRE  /  RECAPITULATIF',11,true);y+=17;
- tx(LM,entries.length+' seances redigees   |   '+classes.length+' classes   |   '+[...new Set(entries.map(x=>x.date))].length+' journees',9);y+=15;
- for(const line of wrap('Classes : '+classes.join(', '),90)){ensure(14);tx(LM,line,9);y+=14;}
- y+=14;rule();y+=18;
- if(!entries.length){tx(LM,'Aucun cours redige depuis le debut de cette annee scolaire.',11);y+=20;}
- else for(const ent of entries){
-  if(ent.date!==dayBefore){ensure(49);if(dayBefore){y+=6;}tx(LM,dayLabel(ent.date).toUpperCase(),11,true);y+=8;rule();y+=19;dayBefore=ent.date;}
-  const title=(ent.classe||'Classe non précisée')+'   ·   Période '+(ent.period||'?');
-  ensure(44);tx(LM,title,10.6,true);y+=15;
-  for(const line of wrap(ent.text||'',94)){
-   ensure(13);if(line)tx(LM+8,line,9.6);y+=13;
-  }
-  y+=17;
+ // PDF dessiné en coordonnées A4 ; couleurs pastel et cadres arrondis.
+ const W=595.28,H=841.89,M=36,RIGHT=W-M,BOTTOM=51;
+ const objects=['<< /Type /Catalog /Pages 2 0 R >>','',
+  '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>',
+  '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>'];
+ const pages=[];let ops=[],y=0,pageNo=0,dayOpen='',hasLessons=false;
+ const NAVY=[0.075,0.18,0.34],BLUE=[0.10,0.40,0.75],CYAN=[0.12,0.64,0.86];
+ const PALE=[0.94,0.97,1],INK=[0.09,0.20,0.36],MUTED=[0.34,0.43,0.55],WHITE=[1,1,1];
+ const palettes=[
+  {main:[0.12,0.47,0.83],light:[0.93,0.97,1],line:[0.72,0.83,0.96]},
+  {main:[0.19,0.62,0.43],light:[0.94,0.985,0.955],line:[0.70,0.86,0.77]},
+  {main:[0.89,0.48,0.14],light:[1,0.965,0.93],line:[0.96,0.80,0.68]},
+  {main:[0.52,0.33,0.73],light:[0.975,0.95,0.995],line:[0.84,0.76,0.92]},
+  {main:[0.16,0.60,0.65],light:[0.935,0.985,0.99],line:[0.71,0.86,0.88]}
+ ];
+ const colors=c=>c.map(n=>Number(n).toFixed(3)).join(' ');
+ const pos=(x,top)=>Number(x).toFixed(2)+' '+(H-top).toFixed(2);
+ const fill=c=>ops.push(colors(c)+' rg');
+ const stroke=c=>ops.push(colors(c)+' RG');
+ function rounded(x,top,w,h,r,background,border=null,lw=.65){
+  const b=H-top-h,k=.55228475,rr=Math.min(r,w/2,h/2),rx=rr*k;
+  if(background)fill(background);if(border)stroke(border);
+  ops.push(lw+' w');
+  const path=[
+   (x+rr)+' '+b+' m',(x+w-rr)+' '+b+' l',
+   (x+w-rr+rx)+' '+b+' '+(x+w)+' '+(b+rr-rx)+' '+(x+w)+' '+(b+rr)+' c',
+   (x+w)+' '+(b+h-rr)+' l',(x+w)+' '+(b+h-rr+rx)+' '+(x+w-rr+rx)+' '+(b+h)+' '+(x+w-rr)+' '+(b+h)+' c',
+   (x+rr)+' '+(b+h)+' l',(x+rr-rx)+' '+(b+h)+' '+x+' '+(b+h-rr+rx)+' '+x+' '+(b+h-rr)+' c',
+   x+' '+(b+rr)+' l',x+' '+(b+rr-rx)+' '+(x+rr-rx)+' '+b+' '+(x+rr)+' '+b+' c','h'
+  ].join(' ');
+  ops.push(path+' '+(background?(border?'B':'f'):'S'));
  }
- page();
+ function rect(x,top,w,h,c){fill(c);ops.push(x+' '+(H-top-h)+' '+w+' '+h+' re f');}
+ function text(x,top,value,size=10,bold=false,c=INK){
+  fill(c);
+  ops.push('BT /F'+(bold?2:1)+' '+size+' Tf '+pos(x,top)+' Td ('+esc(value)+') Tj ET');
+ }
+ function line(x1,y1,x2,y2,c=[.78,.84,.91]){stroke(c);ops.push('0.55 w '+pos(x1,y1)+' m '+pos(x2,y2)+' l S');}
+ const fmt=v=>{const p=String(v||'').split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:v;};
+ const dayName=v=>['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'][new Date(v+'T12:00:00').getDay()];
+ const wordWrap=(value,max)=>{
+  const out=[];
+  for(const para of String(value||'').replace(/\r/g,'').split('\n')){
+   if(!para.trim()){out.push('');continue;}
+   let t='';
+   for(const w of para.trim().split(/\s+/)){
+    if((t?t.length+1:0)+w.length+t.length>max&&t){out.push(t);t='';}
+    if(w.length>max){if(t){out.push(t);t='';}for(let j=0;j<w.length;j+=max)out.push(w.slice(j,j+max));}
+    else t+=(t?' ':'')+w;
+   }
+   if(t)out.push(t);
+  }
+  return out;
+ };
+ function emit(){
+  if(!ops.length)return;
+  const stream='q\n'+ops.join('\n')+'\nQ\n';
+  const id=objects.length+1,cid=id+1;
+  pages.push(id);
+  objects.push('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 '+W+' '+H+'] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents '+cid+' 0 R >>');
+  objects.push('<< /Length '+stream.length+' >>\nstream\n'+stream+'endstream');
+  ops=[];pageNo++;
+ }
+ // Page de garde, distincte des journées.
+ rect(0,0,W,305,NAVY);
+ rounded(M,35,W-2*M,105,16,[.115,.255,.46]);
+ text(M+23,80,"TOP'MATH",34,true,WHITE);
+ text(M+24,117,'JOURNAL DE CLASSE',23,true,WHITE);
+ rect(M,166,132,5,CYAN);
+ text(M+6,245,'Enseignement secondaire spécialisé',13,false,WHITE);
+ rounded(M,348,W-2*M,86,13,PALE,[.80,.87,.96]);
+ text(M+20,376,'ANNEE SCOLAIRE',9,true,MUTED);
+ text(M+20,408,start.slice(0,4)+' - '+(Number(start.slice(0,4))+1),24,true,NAVY);
+ rounded(M,452,W-2*M,90,13,[.955,.965,.99],[.82,.86,.95]);
+ text(M+20,478,'ETABLISSEMENT',9,true,MUTED);
+ text(M+20,512,'E.E.S.S.C.F. Le Chêneux - Amay',15,true,NAVY);
+ text(M+4,598,'Journal de suivi pédagogique',13,true,NAVY);
+ text(M+4,623,'Cours et activités regroupés par journée et par période.',10,false,MUTED);
+ text(M+4,646,'Du '+fmt(start)+' au '+fmt(end),10,false,MUTED);
+ line(M,768,RIGHT,768);
+ text(M,788,"Top'Math  |  Journal de classe",8,false,MUTED);
+ text(RIGHT-105,788,'Page de garde',8,false,MUTED);
+ emit();
+ const topPage=()=>{
+  rounded(M,27,W-2*M,53,10,NAVY);
+  text(M+16,48,"TOP'MATH",15,true,WHITE);
+  text(M+181,48,'Journal de classe',13,true,WHITE);
+  text(RIGHT-104,67,start.slice(0,4)+' - '+(Number(start.slice(0,4))+1),9,false,WHITE);
+  y=101;
+ };
+ function nextPage(){
+  if(ops.length){
+   line(M,H-48,RIGHT,H-48);
+   text(M,H-30,"Journal de classe - Top'Math",8,false,MUTED);
+   text(RIGHT-50,H-30,'Page '+(pageNo+1),8,false,MUTED);
+   emit();
+  }
+  topPage();dayOpen='';
+ }
+ const byDate=new Map();
+ for(const ent of entries){
+  if(!byDate.has(ent.date))byDate.set(ent.date,[]);
+  byDate.get(ent.date).push(ent);
+ }
+ const classNames=[...new Set(entries.map(e=>e.classe||''))].sort((a,b)=>a.localeCompare(b,'fr'));
+ const classColor=new Map(classNames.map((c,i)=>[c,palettes[i%palettes.length]]));
+ function dayTitle(date){
+  rounded(M,y,W-2*M,33,9,[.86,.92,.985],[.75,.84,.95]);
+  rect(M+1,y+1,5,31,BLUE);
+  text(M+14,y+22,dayName(date)+' '+fmt(date),12,true,NAVY);
+  y+=43;dayOpen=date;
+ }
+ nextPage();hasLessons=true;
+ for(const [date,lessons] of byDate){
+  // Le titre d'une journée ne reste jamais seul en bas de page.
+  if(y+92>H-BOTTOM)nextPage();
+  if(dayOpen!==date)dayTitle(date);
+  for(const lesson of lessons){
+   const palette=classColor.get(lesson.classe||'')||palettes[0];
+   const allLines=wordWrap(lesson.text,68);
+   const lines=allLines.length?allLines:[''];
+   const label='P'+String(lesson.period||'?');
+   let offset=0;
+   while(offset<lines.length){
+    const free=H-BOTTOM-y;
+    if(free<57){nextPage();dayTitle(date); }
+    const capacity=Math.max(1,Math.floor((H-BOTTOM-y-24)/13));
+    const chunk=lines.slice(offset,offset+capacity);offset+=chunk.length;
+    const h=Math.max(41,chunk.length*13+21);
+    rounded(M,y,W-2*M,h,8,palette.light,palette.line);
+    rect(M+1,y+1,5,h-2,palette.main);
+    rounded(M+10,y+8,34,24,5,palette.main);
+    text(M+16,y+24,label.slice(0,4),10.4,true,WHITE);
+    text(M+52,y+24,(lesson.classe||'Sans classe').slice(0,18),10.2,true,NAVY);
+    line(M+154,y+7,M+154,y+h-7,palette.line);
+    chunk.forEach((row,i)=>text(M+164,y+19+i*13,row,9.5,false,INK));
+    y+=h+9;
+    if(offset<lines.length){nextPage();dayTitle(date);}
+   }
+  }
+  y+=7;
+ }
+ if(!hasLessons){text(M,y+15,'Aucun cours enregistré.',11,false,INK);}
+ if(ops.length)nextPage();
+ // nextPage() above initializes a new blank header; remove uncommitted ops.
+ ops=[];
  objects[1]='<< /Type /Pages /Count '+pages.length+' /Kids ['+pages.map(id=>id+' 0 R').join(' ')+'] >>';
  let out='%PDF-1.4\n%\xE2\xE3\xCF\xD3\n',offs=[0];
  objects.forEach((o,i)=>{offs.push(out.length);out+=(i+1)+' 0 obj\n'+o+'\nendobj\n';});
