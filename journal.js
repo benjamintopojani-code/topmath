@@ -17,7 +17,7 @@ function refresh(c,slot,date,period){
  const entry=store.entries[key]||{text:''};
  $('journalEditor').value=entry.text||'';
  $('journalLessonTitle').value=entry.title||'';
- $('journalPeriodBadge').textContent='P'+(period||'?');
+ $('journalPeriodBadge').textContent=String(period||'?');
  lastHtml=entry.text||'';
  lastTitle=entry.title||'';
  $('journalSaveState').textContent=entry.updated?'Dernière sauvegarde : '+new Date(entry.updated).toLocaleString('fr-BE'):'Aucun contenu enregistré pour ce cours';
@@ -49,7 +49,7 @@ function render(c,slot){
 
  '<div class="journal-setting-group"><div class="journal-setting-title">Téléchargements</div><div class="journal-downloads"><button type="button" id="journalPrint">Imprimer ce cours</button><button type="button" id="journalExport">Texte</button><button type="button" id="journalBackup">Sauvegarde complète</button></div></div>'+
  '<p class="journal-settings-hint">Sauvegarde automatique sur cet iPad. Pense à conserver une copie : ce journal n’est pas synchronisé avec le journal officiel.</p></div></div>'+
- '<div class="journal-lesson-heading"><span class="journal-period-badge" id="journalPeriodBadge">P'+esc(chosenPeriod)+'</span><label for="journalLessonTitle" class="journal-lesson-title-label"><span class="sr-only">Titre de la leçon</span><input type="text" id="journalLessonTitle" maxlength="180" placeholder="Titre de la leçon…" autocomplete="off" aria-label="Titre de la leçon"></label></div>'+
+ '<div class="journal-lesson-heading"><span class="journal-period-badge" id="journalPeriodBadge" aria-label="Période '+esc(chosenPeriod)+'">'+esc(chosenPeriod)+'</span><label for="journalLessonTitle" class="journal-lesson-title-label"><span class="sr-only">Titre de la leçon</span><input type="text" id="journalLessonTitle" maxlength="180" placeholder="Titre de la leçon…" autocomplete="off" aria-label="Titre de la leçon"></label></div>'+
  '<textarea id="journalEditor" hidden style="display:none" aria-hidden="true" tabindex="-1"></textarea>'+
  '<p class="muted small" id="journalSaveState" role="status"></p>'+
  '<div class="journal-week-export"><button type="button" class="btn-primary" id="journalYearPdf">Créer le PDF de mon journal depuis le début de l’année scolaire</button><p class="muted small" style="margin:0">Toutes les classes et toutes les notes depuis le 1er septembre, avec un récapitulatif et les cours classés par date.</p></div>';
