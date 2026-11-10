@@ -235,7 +235,10 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
 .phase-import-row input{font-size:.87rem;padding:6px;min-width:0}
 .phase-import-row small{grid-column:2 / 4;color:#7b5a13}
 #schedulePhaseSave{width:100%;background:#e4f0ff;color:#164f88;border-color:#a9c8eb;margin-bottom:12px}
-.catalog-fold{margin:12px 0;padding:12px;border:1px solid #d6e2ef;border-radius:10px}.catalog-fold>summary{font-weight:750;cursor:pointer;color:#1c4b80}.catalog-fold .row{grid-template-columns:1fr auto;align-items:end}.catalog-fold .row button{white-space:nowrap}#slotTimePreview{padding:10px 12px;background:#eef5ff;border-radius:8px;border-left:3px solid #2d70b7}@media(max-width:480px){.catalog-fold .row{grid-template-columns:1fr}}</style></head><body>
+.catalog-fold{margin:12px 0;padding:12px;border:1px solid #d6e2ef;border-radius:10px}.catalog-fold>summary{font-weight:750;cursor:pointer;color:#1c4b80}.catalog-fold .row{grid-template-columns:1fr auto;align-items:end}.catalog-fold .row button{white-space:nowrap}#slotTimePreview{padding:10px 12px;background:#eef5ff;border-radius:8px;border-left:3px solid #2d70b7}@media(max-width:480px){.catalog-fold .row{grid-template-columns:1fr}}
+.import-panel .import-existing-btn{display:block;width:100%;padding:12px;margin:10px 0 0;text-align:center;background:#fff;color:#1d528b;border:1px solid #a7c3e2;font-weight:750;border-radius:9px}
+.import-panel .import-existing-btn:active{background:#e7f1ff}
+</style></head><body>
 <header><strong id="topbarTitle">TOP'MATH <span class="topbar-divider">·</span> ADMINISTRATIF</strong><div class="topbar-controls"><button id="topSettingsBtn" type="button" aria-label="Ouvrir les réglages" aria-expanded="false" title="Réglages">⚙️</button><a class="topbar-back" href="enseignant.html" aria-label="Retour à l’espace enseignant" title="Retour à l’espace enseignant">←</a></div></header>
 <main>
 <section id="adminClassBanner" class="admin-class-banner" aria-live="polite"><span class="admin-class-caption">CLASSE EN COURS</span><h1 id="adminClassTitle">Aucun cours en cours</h1><p id="adminClassPeriod">La classe s'affiche selon l'horaire.</p></section>
@@ -281,6 +284,8 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
  <input id="scheduleImportFile" type="file" accept="image/jpeg,image/png,image/webp,application/pdf,.jpg,.jpeg,.png,.webp,.pdf">
  <p class="muted small">Lecture dans ton navigateur, sans envoyer le document à Top’Math. Une connexion est nécessaire au chargement du module de reconnaissance. Vérifie toujours les résultats avant de les enregistrer.</p>
  <button type="button" class="btn-primary" id="scheduleImportRead">Lire mon horaire</button>
+ <button type="button" id="scheduleImportKnown" class="import-existing-btn">Préparer l'horaire de ma photo 2026-2027</button>
+ <p class="muted small">Cette deuxième option utilise les 22 cours de ta photo déjà identifiés et permet de les vérifier avant de remplacer ton horaire.</p>
  <p class="muted small" id="scheduleImportStatus" role="status"></p>
  <details class="import-source-text"><summary>Texte reconnu — corriger si nécessaire</summary>
  <textarea id="scheduleImportText" rows="7" placeholder="Lundi 1 OBS B&#10;Mardi 3 OBS E"></textarea>
@@ -485,7 +490,7 @@ $('settingsSaveLinks').addEventListener('click',()=>{
  alert('Liens de la classe '+c+' enregistrés sur cet appareil.');
 });
 $('auto').addEventListener('click',()=>{override='';render();});
-window.TopMathScheduleImport?.init({applyPhase:prepared=>{
+window.TopMathScheduleImport?.init({preset:()=>photoSlots().map(x=>({day:x.day,period:x.period,classe:x.classe})),applyPhase:prepared=>{
  for(const g of ['first','upper'])Object.assign(data.periodTimesByGroup[g],prepared[g]||{});
  data.periodTimes=data.periodTimesByGroup.first;
  data.timeSource='confirme';
