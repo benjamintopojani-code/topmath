@@ -290,7 +290,7 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
  <div class="course-picker-scroller"><table class="course-picker-table"><thead><tr><th>P.</th><th>Lundi</th><th>Mardi</th><th>Mercredi</th><th>Jeudi</th><th>Vendredi</th></tr></thead><tbody id="coursePickerBody"></tbody></table></div>
  <div class="course-picker-foot"><button type="button" id="coursePickerAuto">↺ Revenir à la classe automatique</button><a href="horaire.html">Modifier mon horaire</a></div>
 </dialog>
-<section id="classSettings" class="class-settings card" hidden aria-label="Réglages de la classe">
+<section id="classSettings" class="class-settings card" hidden aria-label="Réglages administratifs">
  <div class="class-settings-heading"><div><span class="admin-class-caption">PARAMÈTRES</span><h2 id="settingsClassTitle">Réglages administratifs</h2></div><button type="button" id="closeClassSettings" class="class-settings-close" aria-label="Fermer les réglages">✕</button></div>
  <div class="settings-legacy-class-selection" hidden aria-hidden="true"><select id="settingsClassChoice" tabindex="-1"></select><select id="settingsClassGroup" tabindex="-1"><option value="first">1re · Observation · Phase 1</option><option value="upper">Phases 2 et 3</option></select><button type="button" id="settingsAuto" tabindex="-1">Afficher mon cours actuel</button></div>
  <details class="settings-group settings-fold settings-subsection settings-agenda-first"><summary><span class="settings-section-icon">01</span><span>Mon horaire<small>Ajouter, modifier ou supprimer mes cours</small></span><span class="settings-chevron" aria-hidden="true">⌄</span></summary><div class="settings-subsection-body"><p class="muted small">Retrouve toute ta semaine dans un agenda interactif. Touche une période pour choisir une classe et sa grille horaire, sans encoder les heures.</p><a class="agenda-open-button" href="horaire.html"><span aria-hidden="true">▦</span> Ouvrir l’horaire interactif <span aria-hidden="true">→</span></a></div></details>
@@ -324,7 +324,6 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
  <div style="align-self:end"><button type="button" id="auto">Revenir au cours actuel</button></div></div>
 </section></details>
  
- <p class="muted small settings-storage-note">Les réglages sont conservés uniquement sur cet appareil. N'enregistrez pas d'informations confidentielles sur un appareil partagé.</p>
 
  <details class="settings-legacy-links" hidden><summary><span class="settings-section-icon">05</span><span>Autres classes<small>Liens par classe</small></span><span class="settings-chevron" aria-hidden="true">⌄</span></summary><div class="settings-subsection-body">
  <form id="linkForm">
@@ -335,6 +334,8 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
  </form></div></details>
 
  <details class="settings-group settings-fold settings-subsection"><summary><span class="settings-section-icon">03</span><span>Sauvegarde<small>Exporter ou réinitialiser</small></span><span class="settings-chevron" aria-hidden="true">⌄</span></summary><div class="settings-subsection-body"><div class="actions"><button type="button" id="exportConfig">Exporter une sauvegarde JSON</button><button type="button" id="reset" style="color:#9d2c35">Effacer la configuration locale</button></div></div></details>
+ <p class="muted small settings-storage-note">Les réglages sont conservés uniquement sur cet appareil. N'enregistrez pas d'informations confidentielles sur un appareil partagé.</p>
+
  </div>
 </div>
 </section>
