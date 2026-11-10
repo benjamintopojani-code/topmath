@@ -60,6 +60,63 @@ function parseHours(text){
  while((m=rex.exec(text))!==null){rows.push({index:m.index,time:m[1].padStart(2,'0')+':'+m[2]});}
  return rows;
 }
+// Reconstruit une grille jours-en-colonnes et périodes-en-lignes à partir
+// des coordonnées OCR (photos) ou des coordonnées du texte d'un PDF.
+function parseGridFromPositions(words){
+ if(!words?.length)return [];
+ const results=[];
+ const dayName=/^(lundi|mardi|mercredi|jeudi|vendredi)$/;
+ const normalizeWord=w=>norm(w.text).replace(/[^a-z0-9]/g,'');
+ const validClass=raw=>{
+  let value=clean(raw).toUpperCase().replace(/\s*\/\s*/g,' / ').replace(/\s+/g,' ');
+  value=value.replace(/^(?:MATHEMATIQUES?|MATHS?|COURS)\s*[:\-]?\s*/,'').trim();
+  if(/^(?:OBS(?:ERVATION)?\s*[A-Z]|P?[123]\s*(?:[A-Z]{1,6})(?:\s*\/\s*P?[123]\s*[A-Z]{1,6})?|DLC|TC)$/.test(value))return value;
+  return '';
+ };
+ const pages=[...new Set(words.map(w=>w.page||1))];
+ for(const page of pages){
+  const part=words.filter(w=>(w.page||1)===page&&w.text&&Number.isFinite(w.x)&&Number.isFinite(w.y)).map(w=>({...w,cx:w.x+(w.width||0)/2,cy:w.y+(w.height||0)/2}));
+  if(part.length<9)continue;
+  const headers=part.filter(w=>dayName.test(normalizeWord(w))).map(w=>({day:mapDays.find(d=>d[0]===normalizeWord(w))[1],x:w.cx,y:w.cy}));
+  if(headers.length<2)continue;
+  const headerY=Math.min(...headers.map(h=>h.y));
+  const heads=headers.filter(h=>Math.abs(h.y-headerY)<Math.max(35,(part[0].height||12)*3)).sort((a,b)=>a.x-b.x);
+  if(heads.length<2)continue;
+  const leftEdge=heads[0].x-(heads[1].x-heads[0].x)/2;
+  const bounds=heads.map((h,i)=>({day:h.day,left:i===0?leftEdge:(heads[i-1].x+h.x)/2,right:i===heads.length-1?Infinity:(h.x+heads[i+1].x)/2}));
+  const leftColumn=part.filter(w=>w.cx<leftEdge&&w.cy>headerY+8).sort((a,b)=>a.cy-b.cy);
+  const rowCandidates=[];
+  for(const w of leftColumn){
+   const n=normalizeWord(w);
+   let number=null;
+   if(/^[1-9]$/.test(n))number=Number(n);
+   else if(/^[1-9](ere|e|eme|h)$/.test(n))number=Number(n[0]);
+   else if(/^p[1-9]$/.test(n))number=Number(n[1]);
+   if(number&&!rowCandidates.some(r=>r.period===number||Math.abs(r.y-w.cy)<13))rowCandidates.push({period:number,y:w.cy});
+  }
+  // Some layouts put the period labels in the first column, with "P1" etc.
+  const rowMarks=rowCandidates.sort((a,b)=>a.y-b.y);
+  if(rowMarks.length<2)continue;
+  const rowsByY=rowMarks.map((r,i)=>({...r,top:i===0?headerY+5:(rowMarks[i-1].y+r.y)/2,bottom:i===rowMarks.length-1?Infinity:(r.y+rowMarks[i+1].y)/2}));
+  for(const r of rowsByY){
+   for(const h of bounds){
+    const cell=part.filter(w=>w.cx>=h.left&&w.cx<h.right&&w.cy>=r.top&&w.cy<r.bottom).sort((a,b)=>a.cy-b.cy||a.x-b.x);
+    if(!cell.length)continue;
+    const yGroups=[];
+    for(const w of cell){let group=yGroups.find(g=>Math.abs(g.y-w.cy)<Math.max(10,(w.height||12)*.8));if(!group){group={y:w.cy,words:[]};yGroups.push(group);}group.words.push(w);}
+    let value='';
+    for(const group of yGroups){
+     const raw=group.words.sort((a,b)=>a.x-b.x).map(w=>w.text).join(' ');
+     value=validClass(raw);
+     if(value)break;
+    }
+    if(!value)value=validClass(cell.map(w=>w.text).join(' '));
+    if(value&&!results.some(x=>x.day===h.day&&x.period===r.period))results.push({day:h.day,period:r.period,classe:value});
+   }
+  }
+ }
+ return results;
+}
 function parseSchedule(text){
  const lines=text.split(/\r?\n/).map(clean).filter(Boolean),results=[];
  let daysInHeader=[];
@@ -133,11 +190,13 @@ async function readFile(){
  try{
   status('Lecture de '+file.name+'…');lastFileName=file.name;layoutWords=[];
   const text=await extract(file);$('scheduleImportText').value=text;
-  draft=parseSchedule(text);
+  const grid=parseGridFromPositions(layoutWords);
+  draft=grid.length>=3?grid:parseSchedule(text);
+  if(grid.length&&grid.length<3)for(const x of grid)if(!draft.some(r=>r.day===x.day&&r.period===x.period))draft.push(x);
   const phase=parsePhase(text);phaseDraft=phase;showPhasePreview(phase);
   const phaseParts=['first','upper'].filter(g=>Object.keys(phase[g]).length>=2);
-  if(phaseParts.length)status('Horaires identifiés pour '+phaseParts.length+' groupe(s). Vérifie les valeurs avant de les appliquer.');
-  else status(draft.length?draft.length+' cours proposés. Vérifiez et corrigez le tableau avant d’enregistrer.':'Lecture terminée. Le document est difficile à interpréter : complète les lignes manuellement.');
+  if(phaseParts.length)status('Grille(s) horaire(s) repérée(s). Vérifie impérativement chaque heure avant de valider.');
+  else status(draft.length?draft.length+' cours proposés'+(grid.length?' grâce à la disposition du tableau':'')+'. Vérifie les jours, les périodes et les classes avant d’enregistrer.':'Le document a été lu, mais les jours et les classes ne sont pas associés avec certitude. Essaie un PDF original ou une photo recadrée sur la grille, puis vérifie le texte reconnu.');
   showDraft();
  }catch(e){status('Import impossible : '+e.message,true);}finally{$('scheduleImportRead').disabled=false;}
 }
