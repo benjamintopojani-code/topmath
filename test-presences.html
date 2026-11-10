@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Top'Math — Démonstration PDF présences</title>
+<style>
+*{box-sizing:border-box}body{font-family:Arial,sans-serif;background:#f1f6fd;color:#18395f;margin:0}
+header{background:#183860;color:#fff;padding:20px 16px;font-weight:800}
+main{max-width:720px;margin:28px auto;padding:0 15px}
+.card{background:#fff;border:1px solid #cadcf3;padding:24px;border-radius:14px;box-shadow:0 4px 14px #13385d12}
+h1{font-size:1.5rem;margin-top:0}p{line-height:1.5}.meta{background:#edf4ff;padding:12px;border-radius:9px;margin:16px 0;color:#315979}
+button,a.btn{display:inline-block;background:#1959a1;color:#fff;border:0;border-radius:10px;padding:14px 18px;font:700 1rem Arial,sans-serif;cursor:pointer;text-decoration:none}
+a{color:#165b9f}.small{font-size:.85rem;color:#61718a}#result{margin-top:12px}
+</style></head><body><header>TOP'MATH · TEST DES PRÉSENCES</header>
+<main><div class="card">
+<h1>Test réel du générateur PDF</h1>
+<p>Ce test utilise <strong>le même générateur PDF que la page Présences</strong>, avec des données entièrement fictives. Il ne modifie aucune liste, aucun appel et aucune donnée de ton compte.</p>
+<div class="meta"><strong>Classe fictive :</strong> 2 TB — DÉMO<br><strong>Élèves :</strong> 15<br><strong>Cours :</strong> 24 séances réparties sur plusieurs dates et périodes<br><strong>Résultat attendu :</strong> 3 pages en A4 paysage, 10 colonnes maximum par page</div>
+<button id="make" type="button">Télécharger le PDF d'essai</button>
+<p id="result" class="small" role="status">Le téléchargement contient des valeurs P, A, S, R et des cases non renseignées.</p>
+<p class="small"><a href="presences.html">Retour aux présences</a></p></div></main>
+<script src="presences-pdf.js"></script><script>
+'use strict';
+const classe='2 TB - DEMO';
+const names=['ADAM Léa','BERNARD Hugo','CARON Nora','DELMOTTE Lucas','DUBOIS Emma','FONTAINE Noé','GARCIA Lina','HENRY Mathis','JACOBS Alice','LAMBERT Nathan','LECLERC Jade','MARTIN Louis','MOREAU Inès','SIMON Arthur','THOMAS Sarah'];
+const sessions=[];
+const dates=['2026-09-01','2026-09-03','2026-09-08','2026-09-10','2026-09-15','2026-09-17','2026-09-22','2026-09-24','2026-09-29','2026-10-01','2026-10-06','2026-10-08'];
+for(let i=0;i<24;i++){sessions.push({date:dates[Math.floor(i/2)],period:i%2===0?3:4,classe,entries:names.map((name,j)=>({name,status:(i+j)%13===0?'':(i+j)%11===0?'R':(i+j)%7===0?'S':(i+j)%5===0?'A':'P'}))});}
+document.getElementById('make').addEventListener('click',()=>{try{window.TopMathAttendancePdf.download(classe,names,sessions);document.getElementById('result').textContent='PDF généré : 15 élèves, 24 cours, toutes les dates en colonnes. Vérifie tes téléchargements Safari.';}catch(e){document.getElementById('result').textContent='Échec : '+e.message;}});
+</script></body></html>
