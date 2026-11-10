@@ -4,7 +4,7 @@
 const $=id=>document.getElementById(id);
 const clean=s=>String(s||'').trim().replace(/\s+/g,' ');
 const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let draft=[],lastFileName='';
+let draft=[],lastFileName='',phaseDraft={first:{},upper:{}};
 const weekdays=['','Lundi','Mardi','Mercredi','Jeudi','Vendredi'];
 const mapDays=[['lundi',1],['mardi',2],['mercredi',3],['jeudi',4],['vendredi',5]];
 function status(message,bad=false){const el=$('scheduleImportStatus');if(el){el.textContent=message;el.classList.toggle('import-error',bad);}}
@@ -72,14 +72,35 @@ function parseSchedule(text){
  return results;
 }
 function parsePhase(text){
- const lines=text.split(/\r?\n/).map(clean).filter(Boolean);
- const times=[];for(const line of lines){const cells=parseHours(line);if(cells.length>=2){times.push({start:cells[0].time,end:cells[1].time,line});}}
- // Only use structured rows when a phase and period can be identified with confidence.
- const first={},upper={};let group=null;
- for(const line of lines){const n=norm(line);if(/(?:obs|phase\s*1|p1|1re)/.test(n)&&/(?:horaire|phase|periode)/.test(n))group='first';if(/(?:p2|p3|phase\s*[23])/.test(n)&&/(?:horaire|phase|periode)/.test(n))group='upper';
- const p=n.match(/\b(?:p(?:eriode)?\s*|heure\s*)([1-9])\b/),hours=parseHours(line);
- if(group&&p&&hours.length>=2){const [start,end]=hours;if(start.time<end.time)(group==='first'?first:upper)[Number(p[1])]={start:start.time,end:end.time};}}
- return {first,upper,timesFound:times.length};
+ const first={},upper={},lines=text.split(/\r?\n/).map(clean).filter(Boolean);
+ let currentGroup=null;
+ for(const line of lines){
+  const n=norm(line),explicitGroup=n.match(/\b(?:phase|p)\s*([123])\b/);
+  if(/(?:obs|observation|phase\s*1|p1|1re)/.test(n)&&/(?:horaire|phase|p1|grille)/.test(n))currentGroup='first';
+  if(/(?:p2|p3|phase\s*[23])/.test(n)&&/(?:horaire|phase|p2|p3|grille)/.test(n))currentGroup='upper';
+  const groups=explicitGroup?[explicitGroup[1]==='1'?'first':'upper']:currentGroup?[currentGroup]:[];
+  const p=n.match(/\b(?:p(?:eriode)?\s*|heure\s*)([1-9])\b/),hours=parseHours(line);
+  if(p&&hours.length>=2&&groups.length)for(const group of groups){
+   const [start,end]=hours;
+   if(start.time<end.time)(group==='first'?first:upper)[Number(p[1])]={start:start.time,end:end.time};
+  }
+ }
+ return {first,upper};
+}
+function showPhasePreview(phase){
+ const wrap=$('schedulePhasePreview');if(!wrap)return;
+ const labels={first:'1re · Observation · P1',upper:'P2 · P3'};
+ const built=['first','upper'].map(g=>{
+  const found=phase[g]||{},count=Object.keys(found).length;
+  if(!count)return '';
+  return '<div class="phase-import-group"><h4>'+labels[g]+' — '+count+' période(s) reconnue(s)</h4>'+
+    Array.from({length:9},(_,i)=>{const n=i+1; if((g==='first'&&n===5)||(g==='upper'&&n===6))return '';
+    const v=found[n]||{},known=v.start&&v.end;
+    return '<div class="phase-import-row"><strong>P'+n+'</strong><input aria-label="Début P'+n+' '+labels[g]+'" data-phase-group="'+g+'" data-phase-period="'+n+'" data-phase-field="start" type="time" value="'+escape(v.start||'')+'"><input aria-label="Fin P'+n+' '+labels[g]+'" data-phase-group="'+g+'" data-phase-period="'+n+'" data-phase-field="end" type="time" value="'+escape(v.end||'')+'">'+(known?'':'<small>À vérifier</small>')+'</div>';
+    }).join('')+'</div>';
+ }).join('');
+ wrap.innerHTML=built||'<p class="notice small">Aucune grille suffisamment structurée pour reconnaître ses horaires. Utilisez la correction manuelle ci-dessous.</p>';
+ $('schedulePhaseSave').hidden=!built;
 }
 function rows(){return [...$('scheduleImportPreview').querySelectorAll('[data-import-row]')].map(row=>({day:Number(row.querySelector('[data-day]').value),period:Number(row.querySelector('[data-period]').value),classe:clean(row.querySelector('[data-classe]').value)})).filter(x=>x.day&&x.period&&x.classe);}
 function showDraft(){const container=$('scheduleImportPreview');if(!draft.length){container.innerHTML='<p class="notice small">Aucun cours identifié avec assez de certitude. Vérifiez le texte ci-dessous et ajoutez les cours manuellement dans l’aperçu avant d’enregistrer.</p>';}else container.innerHTML='';
@@ -98,14 +119,14 @@ async function readFile(){
   status('Lecture de '+file.name+'…');lastFileName=file.name;
   const text=await extract(file);$('scheduleImportText').value=text;
   draft=parseSchedule(text);
-  const phase=parsePhase(text);
-  const phaseParts=['first','upper'].filter(g=>Object.keys(phase[g]).length>=3);
-  if(phaseParts.length)status('Horaires détectés pour '+phaseParts.length+' groupe(s). Vérifiez et confirmez les données avant tout changement.');
-  else status(draft.length?draft.length+' cours proposés. Vérifiez et corrigez le tableau avant d’enregistrer.':'Lecture terminée. Les cases du tableau ne sont pas assez claires : complétez les lignes manuellement.');
+  const phase=parsePhase(text);phaseDraft=phase;showPhasePreview(phase);
+  const phaseParts=['first','upper'].filter(g=>Object.keys(phase[g]).length>=2);
+  if(phaseParts.length)status('Horaires identifiés pour '+phaseParts.length+' groupe(s). Vérifie les valeurs avant de les appliquer.');
+  else status(draft.length?draft.length+' cours proposés. Vérifiez et corrigez le tableau avant d’enregistrer.':'Lecture terminée. Le document est difficile à interpréter : complète les lignes manuellement.');
   showDraft();
  }catch(e){status('Import impossible : '+e.message,true);}finally{$('scheduleImportRead').disabled=false;}
 }
-function reparse(){draft=parseSchedule($('scheduleImportText').value);showDraft();status(draft.length+' cours proposés à vérifier.');}
+function reparse(){const text=$('scheduleImportText').value;draft=parseSchedule(text);phaseDraft=parsePhase(text);showDraft();showPhasePreview(phaseDraft);status(draft.length+' cours proposés à vérifier.');}
 function init(config){
  if(!$('scheduleImportRead'))return;
  const read=$('scheduleImportRead'),add=$('scheduleImportAdd'),parse=$('scheduleImportReparse');
@@ -113,6 +134,22 @@ function init(config){
  add.addEventListener('click',()=>appendRow());
  parse.addEventListener('click',reparse);
  $('scheduleImportPreview').addEventListener('click',event=>{const b=event.target.closest('[data-import-remove]');if(b)b.closest('[data-import-row]').remove();});
+ $('schedulePhaseSave').addEventListener('click',()=>{
+  const prepared={first:{},upper:{}};
+  for(const g of ['first','upper']){
+   const groupInputs=[...$('schedulePhasePreview').querySelectorAll('[data-phase-group="'+g+'"]')];
+   for(const n of [...new Set(groupInputs.map(x=>Number(x.dataset.phasePeriod)))]){
+    const start=groupInputs.find(x=>Number(x.dataset.phasePeriod)===n&&x.dataset.phaseField==='start')?.value||'';
+    const end=groupInputs.find(x=>Number(x.dataset.phasePeriod)===n&&x.dataset.phaseField==='end')?.value||'';
+    if(Boolean(start)!==Boolean(end)||(start&&end&&start>=end)){status('Vérifie les heures de '+(g==='first'?'1re/Obs/P1':'P2/P3')+' P'+n,true);return;}
+    if(start&&end)prepared[g][n]={start,end};
+   }
+  }
+  if(!Object.values(prepared).some(x=>Object.keys(x).length)){status('Aucune plage horaire complète reconnue.',true);return;}
+  if(!confirm('Appliquer uniquement les horaires vérifiés aux grilles concernées ? Les autres heures restent conservées.'))return;
+  config.applyPhase?.(prepared);
+  status('Horaires des phases enregistrés.');
+ });
  $('scheduleImportSave').addEventListener('click',()=>{
   const proposed=rows();if(!proposed.length){status('Aucun cours à enregistrer.',true);return;}
   if(proposed.some(x=>x.classe.length>65)){status('Nom de classe trop long.',true);return;}
