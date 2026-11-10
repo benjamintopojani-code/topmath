@@ -238,6 +238,14 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
 .catalog-fold{margin:12px 0;padding:12px;border:1px solid #d6e2ef;border-radius:10px}.catalog-fold>summary{font-weight:750;cursor:pointer;color:#1c4b80}.catalog-fold .row{grid-template-columns:1fr auto;align-items:end}.catalog-fold .row button{white-space:nowrap}#slotTimePreview{padding:10px 12px;background:#eef5ff;border-radius:8px;border-left:3px solid #2d70b7}@media(max-width:480px){.catalog-fold .row{grid-template-columns:1fr}}
 .import-panel .import-existing-btn{display:block;width:100%;padding:12px;margin:10px 0 0;text-align:center;background:#fff;color:#1d528b;border:1px solid #a7c3e2;font-weight:750;border-radius:9px}
 .import-panel .import-existing-btn:active{background:#e7f1ff}
+
+.agenda-settings-link{padding:0!important}
+.agenda-entry{display:flex;align-items:center;gap:10px;padding:15px;text-decoration:none;color:#244672;min-height:64px}
+.agenda-entry>span:nth-child(2){flex:1}
+.agenda-entry strong{display:block;font-size:.94rem}
+.agenda-entry small{display:block;font-size:.77rem;color:#637b99;margin-top:4px}
+.agenda-entry .agenda-arrow{font-size:1.35rem;color:#2667aa}
+.agenda-entry:focus-visible{outline:3px solid #3175c5;border-radius:10px}
 </style></head><body>
 <header><strong id="topbarTitle">TOP'MATH <span class="topbar-divider">·</span> ADMINISTRATIF</strong><div class="topbar-controls"><button id="topSettingsBtn" type="button" aria-label="Ouvrir les réglages" aria-expanded="false" title="Réglages">⚙️</button><a class="topbar-back" href="enseignant.html" aria-label="Retour à l’espace enseignant" title="Retour à l’espace enseignant">←</a></div></header>
 <main>
@@ -278,17 +286,7 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
 </section></details>
  
  <p class="muted small">Configuration de départ à réaliser une fois. Les réglages sont conservés uniquement dans ce navigateur sur cet iPad (sans synchronisation). N'enregistrez pas d'informations confidentielles sur un appareil partagé.</p>
- <details class="settings-group settings-fold settings-subsection"><summary><span class="settings-section-icon">03</span><span>Mon horaire<small>Classe, période et phase — ajouter un cours</small></span><span class="settings-chevron" aria-hidden="true">⌄</span></summary><div class="settings-subsection-body"><p class="muted small">Sélectionne le jour, la classe, la période et le groupe. Les heures correspondantes sont ajoutées automatiquement.</p>
- <form id="slotForm">
-  <div class="row"><div><label for="day">Jour</label><select id="day" required><option value="1">Lundi</option><option value="2">Mardi</option><option value="3">Mercredi</option><option value="4">Jeudi</option><option value="5">Vendredi</option></select></div>
-  <div><label for="slotPeriod">Période</label><select id="slotPeriod" required></select></div></div>
-  <label for="slotClass">Classe (forme 3)</label><select id="slotClass" required><option value="">Choisir une classe</option></select>
-  <label for="slotGroup">Grille horaire</label><select id="slotGroup" required><option value="first">1re · Observation · Phase 1</option><option value="upper">Phases 2 et 3</option></select>
-  <p id="slotTimePreview" class="muted small" role="status">Les heures sont calculées automatiquement selon le groupe choisi.</p>
-  <div class="actions"><button type="submit" class="btn-primary">+ Ajouter le cours</button></div>
- </form>
- <details class="catalog-fold"><summary>Gérer ma liste de classes</summary><p class="muted small">Les 36 classes de forme 3 de l'école sont déjà proposées, observation comprise. Tu peux ajouter une classe complémentaire ici.</p><form id="classCatalogForm"><label for="classCatalogInput">Ajouter une classe</label><div class="row"><input id="classCatalogInput" required maxlength="65" placeholder="Ex. : P2 HORT"><button type="submit">Ajouter à la liste</button></div></form></details>
- <div id="slots"></div></div></details>
+ <div class="settings-group agenda-settings-link"><a class="agenda-entry" href="horaire.html"><span class="settings-section-icon">03</span><span><strong>Mon horaire</strong><small>Ouvrir l’agenda interactif des périodes 1 à 9</small></span><span class="agenda-arrow" aria-hidden="true">→</span></a></div>
  <details class="settings-legacy-links" hidden><summary><span class="settings-section-icon">05</span><span>Autres classes<small>Liens par classe</small></span><span class="settings-chevron" aria-hidden="true">⌄</span></summary><div class="settings-subsection-body">
  <form id="linkForm">
   <label for="linkClass">Classe</label><select id="linkClass" required></select>
@@ -333,7 +331,7 @@ const DEFAULT_TIMES=FIRST_GRID;
 const DEFAULT_GROUP_TIMES={first:FIRST_GRID,upper:UPPER_GRID};
 const inferGroup=classe=>{const c=String(classe||'').toUpperCase().trim();if(/^(?:OBS|OBSERVATION|1(?:ERE|ÈRE)?\b|P1\b|F1\b|F2\b)/.test(c))return 'first';if(/^(?:P?2\b|P?3\b|PHASE\s*[23]\b)/.test(c))return 'upper';return 'first';};
 const classGroup=classe=>data.classScheduleGroups?.[classe]||inferGroup(classe);
-const groupForSlot=x=>Number(x.day)===3?'first':classGroup(x.classe);
+const groupForSlot=x=>Number(x.day)===3?'first':x.scheduleGroup||classGroup(x.classe);
 const slotTimes=x=>x.period?data.periodTimesByGroup?.[groupForSlot(x)]?.[x.period]||null:null;
 function applyPeriodTimings(){data.slots.forEach(x=>{if(!x.period)return;const v=slotTimes(x);x.start=v?.start||'';x.end=v?.end||'';});}
 let editingPeriodGroup='first';
@@ -409,9 +407,9 @@ function renderView(){const c=current(),v=$('view');if(!c){v.innerHTML='<h2>Aucu
 if(tab==='journal'){window.TopMathJournal.render(c,autoSlot);}
 if(tab==='presences'){if(isSimulation){v.innerHTML='<div class="attendance-course-head"><div class="attendance-course-eyebrow">CLASSE EN COURS · SIMULATION</div><h2>'+esc(c)+'</h2><div class="muted small">Cours de '+esc(autoSlot?.start||'')+' à '+esc(autoSlot?.end||'')+'</div></div><div id="simRows"></div><div class="actions"><button type="button" class="btn-primary" id="simSave">Tester l’enregistrement</button></div><p id="simResult" class="muted small"></p>';const fictifs=['Élève A','Élève B','Élève C','Élève D'];$('simRows').innerHTML='<div class="attendance-table-wrap"><table class="attendance-table"><thead><tr><th scope="col">Élèves</th><th scope="col">Présent</th><th scope="col">Absent</th><th scope="col">Stage</th></tr></thead><tbody>'+fictifs.map((n,i)=>'<tr><th scope="row">'+n+'</th>'+[['P','Présent'],['A','Absent'],['S','Stage']].map(([v,l])=>'<td><label class="attendance-cell"><input type="checkbox" data-sim-att="'+i+'" value="'+v+'" aria-label="'+l+' : '+n+'"></label></td>').join('')+'</tr>').join('')+'</tbody></table></div>';$('simRows').addEventListener('change',e=>{const x=e.target.closest('input[data-sim-att]');if(!x||!x.checked)return;$('simRows').querySelectorAll('input[data-sim-att]').forEach(y=>{if(y!==x&&y.dataset.simAtt===x.dataset.simAtt)y.checked=false;});});$('simSave').addEventListener('click',()=>{const chosen=[...document.querySelectorAll('[data-sim-att]:checked')];$('simResult').textContent='Simulation réussie : '+chosen.filter(x=>x.value==='P').length+' présents, '+chosen.filter(x=>x.value==='A').length+' absent(s), '+chosen.filter(x=>x.value==='S').length+' en stage. Aucune donnée conservée.';});}else window.TopMathAttendance.render(c,autoSlot);}
 if(tab==='rapports'){const arr=data.reports.filter(x=>x.classe===c);v.innerHTML='<div class="flex"><h2>Rapports · '+esc(c)+'</h2><span class="pill">'+arr.filter(x=>!x.done).length+' à compléter</span></div>'+(arr.length?arr.map(r=>'<article class="task"><div class="flex"><strong>'+esc(r.student)+'</strong><span class="pill">'+(r.done?'Marqué terminé':'À compléter')+'</span></div><p>'+esc(r.title)+'</p><div class="actions">'+external(r.url,'Ouvrir le document')+'<button type="button" data-toggle="'+esc(r.id)+'">'+(r.done?'Marquer à faire':'Marquer terminé')+'</button><button type="button" data-remove-report="'+esc(r.id)+'">Retirer</button></div></article>').join(''):'<p class="muted">Aucun suivi demandé pour cette classe.</p>')+'<p class="muted small">Le statut « terminé » est un suivi personnel : il ne confirme pas l’envoi du formulaire officiel.</p>';}}
-function render(){autoSlot=determine();const old=$('manualClass').value;const all=classes();const previousClass=$('slotClass').value;$('slotClass').innerHTML='<option value="">Choisir une classe</option>'+optionHTML(all,previousClass);$('slotClass').value=all.includes(previousClass)?previousClass:'';if(!$('slotPeriod').options.length){$('slotPeriod').innerHTML=Array.from({length:9},(_,i)=>'<option value="'+(i+1)+'">Période '+(i+1)+'</option>').join('');}const selected=override||old;$('manualClass').innerHTML='<option value="">Automatique (horaire)</option>'+optionHTML(all,selected);$('manualClass').value=override||'';for(const id of ['linkClass','reportClass']){const prev=$(id).value;$(id).innerHTML='<option value="">Choisir une classe</option>'+optionHTML(all,prev);$(id).value=all.includes(prev)?prev:'';}
+function render(){autoSlot=determine();const old=$('manualClass').value;const all=classes();const selected=override||old;$('manualClass').innerHTML='<option value="">Automatique (horaire)</option>'+optionHTML(all,selected);$('manualClass').value=override||'';for(const id of ['linkClass','reportClass']){const prev=$(id).value;$(id).innerHTML='<option value="">Choisir une classe</option>'+optionHTML(all,prev);$(id).value=all.includes(prev)?prev:'';}
 updateHeader();if($('classSettings')&&!$('classSettings').hidden)syncClassReportForm(current());document.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===tab?'true':'false'));renderView();
-$('slots').innerHTML=data.slots.length?'<h2 style="margin-top:20px">Mes cours enregistrés</h2>'+data.slots.slice().sort((a,b)=>a.day-b.day||a.period-b.period).map(s=>'<div class="task flex"><span>'+days[s.day]+' · '+(s.period?'Période '+s.period:'Cours')+' · <strong>'+esc(s.classe)+'</strong></span><button type="button" data-remove-slot="'+esc(s.id)+'">Supprimer</button></div>').join(''):'<p class="muted small">Aucun cours enregistré pour le moment.</p>';}
+}
 document.querySelectorAll('[data-section-link]').forEach(a=>{const url=new URL(a.href);if(isSimulation){url.searchParams.set('testDay',String(simulatedDay));url.searchParams.set('testTime',simulatedTime);}a.href=url.pathname.split('/').pop()+url.search;});
 if(pagePanel){document.body.classList.add('section-page');document.title='Top’Math — '+({journal:'Journal de classe',presences:'Présences',rapports:'Rapports'})[pagePanel];}
 
@@ -432,40 +430,6 @@ $('settingsSaveLinks').addEventListener('click',()=>{
  alert('Liens de la classe '+c+' enregistrés sur cet appareil.');
 });
 $('auto').addEventListener('click',()=>{override='';render();});
-function previewManualSlot(){
- const day=Number($('day').value),period=Number($('slotPeriod').value),group=day===3?'first':$('slotGroup').value;
- const time=data.periodTimesByGroup[group]?.[period];
- $('slotGroup').disabled=day===3;
- $('slotTimePreview').textContent=day===3?'Le mercredi, l’horaire 1re / Observation / Phase 1 est obligatoire. '+(time?time.start+' – '+time.end:'Aucun cours pour cette période.'):(time?'Heures appliquées automatiquement : '+time.start+' – '+time.end:'Cette période est une pause ou n’a pas d’horaire dans la grille choisie.');
-}
-$('day').addEventListener('change',previewManualSlot);
-$('slotPeriod').addEventListener('change',previewManualSlot);
-$('slotGroup').addEventListener('change',previewManualSlot);
-$('slotClass').addEventListener('change',()=>{
- const c=$('slotClass').value;if(c)$('slotGroup').value=classGroup(c);
- previewManualSlot();
-});
-$('classCatalogForm').addEventListener('submit',e=>{
- e.preventDefault();const name=$('classCatalogInput').value.trim().replace(/\s+/g,' ');
- if(!name)return;
- if(!classes().some(c=>c.toLocaleLowerCase('fr')===name.toLocaleLowerCase('fr')))data.classCatalog.push(name);
- $('classCatalogInput').value='';save();$('slotClass').value=name;
- previewManualSlot();
-});
-$('slotForm').addEventListener('submit',e=>{
- e.preventDefault();
- const day=Number($('day').value),period=Number($('slotPeriod').value),classe=$('slotClass').value;
- const group=day===3?'first':$('slotGroup').value;
- if(!classe||!Number.isInteger(period)||period<1||period>9||day<1||day>5)return;
- const time=data.periodTimesByGroup[group]?.[period];
- if(!time?.start||!time?.end){alert('Période sans cours dans cette grille. Choisis une autre période ou un autre groupe.');return;}
- const existing=data.slots.find(x=>Number(x.day)===day&&Number(x.period)===period);
- if(existing&&!confirm('Remplacer '+existing.classe+' par '+classe+' pour '+days[day]+' en période '+period+' ?'))return;
- if(existing)data.slots=data.slots.filter(x=>x!==existing);
- if(day!==3)data.classScheduleGroups[classe]=group;
- data.slots.push({id:crypto.randomUUID(),day,period,classe,start:time.start,end:time.end});
- applyPeriodTimings();save();previewManualSlot();
-});
 $('linkClass').addEventListener('change',()=>{const o=data.links[$('linkClass').value]||{};$('journalUrl').value=o.journal||'';$('presenceUrl').value=o.presence||'';});
 $('linkForm').addEventListener('submit',e=>{e.preventDefault();const c=$('linkClass').value;if(!c)return;const journal=$('journalUrl').value.trim(),presence=$('presenceUrl').value.trim();if((journal&&!safeUrl(journal))||(presence&&!safeUrl(presence))){alert('Lien HTTP ou HTTPS requis.');return;}data.links[c]={journal,presence};save();});
 $('student').addEventListener('change',()=>{const c=current(),name=$('student').value.trim();const matches=data.reports.filter(r=>r.classe===c&&r.student===name);if(matches.length===1){$('reportTitle').value=matches[0].title;$('reportUrl').value=matches[0].url;}else{$('reportTitle').value='Fiche de comportement';$('reportUrl').value='';}});
@@ -491,7 +455,7 @@ document.addEventListener('click',e=>{
   }
   return;
  }
- if(b.dataset.toggle){const r=data.reports.find(x=>x.id===b.dataset.toggle);if(r){r.done=!r.done;save();}}if(b.dataset.removeReport){if(confirm('Retirer ce suivi de l’affichage ?')){data.reports=data.reports.filter(x=>x.id!==b.dataset.removeReport);save();}}if(b.dataset.removeSlot){if(confirm('Supprimer ce cours ?')){data.slots=data.slots.filter(x=>x.id!==b.dataset.removeSlot);save();}}});
+ if(b.dataset.toggle){const r=data.reports.find(x=>x.id===b.dataset.toggle);if(r){r.done=!r.done;save();}}if(b.dataset.removeReport){if(confirm('Retirer ce suivi de l’affichage ?')){data.reports=data.reports.filter(x=>x.id!==b.dataset.removeReport);save();}}});
 $('exportConfig').addEventListener('click',()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='topmath-administratif-sauvegarde.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);});
 $('reset').addEventListener('click',()=>{if(confirm('Effacer toutes les données administratives enregistrées sur cet iPad ?')){data=defaultData();override='';save();}});
 applyPeriodTimings();
@@ -507,5 +471,5 @@ $('topSettingsBtn').addEventListener('click',()=>{
  }
 });
 if(pagePanel){const title=({journal:'Journal de classe',presences:'Présences',rapports:'Rapports'})[pagePanel];document.getElementById('topbarTitle').textContent='TOP’MATH · '+title.toUpperCase();document.querySelector('header a').setAttribute('aria-label','Retour à Administratif');document.querySelector('header a').title='Retour à Administratif';document.querySelector('header a').target='_top';document.querySelector('header a').href='administratif.html'+(isSimulation?'?testDay='+simulatedDay+'&testTime='+encodeURIComponent(simulatedTime):'');}
-render();previewManualSlot();clock();setInterval(clock,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)clock();});
+render();clock();setInterval(clock,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)clock();});
 </script></body></html>
