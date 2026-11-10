@@ -175,8 +175,10 @@ function makePdf(entries,start,end){
   if(dayOpen!==date)dayTitle(date);
   for(const lesson of lessons){
    const palette=classColor.get(lesson.classe||'')||palettes[0];
+   const titleLines=lesson.title?wordWrap(lesson.title,67):[];
    const allLines=wordWrap(lesson.text,68);
-   const lines=allLines.length?allLines:[''];
+   const lines=[...titleLines.map(value=>({value,bold:true})),...allLines.map(value=>({value,bold:false}))];
+   if(!lines.length)lines.push({value:'',bold:false});
    const label='P'+String(lesson.period||'?');
    let offset=0;
    while(offset<lines.length){
@@ -191,7 +193,7 @@ function makePdf(entries,start,end){
     text(M+16,y+24,label.slice(0,4),10.4,true,WHITE);
     text(M+52,y+24,(lesson.classe||'Sans classe').slice(0,18),10.2,true,NAVY);
     line(M+154,y+7,M+154,y+h-7,palette.line);
-    chunk.forEach((row,i)=>text(M+164,y+19+i*13,row,9.5,false,INK));
+    chunk.forEach((row,i)=>text(M+164,y+19+i*13,row.value,9.5,row.bold,INK));
     y+=h+9;
     if(offset<lines.length){nextPage();dayTitle(date);}
    }
@@ -219,7 +221,7 @@ function monday(date){
 function plusDays(date,n){const d=new Date(date+'T12:00:00');d.setDate(d.getDate()+n);return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');}
 function exportWeek(date,raw){
  const start=monday(date),end=plusDays(start,6);
- const entries=Object.values(raw||{}).filter(x=>x&&x.date>=start&&x.date<=end&&String(x.text||'').trim())
+ const entries=Object.values(raw||{}).filter(x=>x&&x.date>=start&&x.date<=end&&(String(x.text||'').trim()||String(x.title||'').trim()))
   .sort((a,b)=>a.date.localeCompare(b.date)||Number(a.period)-Number(b.period)||(a.classe||'').localeCompare(b.classe||'','fr'));
  if(!entries.length)throw Error('Aucune note de cours enregistrée cette semaine. Choisis une autre semaine.');
  const blob=makePdf(entries,start,end),url=URL.createObjectURL(blob),a=document.createElement('a');
@@ -230,7 +232,7 @@ function exportSchoolYear(date,raw){
  const point=String(date||new Date().toISOString().slice(0,10));
  const year=Number(point.slice(5,7))>=9?Number(point.slice(0,4)):Number(point.slice(0,4))-1;
  const start=year+'-09-01',end=point;
- const entries=Object.values(raw||{}).filter(x=>x&&x.date>=start&&x.date<=end&&String(x.text||'').trim())
+ const entries=Object.values(raw||{}).filter(x=>x&&x.date>=start&&x.date<=end&&(String(x.text||'').trim()||String(x.title||'').trim()))
   .sort((a,b)=>a.date.localeCompare(b.date)||Number(a.period)-Number(b.period)||(a.classe||'').localeCompare(b.classe||'','fr'));
  if(!entries.length)throw Error("Aucun cours redige depuis le 1er septembre "+year+".");
  const blob=makePdf(entries,start,end),url=URL.createObjectURL(blob),a=document.createElement('a');
