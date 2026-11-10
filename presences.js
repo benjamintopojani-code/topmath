@@ -111,16 +111,16 @@ function render(c,slot){
  const students=roster(c),ss=session(selectedDate,selectedPeriod,c);
  let map=new Map((ss?.entries||[]).map(x=>[x.name,x.status]));
  let nDone=students.filter(x=>validStatus.slice(1).includes(map.get(x))).length;
- const html='<h2>Présences · '+esc(c)+'</h2>'+
- '<p class="muted small">Feuille de présence indépendante, avec conservation locale sur cet iPad. Les anciennes séances sont consultables et exportables.</p>'+
- '<div class="notice small"><strong>Confidentialité :</strong> prototype sans compte individuel ni synchronisation sécurisée. Ne l’utilisez pas pour le registre officiel ou avec des données personnelles réelles sans validation de l’établissement. Une suppression des données Safari efface l’historique local.</div>'+
- '<div class="task"><strong>Listes d’élèves communes</strong>'+rosterSyncPanel(c)+'</div>'+ 
+ const html='<div class="attendance-course-head"><div class="attendance-course-eyebrow">CLASSE EN COURS</div><h2>'+esc(c)+'</h2><div class="muted small">'+esc(slot&&slot.classe===c&&slot.start&&slot.end?'Cours de '+slot.start+' à '+slot.end:'Feuille de présences')+' · Période '+esc(selectedPeriod)+'</div></div>'+
+
  '<div class="row"><div><label for="attDate">Date du cours</label><input type="date" id="attDate" value="'+esc(selectedDate)+'"></div>'+
  '<div><label for="attPeriod">Période</label><select id="attPeriod">'+periods.map(p=>'<option value="'+esc(p)+'"'+(selectedPeriod===p?' selected':'')+'>Période '+esc(p)+'</option>').join('')+'</select></div></div>'+
  (ss?'<p class="pill">Enregistré le '+esc(new Date(ss.updated).toLocaleString('fr-BE'))+'</p>':'<p class="muted small">Aucun appel enregistré pour cette séance.</p>')+
  '<div class="flex" style="margin:16px 0 8px"><strong>'+students.length+' élèves · '+nDone+' réponses renseignées</strong><span class="pill">'+(students.length-nDone)+' à renseigner</span></div>'+
  (students.length?'<div class="attendance-table-wrap"><table class="attendance-table"><thead><tr><th scope="col">Élèves</th><th scope="col">Présent</th><th scope="col">Absent</th><th scope="col">Stage</th></tr></thead><tbody>'+students.map((name,i)=>'<tr><th scope="row">'+esc(name)+'</th>'+[['P','Présent'],['A','Absent'],['S','Stage']].map(([v,l])=>'<td><label class="attendance-cell"><input type="checkbox" data-att-student="'+esc(name)+'" value="'+v+'" aria-label="'+l+' : '+esc(name)+'"'+((map.get(name)||'')===v?' checked':'')+'></label></td>').join('')+'</tr>').join('')+'</tbody></table></div>':'<p class="notice">Aucune liste d’élèves importée pour cette classe. Ajoutez-la ci-dessous avant de faire l’appel.</p>')+
  '<div class="actions"><button type="button" class="btn-primary" id="attSave"'+(!students.length?' disabled':'')+'>Enregistrer la présence</button><button type="button" id="attAll"'+(!students.length?' disabled':'')+'>Tous présents</button><button type="button" id="attClear">Effacer les choix affichés</button></div>'+
+ '<div class="notice small" style="margin-top:16px"><strong>Confidentialité :</strong> prototype sans authentification individuelle ni sauvegarde sécurisée. À tester avec des données fictives jusqu’à validation de l’établissement. Les données locales peuvent être perdues si Safari est réinitialisé.</div>'+
+ '<details><summary>⚙️ Liaison des classes et listes Top’Math</summary><div class="task"><strong>Listes communes</strong>'+rosterSyncPanel(c)+'</div></details>'+
  '<hr><details><summary>📥 Importer ou modifier la liste des élèves</summary>'+
  '<p class="muted small">Collez un élève par ligne, ou importez un fichier TXT ou CSV (colonnes « Nom;Prénom »). Cette liste concerne uniquement la classe '+esc(c)+'.</p>'+
  '<label for="attList">Liste d’élèves (un par ligne)</label><textarea id="attList" rows="6" placeholder="Nom Prénom&#10;Nom Prénom">'+esc(students.join('\n'))+'</textarea>'+
