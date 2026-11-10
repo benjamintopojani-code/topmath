@@ -342,7 +342,7 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
 <script src="journal.js"></script>
 <script>
 window.topmathSchedule=()=>data.slots;
-window.topmathCurrentSlot=()=>autoSlot;
+window.topmathCurrentSlot=()=>selectedSlot||autoSlot;
 window.topmathAttendanceActive=()=>tab==='presences';
 window.topmathIsSimulation=()=>isSimulation;
 'use strict';
@@ -386,7 +386,9 @@ const pagePanel=['journal','presences','rapports'].includes(searchParams.get('pa
 const simulatedTime=searchParams.get('testTime');
 const simulatedDay=Number(searchParams.get('testDay'));
 const isSimulation=/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(simulatedTime||'')&&simulatedDay>=1&&simulatedDay<=5;
-let tab=pagePanel||'journal',override='',autoSlot=null;
+const SELECTION_KEY='topmath-administratif-selected-course';
+let tab=pagePanel||'journal',override='',autoSlot=null,selectedSlot=null;
+try{const selected=JSON.parse(sessionStorage.getItem(SELECTION_KEY)||'null');if(selected)selectedSlot=data.slots.find(x=>Number(x.day)===selected.day&&Number(x.period)===selected.period)||null;if(selectedSlot)override=selectedSlot.classe;}catch{}
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function safeUrl(value){try{const u=new URL(value);return ['https:','http:'].includes(u.protocol)?u.href:'';}catch{return '';}}
 function save(){localStorage.setItem(KEY,JSON.stringify(data));render();}
@@ -394,6 +396,10 @@ function classes(){return [...new Set([...data.classCatalog,...data.slots.map(x=
 function optionHTML(items,selected=''){return items.map(s=>'<option value="'+esc(s)+'"'+(s===selected?' selected':'')+'>'+esc(s)+'</option>').join('');}
 function determine(){const d=new Date(),hm=isSimulation?simulatedTime:d.toTimeString().slice(0,5),day=isSimulation?simulatedDay:d.getDay();return data.slots.find(x=>Number(x.day)===day&&x.start&&x.end&&x.start<=hm&&hm<x.end)||null;}
 function current(){return override||autoSlot?.classe||'';}
+function activeCourse(){return selectedSlot||autoSlot;}
+function clearSelectedCourse(){selectedSlot=null;override='';try{sessionStorage.removeItem(SELECTION_KEY);}catch{}render();}
+function chooseTimetableCourse(day,period){const slot=data.slots.find(x=>Number(x.day)===day&&Number(x.period)===period);if(!slot)return;selectedSlot=slot;override=slot.classe;try{sessionStorage.setItem(SELECTION_KEY,JSON.stringify({day,period}));}catch{}$('coursePicker').close();render();}
+function renderCoursePicker(){const rows=[];for(let period=1;period<=9;period++){let html='<tr><th scope="row">'+period+'</th>';for(let day=1;day<=5;day++){const slot=data.slots.find(x=>Number(x.day)===day&&Number(x.period)===period);html+='<td>'+(slot?'<button type="button" class="course-picker-choice'+(selectedSlot&&Number(selectedSlot.day)===day&&Number(selectedSlot.period)===period?' active':'')+'" data-pick-day="'+day+'" data-pick-period="'+period+'"><strong>'+esc(slot.classe)+'</strong><small>P'+period+'</small></button>':'<div class="course-picker-empty" aria-label="Aucun cours"></div>')+'</td>';}rows.push(html+'</tr>');}$('coursePickerBody').innerHTML=rows.join('');}
 function renderClassReportLinks(c){
  const box=$('classReportLinks');if(!box)return;
  const arr=data.reports.filter(r=>r.classe===c);
@@ -432,26 +438,26 @@ function setClassSettingsOpen(open){
  if(open){populateClassSettings();panel.scrollIntoView({block:'nearest',behavior:'smooth'});}
 }
 function clock(){const now=new Date();$('time').textContent=isSimulation?days[simulatedDay]+' · '+simulatedTime+' (heure fictive)':new Intl.DateTimeFormat('fr-BE',{weekday:'long',hour:'2-digit',minute:'2-digit'}).format(now);const prev=autoSlot?.id;autoSlot=determine();if(prev!==autoSlot?.id)render();else updateHeader();}
-function updateHeader(){const c=current();if(!$('classSettings').hidden&&$('classSettings').dataset.currentClasse!==c)populateClassSettings();$('adminClassTitle').textContent=c||'Aucun cours en cours';$('adminClassPeriod').textContent=override?'Classe sélectionnée manuellement':autoSlot?'Période '+(autoSlot.period||''):'Aucun cours à cette heure';$('simulationNotice').classList.toggle('hidden',!isSimulation);$('currentClass').textContent=c||'Aucun cours identifié';$('status').textContent=override?'Consultation manuelle':autoSlot?'Cours en cours':'Aucun cours en cours';$('currentSlot').textContent=override?'Classe sélectionnée manuellement':autoSlot?autoSlot.start+' – '+autoSlot.end+' · '+days[autoSlot.day]:'Horaire non renseigné ou période libre';}
+function updateHeader(){const c=current(),slot=activeCourse();if(!$('classSettings').hidden&&$('classSettings').dataset.currentClasse!==c)populateClassSettings();$('adminClassTitle').textContent=c||'Aucun cours en cours';$('adminClassPeriod').textContent=selectedSlot?days[selectedSlot.day]+' · Période '+selectedSlot.period+' · Consultation manuelle':override?'Classe sélectionnée manuellement':autoSlot?'Période '+(autoSlot.period||''):'Aucun cours à cette heure';$('simulationNotice').classList.toggle('hidden',!isSimulation);$('currentClass').textContent=c||'Aucun cours identifié';$('status').textContent=override?'Consultation manuelle':autoSlot?'Cours en cours':'Aucun cours en cours';$('currentSlot').textContent=selectedSlot?days[selectedSlot.day]+' · Période '+selectedSlot.period:override?'Classe sélectionnée manuellement':autoSlot?autoSlot.start+' – '+autoSlot.end+' · '+days[autoSlot.day]:'Horaire non renseigné ou période libre';}
 function external(url,label){const safe=safeUrl(url);return safe?'<a class="btn btn-primary" href="'+esc(safe)+'" target="_blank" rel="noopener noreferrer">'+esc(label)+' ↗</a>':'<p class="notice">Aucun lien configuré pour cette classe.</p>';}
 function renderView(){const c=current(),v=$('view');if(!c){v.innerHTML='<h2>Aucun cours en cours</h2><p class="muted">La classe s’affichera automatiquement pendant une période de cours. En dehors de l’horaire, le tableau des présences reste indisponible.</p><a class="btn" href="administratif.html" target="_top">Retour à Administratif</a>';return;}
-if(tab==='journal'){window.TopMathJournal.render(c,autoSlot);}
-if(tab==='presences'){if(isSimulation){v.innerHTML='<div class="attendance-course-head"><div class="attendance-course-eyebrow">CLASSE EN COURS · SIMULATION</div><h2>'+esc(c)+'</h2><div class="muted small">Cours de '+esc(autoSlot?.start||'')+' à '+esc(autoSlot?.end||'')+'</div></div><div id="simRows"></div><div class="actions"><button type="button" class="btn-primary" id="simSave">Tester l’enregistrement</button></div><p id="simResult" class="muted small"></p>';const fictifs=['Élève A','Élève B','Élève C','Élève D'];$('simRows').innerHTML='<div class="attendance-table-wrap"><table class="attendance-table"><thead><tr><th scope="col">Élèves</th><th scope="col">Présent</th><th scope="col">Absent</th><th scope="col">Stage</th></tr></thead><tbody>'+fictifs.map((n,i)=>'<tr><th scope="row">'+n+'</th>'+[['P','Présent'],['A','Absent'],['S','Stage']].map(([v,l])=>'<td><label class="attendance-cell"><input type="checkbox" data-sim-att="'+i+'" value="'+v+'" aria-label="'+l+' : '+n+'"></label></td>').join('')+'</tr>').join('')+'</tbody></table></div>';$('simRows').addEventListener('change',e=>{const x=e.target.closest('input[data-sim-att]');if(!x||!x.checked)return;$('simRows').querySelectorAll('input[data-sim-att]').forEach(y=>{if(y!==x&&y.dataset.simAtt===x.dataset.simAtt)y.checked=false;});});$('simSave').addEventListener('click',()=>{const chosen=[...document.querySelectorAll('[data-sim-att]:checked')];$('simResult').textContent='Simulation réussie : '+chosen.filter(x=>x.value==='P').length+' présents, '+chosen.filter(x=>x.value==='A').length+' absent(s), '+chosen.filter(x=>x.value==='S').length+' en stage. Aucune donnée conservée.';});}else window.TopMathAttendance.render(c,autoSlot);}
+if(tab==='journal'){window.TopMathJournal.render(c,activeCourse());}
+if(tab==='presences'){if(isSimulation){v.innerHTML='<div class="attendance-course-head"><div class="attendance-course-eyebrow">CLASSE EN COURS · SIMULATION</div><h2>'+esc(c)+'</h2><div class="muted small">Cours de '+esc(activeCourse()?.start||'')+' à '+esc(activeCourse()?.end||'')+'</div></div><div id="simRows"></div><div class="actions"><button type="button" class="btn-primary" id="simSave">Tester l’enregistrement</button></div><p id="simResult" class="muted small"></p>';const fictifs=['Élève A','Élève B','Élève C','Élève D'];$('simRows').innerHTML='<div class="attendance-table-wrap"><table class="attendance-table"><thead><tr><th scope="col">Élèves</th><th scope="col">Présent</th><th scope="col">Absent</th><th scope="col">Stage</th></tr></thead><tbody>'+fictifs.map((n,i)=>'<tr><th scope="row">'+n+'</th>'+[['P','Présent'],['A','Absent'],['S','Stage']].map(([v,l])=>'<td><label class="attendance-cell"><input type="checkbox" data-sim-att="'+i+'" value="'+v+'" aria-label="'+l+' : '+n+'"></label></td>').join('')+'</tr>').join('')+'</tbody></table></div>';$('simRows').addEventListener('change',e=>{const x=e.target.closest('input[data-sim-att]');if(!x||!x.checked)return;$('simRows').querySelectorAll('input[data-sim-att]').forEach(y=>{if(y!==x&&y.dataset.simAtt===x.dataset.simAtt)y.checked=false;});});$('simSave').addEventListener('click',()=>{const chosen=[...document.querySelectorAll('[data-sim-att]:checked')];$('simResult').textContent='Simulation réussie : '+chosen.filter(x=>x.value==='P').length+' présents, '+chosen.filter(x=>x.value==='A').length+' absent(s), '+chosen.filter(x=>x.value==='S').length+' en stage. Aucune donnée conservée.';});}else window.TopMathAttendance.render(c,autoSlot);}
 if(tab==='rapports'){const arr=data.reports.filter(x=>x.classe===c);v.innerHTML='<div class="flex"><h2>Rapports · '+esc(c)+'</h2><span class="pill">'+arr.filter(x=>!x.done).length+' à compléter</span></div>'+(arr.length?arr.map(r=>'<article class="task"><div class="flex"><strong>'+esc(r.student)+'</strong><span class="pill">'+(r.done?'Marqué terminé':'À compléter')+'</span></div><p>'+esc(r.title)+'</p><div class="actions">'+external(r.url,'Ouvrir le document')+'<button type="button" data-toggle="'+esc(r.id)+'">'+(r.done?'Marquer à faire':'Marquer terminé')+'</button><button type="button" data-remove-report="'+esc(r.id)+'">Retirer</button></div></article>').join(''):'<p class="muted">Aucun suivi demandé pour cette classe.</p>')+'<p class="muted small">Le statut « terminé » est un suivi personnel : il ne confirme pas l’envoi du formulaire officiel.</p>';}}
-function render(){autoSlot=determine();const old=$('manualClass').value;const all=classes();const selected=override||old;$('manualClass').innerHTML='<option value="">Automatique (horaire)</option>'+optionHTML(all,selected);$('manualClass').value=override||'';for(const id of ['linkClass','reportClass']){const prev=$(id).value;$(id).innerHTML='<option value="">Choisir une classe</option>'+optionHTML(all,prev);$(id).value=all.includes(prev)?prev:'';}
+function render(){if(selectedSlot){selectedSlot=data.slots.find(x=>Number(x.day)===Number(selectedSlot.day)&&Number(x.period)===Number(selectedSlot.period))||null;if(selectedSlot)override=selectedSlot.classe;else{override='';try{sessionStorage.removeItem(SELECTION_KEY);}catch{}}}autoSlot=determine();const old=$('manualClass').value;const all=classes();const selected=override||old;$('manualClass').innerHTML='<option value="">Automatique (horaire)</option>'+optionHTML(all,selected);$('manualClass').value=override||'';for(const id of ['linkClass','reportClass']){const prev=$(id).value;$(id).innerHTML='<option value="">Choisir une classe</option>'+optionHTML(all,prev);$(id).value=all.includes(prev)?prev:'';}
 updateHeader();if($('classSettings')&&!$('classSettings').hidden)syncClassReportForm(current());document.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===tab?'true':'false'));renderView();
 }
 document.querySelectorAll('[data-section-link]').forEach(a=>{const url=new URL(a.href);if(isSimulation){url.searchParams.set('testDay',String(simulatedDay));url.searchParams.set('testTime',simulatedTime);}a.href=url.pathname.split('/').pop()+url.search;});
 if(pagePanel){document.body.classList.add('section-page');document.title='Top’Math — '+({journal:'Journal de classe',presences:'Présences',rapports:'Rapports'})[pagePanel];}
 
-$('manualClass').addEventListener('change',e=>{override=e.target.value;render();});
-$('settingsClassChoice').addEventListener('change',e=>{override=e.target.value;render();});
+$('manualClass').addEventListener('change',e=>{selectedSlot=null;try{sessionStorage.removeItem(SELECTION_KEY);}catch{}override=e.target.value;render();});
+$('settingsClassChoice').addEventListener('change',e=>{selectedSlot=null;try{sessionStorage.removeItem(SELECTION_KEY);}catch{}override=e.target.value;render();});
 $('settingsClassGroup').addEventListener('change',e=>{
  const c=current();if(!c)return;
  data.classScheduleGroups[c]=e.target.value;
  applyPeriodTimings();save();
 });
-$('settingsAuto').addEventListener('click',()=>{override='';render();});
+$('settingsAuto').addEventListener('click',clearSelectedCourse);
 $('closeClassSettings').addEventListener('click',()=>setClassSettingsOpen(false));
 $('settingsSaveLinks').addEventListener('click',()=>{
  const c=current();if(!c)return;
@@ -460,7 +466,7 @@ $('settingsSaveLinks').addEventListener('click',()=>{
  data.links[c]={journal,presence};save();
  alert('Liens de la classe '+c+' enregistrés sur cet appareil.');
 });
-$('auto').addEventListener('click',()=>{override='';render();});
+$('auto').addEventListener('click',clearSelectedCourse);
 $('linkClass').addEventListener('change',()=>{const o=data.links[$('linkClass').value]||{};$('journalUrl').value=o.journal||'';$('presenceUrl').value=o.presence||'';});
 $('linkForm').addEventListener('submit',e=>{e.preventDefault();const c=$('linkClass').value;if(!c)return;const journal=$('journalUrl').value.trim(),presence=$('presenceUrl').value.trim();if((journal&&!safeUrl(journal))||(presence&&!safeUrl(presence))){alert('Lien HTTP ou HTTPS requis.');return;}data.links[c]={journal,presence};save();});
 $('student').addEventListener('change',()=>{const c=current(),name=$('student').value.trim();const matches=data.reports.filter(r=>r.classe===c&&r.student===name);if(matches.length===1){$('reportTitle').value=matches[0].title;$('reportUrl').value=matches[0].url;}else{$('reportTitle').value='Fiche de comportement';$('reportUrl').value='';}});
@@ -490,6 +496,10 @@ document.addEventListener('click',e=>{
 $('exportConfig').addEventListener('click',()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='topmath-administratif-sauvegarde.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);});
 $('reset').addEventListener('click',()=>{if(confirm('Effacer toutes les données administratives enregistrées sur cet iPad ?')){data=defaultData();override='';save();}});
 applyPeriodTimings();
+$('adminClassBanner').addEventListener('click',()=>{renderCoursePicker();$('coursePicker').showModal();});
+$('closeCoursePicker').addEventListener('click',()=>$('coursePicker').close());
+$('coursePickerAuto').addEventListener('click',()=>{$('coursePicker').close();clearSelectedCourse();});
+$('coursePickerBody').addEventListener('click',event=>{const button=event.target.closest('button[data-pick-day][data-pick-period]');if(button)chooseTimetableCourse(Number(button.dataset.pickDay),Number(button.dataset.pickPeriod));});
 $('topSettingsBtn').addEventListener('click',()=>{
  if(pagePanel==='journal'){
   if(window.TopMathJournal?.toggleSettings){window.TopMathJournal.toggleSettings();return;}
