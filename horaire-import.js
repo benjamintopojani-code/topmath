@@ -4,12 +4,25 @@
 const $=id=>document.getElementById(id);
 const clean=s=>String(s||'').trim().replace(/\s+/g,' ');
 const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let draft=[],lastFileName='',phaseDraft={first:{},upper:{}};
+let draft=[],lastFileName='',phaseDraft={first:{},upper:{}},layoutWords=[];
 const weekdays=['','Lundi','Mardi','Mercredi','Jeudi','Vendredi'];
 const mapDays=[['lundi',1],['mardi',2],['mercredi',3],['jeudi',4],['vendredi',5]];
 function status(message,bad=false){const el=$('scheduleImportStatus');if(el){el.textContent=message;el.classList.toggle('import-error',bad);}}
 function loadScript(url,globalName){if(window[globalName])return Promise.resolve();return new Promise((resolve,reject)=>{const script=document.createElement('script');script.src=url;script.async=true;script.onload=()=>window[globalName]?resolve():reject(Error('Bibliothèque indisponible'));script.onerror=()=>reject(Error('Connexion nécessaire pour charger le module de lecture.'));document.head.append(script);});}
-async function ocr(image){await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js','Tesseract');const worker=await Tesseract.createWorker('fra+eng',1,{logger:m=>{if(m.status==='recognizing text')status('Lecture du document : '+Math.round(m.progress*100)+' %');}});try{return (await worker.recognize(image)).data.text||'';}finally{await worker.terminate();}}
+async function ocr(image){
+ await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js','Tesseract');
+ const worker=await Tesseract.createWorker('fra+eng',1,{logger:m=>{if(m.status==='recognizing text')status('Lecture du document : '+Math.round(m.progress*100)+' %');}});
+ try{
+  const data=(await worker.recognize(image,{}, {tsv:true})).data;
+  const words=Array.isArray(data.words)?data.words.map(w=>({text:w.text,x:w.bbox?.x0||0,y:w.bbox?.y0||0,width:(w.bbox?.x1||0)-(w.bbox?.x0||0),height:(w.bbox?.y1||0)-(w.bbox?.y0||0)})):parseTsv(data.tsv||'');
+  return {text:data.text||'',words};
+ }finally{await worker.terminate();}
+}
+function parseTsv(tsv){
+ const lines=String(tsv||'').split(/\r?\n/);const head=lines.shift()?.split('\t')||[];
+ return lines.map(row=>{const fields=row.split('\t'),get=name=>fields[head.indexOf(name)]||'';
+ return {text:get('text'),x:Number(get('left')),y:Number(get('top')),width:Number(get('width')),height:Number(get('height'))};}).filter(w=>w.text&&Number.isFinite(w.x)&&Number.isFinite(w.y));
+}
 async function extract(file){
  if(file.size>15*1024*1024)throw Error('Fichier trop volumineux (maximum 15 Mo).');
  if(file.type==='application/pdf'||/\.pdf$/i.test(file.name)){
@@ -17,25 +30,27 @@ async function extract(file){
   pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   const doc=await pdfjsLib.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;
   if(doc.numPages>8)throw Error('PDF limité à 8 pages pour cet import.');
-  const texts=[];
+  const texts=[];layoutWords=[];
   for(let i=1;i<=doc.numPages;i++){
    status('Lecture du PDF : page '+i+'/'+doc.numPages);
    const page=await doc.getPage(i),content=await page.getTextContent();
    const pieces=content.items.filter(x=>typeof x.str==='string').map(x=>({text:x.str.trim(),x:x.transform[4],y:x.transform[5]})).filter(x=>x.text);
    const lines=[];for(const part of pieces.sort((a,b)=>b.y-a.y||a.x-b.x)){let l=lines.find(l=>Math.abs(l.y-part.y)<4);if(!l){l={y:part.y,parts:[]};lines.push(l);}l.parts.push(part);}
    let text=lines.sort((a,b)=>b.y-a.y).map(l=>l.parts.sort((a,b)=>a.x-b.x).map(p=>p.text).join(' | ')).join('\n');
+   const pdfWords=pieces.map(p=>({...p,y:-p.y,width:Math.max(p.text.length*4,12),height:10,page:i}));
    if(text.replace(/\s/g,'').length<75){
     const viewport=page.getViewport({scale:2}),canvas=document.createElement('canvas');canvas.width=viewport.width;canvas.height=viewport.height;
     await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
-    text=await ocr(canvas);
+    const recognized=await ocr(canvas);text=recognized.text;layoutWords.push(...recognized.words.map(w=>({...w,page:i})));
    }
+   else layoutWords.push(...pdfWords);
    texts.push(text);
   }
   return texts.join('\n');
  }
  if(file.type.startsWith('image/')||/\.(png|jpg|jpeg|webp|heic)$/i.test(file.name)){
   if(/\.heic$/i.test(file.name)&&!file.type.startsWith('image/'))throw Error('Convertissez la photo HEIC en JPEG ou PNG sur votre appareil.');
-  return ocr(file);
+  const result=await ocr(file);layoutWords=result.words;return result.text;
  }
  throw Error('Utilisez une image JPG/PNG/WebP ou un PDF.');
 }
@@ -116,7 +131,7 @@ async function readFile(){
  const file=$('scheduleImportFile').files?.[0];if(!file){status('Choisissez une photo ou un PDF.',true);return;}
  $('scheduleImportRead').disabled=true;$('scheduleImportActions').hidden=true;
  try{
-  status('Lecture de '+file.name+'…');lastFileName=file.name;
+  status('Lecture de '+file.name+'…');lastFileName=file.name;layoutWords=[];
   const text=await extract(file);$('scheduleImportText').value=text;
   draft=parseSchedule(text);
   const phase=parsePhase(text);phaseDraft=phase;showPhasePreview(phase);
