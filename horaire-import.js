@@ -210,6 +210,12 @@ function init(config){
  if(!$('scheduleImportRead'))return;
  const read=$('scheduleImportRead'),add=$('scheduleImportAdd'),parse=$('scheduleImportReparse');
  read.addEventListener('click',readFile);
+ $('scheduleImportKnown')?.addEventListener('click',()=>{
+  draft=config.preset?.()||[];
+  $('scheduleImportText').value=draft.map(x=>weekdays[x.day]+' P'+x.period+' '+x.classe).join('\n');
+  showDraft();showPhasePreview({first:{},upper:{}});
+  status(draft.length+' cours de ta photo 2026-2027 chargés. Vérifie les cases puis clique sur « Enregistrer l’horaire vérifié ».');
+ });
  add.addEventListener('click',()=>appendRow());
  parse.addEventListener('click',reparse);
  $('scheduleImportPreview').addEventListener('click',event=>{const b=event.target.closest('[data-import-remove]');if(b)b.closest('[data-import-row]').remove();});
