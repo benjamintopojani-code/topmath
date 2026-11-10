@@ -8,7 +8,7 @@ h1{font-size:1.7rem;margin:0 0 7px}h2{font-size:1.1rem;margin:0 0 12px}p{line-he
 .muted{color:#54657b}.small{font-size:.84rem}.card{background:white;border:1px solid #d5e1f0;border-radius:14px;padding:19px;margin:0 0 16px;box-shadow:0 3px 10px #182b4510}
 .hero{background:#e8f1ff;border-color:#bdd5f5}.flex{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
 .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.tile{text-align:left;padding:20px;background:white;border:1px solid #c9d9ed;border-radius:14px;min-height:118px;cursor:pointer}
-.tile strong{display:block;margin:12px 0 6px;font-size:1.08rem}.tile small{color:#536581}.tile[aria-selected=true]{border:2px solid #1453ab;background:#f3f8ff}
+.tile{text-decoration:none;color:#172b47;display:block}.tile strong{display:block;margin:12px 0 6px;font-size:1.08rem}.tile small{color:#536581}.tile[aria-selected=true]{border:2px solid #1453ab;background:#f3f8ff}
 button,.btn{font:inherit;cursor:pointer;min-height:43px;padding:9px 14px;border-radius:9px;border:1px solid #abc4e6;background:white;color:#17467e;font-weight:700}
 .btn-primary{background:#1458b5;color:white;border-color:#1458b5}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
 label{display:block;font-weight:700;margin:10px 0 5px}input,select,textarea{font:inherit;padding:10px;border:1px solid #afc2dc;border-radius:9px;background:#fff;width:100%;min-height:43px}
@@ -35,6 +35,7 @@ summary{font-weight:700;cursor:pointer;padding:8px 0}details{margin-top:20px}hr{
 .attendance-cell{display:flex;align-items:center;justify-content:center;min-height:44px;margin:0;cursor:pointer}
 .attendance-cell input{width:24px;height:24px;min-height:24px;margin:0;accent-color:#1561b8}
 @media(max-width:430px){.attendance-table{font-size:13px}.attendance-table thead th{font-size:12px}.attendance-table thead th:first-child{width:43%;padding-left:9px}.attendance-table thead th:not(:first-child){width:19%}.attendance-table tbody th{padding-left:9px}}
+.section-page #adminNav,.section-page details.card{display:none}.section-page main{padding-top:12px}.section-page .hero{padding:14px}.section-page .hero h1{font-size:1.12rem}.section-page #view{margin-top:12px!important}.section-page header{position:sticky;top:0;z-index:10}
 </style></head><body>
 <header><strong>TOP'MATH · ADMINISTRATIF</strong><a href="enseignant.html">← Espace enseignant</a></header>
 <main>
@@ -46,10 +47,10 @@ summary{font-weight:700;cursor:pointer;padding:8px 0}details{margin-top:20px}hr{
  <div class="row"><div><label for="manualClass">Consulter une autre classe</label><select id="manualClass"></select></div>
  <div style="align-self:end"><button type="button" id="auto">Revenir au cours actuel</button></div></div>
 </section>
-<div class="grid" role="tablist" aria-label="Rubriques administratives">
- <button class="tile" role="tab" aria-selected="true" data-tab="journal">📖<strong>Journal de classe</strong><small>Accès au document officiel</small></button>
- <button class="tile" role="tab" aria-selected="false" data-tab="presences">👥<strong>Présences</strong><small>Ouvrir l'appel de la classe</small></button>
- <button class="tile" role="tab" aria-selected="false" data-tab="rapports">📋<strong>Rapports</strong><small>Uniquement les élèves concernés</small></button>
+<div class="grid" id="adminNav" aria-label="Rubriques administratives">
+ <a class="tile" data-section-link="journal" href="journal.html">📖<strong>Journal de classe</strong><small>Ouvrir la page du journal</small></a>
+ <a class="tile" data-section-link="presences" href="presences.html">👥<strong>Présences</strong><small>Ouvrir la feuille d'appel</small></a>
+ <a class="tile" data-section-link="rapports" href="rapports.html">📋<strong>Rapports</strong><small>Ouvrir les suivis</small></a>
 </div>
 <section id="view" class="card" style="margin-top:16px" aria-live="polite"></section>
 <details class="card"><summary>⚙️ Configurer mon horaire et mes liens</summary>
@@ -105,10 +106,11 @@ if(!data.periodTimes||typeof data.periodTimes!=='object')data.periodTimes={};
 if(Object.keys(data.periodTimes).length===0){data.periodTimes=structuredClone(DEFAULT_TIMES);data.timeSource='provisoire';}
 data.slots.forEach(x=>{if(x.period&&data.periodTimes[x.period]){x.start=data.periodTimes[x.period].start;x.end=data.periodTimes[x.period].end;}});
 const searchParams=new URLSearchParams(location.search);
+const pagePanel=['journal','presences','rapports'].includes(searchParams.get('panel'))?searchParams.get('panel'):null;
 const simulatedTime=searchParams.get('testTime');
 const simulatedDay=Number(searchParams.get('testDay'));
 const isSimulation=/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(simulatedTime||'')&&simulatedDay>=1&&simulatedDay<=5;
-let tab='journal',override='',autoSlot=null;
+let tab=pagePanel||'journal',override='',autoSlot=null;
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function safeUrl(value){try{const u=new URL(value);return ['https:','http:'].includes(u.protocol)?u.href:'';}catch{return '';}}
 function save(){localStorage.setItem(KEY,JSON.stringify(data));render();}
@@ -135,7 +137,9 @@ $('savePeriodTimes').addEventListener('click',()=>{
  data.periodTimes=times;data.timeSource='confirme';data.slots.forEach(x=>{if(x.period){x.start=times[x.period]?.start||'';x.end=times[x.period]?.end||'';}});save();alert('Heures enregistrées. La classe s’affichera automatiquement pendant chaque cours.');
 });
 $('importPhotoSchedule').addEventListener('click',()=>{if(!confirm('Remplacer uniquement l’horaire existant par celui de la photo ? Les liens et rapports seront conservés.'))return;data.slots=photoSlots();data.slots.forEach(x=>{x.start=data.periodTimes[x.period]?.start||'';x.end=data.periodTimes[x.period]?.end||''});override='';save();});
-document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>{tab=b.dataset.tab;render();}));
+document.querySelectorAll('[data-section-link]').forEach(a=>{const url=new URL(a.href);if(isSimulation){url.searchParams.set('testDay',String(simulatedDay));url.searchParams.set('testTime',simulatedTime);}a.href=url.pathname.split('/').pop()+url.search;});
+if(pagePanel){document.body.classList.add('section-page');document.title='Top’Math — '+({journal:'Journal de classe',presences:'Présences',rapports:'Rapports'})[pagePanel];}
+
 $('manualClass').addEventListener('change',e=>{override=e.target.value;render();});
 $('auto').addEventListener('click',()=>{override='';render();});
 $('slotForm').addEventListener('submit',e=>{e.preventDefault();const start=$('start').value,end=$('end').value,day=Number($('day').value),classe=$('slotClass').value.trim();if(start>=end){alert('La fin doit être après le début.');return;}if(data.slots.some(x=>x.day===day&&start<x.end&&x.start<end)){alert('Ce créneau chevauche un cours existant.');return;}data.slots.push({id:crypto.randomUUID(),day,start,end,classe});e.target.reset();save();});
@@ -147,5 +151,6 @@ document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)r
 $('exportConfig').addEventListener('click',()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='topmath-administratif-sauvegarde.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);});
 $('reset').addEventListener('click',()=>{if(confirm('Effacer toutes les données administratives enregistrées sur cet iPad ?')){data=defaultData();override='';save();}});
 data.slots.forEach(x=>{if(x.period&&data.periodTimes[x.period]){x.start=data.periodTimes[x.period].start;x.end=data.periodTimes[x.period].end;}});
+if(pagePanel){const title=({journal:'Journal de classe',presences:'Présences',rapports:'Rapports'})[pagePanel];document.querySelector('header strong').textContent='TOP’MATH · '+title.toUpperCase();document.querySelector('header a').textContent='← Administratif';document.querySelector('header a').href='administratif.html'+(isSimulation?'?testDay='+simulatedDay+'&testTime='+encodeURIComponent(simulatedTime):'');}
 render();clock();setInterval(clock,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)clock();});
 </script></body></html>
