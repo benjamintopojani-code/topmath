@@ -173,5 +173,8 @@ function exportCSV(c){
  download('topmath-presences-'+(scope==='all'?'toutes-classes':c.replace(/[^a-z0-9-]/gi,'-'))+'-'+today()+'.csv',csv(data),'text/csv;charset=utf-8');
 }
 document.addEventListener('change',e=>{const input=e.target.closest('input[type="checkbox"][data-att-student]');if(!input||!input.checked)return;document.querySelectorAll('[data-att-student]').forEach(other=>{if(other!==input&&other.dataset.attStudent===input.dataset.attStudent)other.checked=false;});});
+// Au retour de « Mes classes », récupérer les changements de la base commune.
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&selectedClass&&window.topmathAttendanceActive?.())fetchShared(selectedClass,true);});
+window.addEventListener('focus',()=>{if(selectedClass&&window.topmathAttendanceActive?.()&&Date.now()-lastFetch>15000)fetchShared(selectedClass,true);});
 window.TopMathAttendance={render,refreshFromTopMath:fetchShared,studentsForClass:c=>roster(c),linkedClassIds:autoMap};
 })();
