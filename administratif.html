@@ -299,6 +299,14 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
 .selected-class-actions[hidden]{display:none!important}
 .selected-class-actions button{min-height:42px;padding:9px 16px;border:1px solid #a8c4e6;border-radius:9px;background:#fff;color:#245a91;font:inherit;font-size:.86rem;font-weight:750;cursor:pointer}
 .selected-class-actions button:focus-visible{outline:3px solid #3578cf;outline-offset:2px}
+
+/* Export de l'appel : un seul bouton visible, sauvegarde facultative rangée en dessous. */
+.attendance-export-panel{margin:17px 0 5px;display:grid;gap:6px}
+.attendance-export-panel>button{width:100%;min-height:48px;white-space:normal;font-size:.96rem}
+.attendance-export-panel>p{margin:0 2px;font-size:.76rem}
+.attendance-backup-tools{margin:18px 0 0;border-top:1px solid #e4ebf5;padding-top:12px}
+.attendance-backup-tools>summary{font-size:.82rem;color:#5a718b;cursor:pointer}
+.attendance-backup-tools .actions{margin-top:12px}
 </style></head><body>
 <header><strong id="topbarTitle">TOP'MATH <span class="topbar-divider">·</span> ADMINISTRATIF</strong><div class="topbar-controls"><button id="topSettingsBtn" type="button" aria-label="Ouvrir les réglages" aria-expanded="false" title="Réglages">⚙️</button><a class="topbar-back" href="enseignant.html" aria-label="Retour à l’espace enseignant" title="Retour à l’espace enseignant">←</a></div></header>
 <main>
@@ -367,6 +375,7 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
 <section id="view" class="card" style="margin-top:16px" aria-live="polite"></section>
 
 </main>
+<script src="presences-pdf.js"></script>
 <script src="presences.js"></script>
 <script src="journal.js"></script>
 <script>
