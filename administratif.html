@@ -82,8 +82,18 @@ body:not(.section-page) #view{display:none}
 .journal-settings-hint{font-size:.79rem;line-height:1.45;color:#5c718b;margin:13px 0 0}
 .section-page:has(.journal-editor) #view{padding:14px}
 @media(max-width:520px){.journal-course-frame{padding:12px}.journal-frame-top{gap:8px}.journal-course-name h2{font-size:1.35rem}.journal-downloads button{flex:1 1 auto}.journal-course-frame .journal-settings>summary{font-size:.82rem;padding:9px}}
+
+header .topbar-controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+#topSettingsBtn{width:42px;height:42px;min-height:42px;padding:0;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.5);border-radius:10px;color:#fff;font-size:24px;display:flex;align-items:center;justify-content:center}
+#topSettingsBtn[aria-expanded="true"]{background:#fff;color:#17467e}
+#adminSettings:not([open]){display:none}
+#adminSettings>summary.visually-hidden{position:absolute;opacity:0;width:1px;height:1px;padding:0;margin:0;overflow:hidden;pointer-events:none}
+#adminSettings[open]{margin-top:16px}
+.section-page #topSettingsBtn{display:none}
+.section-page:has(.journal-editor) #topSettingsBtn{display:flex}
+@media(max-width:560px){header .topbar-controls{gap:8px}header .topbar-controls a{font-size:.84rem}}
 </style></head><body>
-<header><strong>TOP'MATH · ADMINISTRATIF</strong><a href="enseignant.html">← Espace enseignant</a></header>
+<header><strong>TOP'MATH · ADMINISTRATIF</strong><div class="topbar-controls"><button id="topSettingsBtn" type="button" aria-label="Ouvrir les réglages" aria-expanded="false" title="Réglages">⚙️</button><a href="enseignant.html">← Espace enseignant</a></div></header>
 <main>
 <section id="adminClassBanner" class="admin-class-banner" aria-live="polite"><span class="admin-class-caption">CLASSE EN COURS</span><h1 id="adminClassTitle">Aucun cours en cours</h1><p id="adminClassPeriod">La classe s'affiche selon l'horaire.</p></section>
 <div class="grid" id="adminNav" aria-label="Rubriques administratives">
@@ -92,7 +102,7 @@ body:not(.section-page) #view{display:none}
  <a class="tile" data-section-link="rapports" href="rapports.html">📋<strong>Rapports</strong><small>Ouvrir les suivis</small></a>
 </div>
 <section id="view" class="card" style="margin-top:16px" aria-live="polite"></section>
-<details id="adminSettings" class="card settings-panel"><summary aria-label="Réglages" title="Réglages"><span aria-hidden="true">⚙️</span><span class="settings-label">Réglages</span></summary>
+<details id="adminSettings" class="card settings-panel"><summary class="visually-hidden">Réglages administratifs</summary>
  <div class="settings-content">
  <h2>Mon cours et ma classe</h2>
  <section class="card hero" aria-live="polite">
@@ -203,6 +213,18 @@ document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)r
 $('exportConfig').addEventListener('click',()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='topmath-administratif-sauvegarde.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);});
 $('reset').addEventListener('click',()=>{if(confirm('Effacer toutes les données administratives enregistrées sur cet iPad ?')){data=defaultData();override='';save();}});
 data.slots.forEach(x=>{if(x.period&&data.periodTimes[x.period]){x.start=data.periodTimes[x.period].start;x.end=data.periodTimes[x.period].end;}});
+$('topSettingsBtn').addEventListener('click',()=>{
+ if(pagePanel==='journal'){
+  const body=$('journalSettingsBody');if(!body)return;
+  body.hidden=!body.hidden;
+  $('topSettingsBtn').setAttribute('aria-expanded',String(!body.hidden));
+  $('topSettingsBtn').setAttribute('aria-label',body.hidden?'Ouvrir les réglages du journal':'Fermer les réglages du journal');
+ }else if(!pagePanel){
+  const panel=$('adminSettings');panel.open=!panel.open;
+  $('topSettingsBtn').setAttribute('aria-expanded',String(panel.open));
+  $('topSettingsBtn').setAttribute('aria-label',panel.open?'Fermer les réglages':'Ouvrir les réglages');
+ }
+});
 if(pagePanel){const title=({journal:'Journal de classe',presences:'Présences',rapports:'Rapports'})[pagePanel];document.querySelector('header strong').textContent='TOP’MATH · '+title.toUpperCase();document.querySelector('header a').textContent='← Administratif';document.querySelector('header a').target='_top';document.querySelector('header a').href='administratif.html'+(isSimulation?'?testDay='+simulatedDay+'&testTime='+encodeURIComponent(simulatedTime):'');}
 render();clock();setInterval(clock,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)clock();});
 </script></body></html>
