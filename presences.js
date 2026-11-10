@@ -12,7 +12,7 @@ const id=s=>document.getElementById(s);
 const today=()=>{const d=new Date(),n=d.getTimezoneOffset()*60000;return new Date(d-n).toISOString().slice(0,10);};
 const persist=()=>{try{localStorage.setItem(KEY,JSON.stringify(state));return true;}catch(e){alert("Enregistrement impossible : espace de stockage indisponible. Exportez vos données.");return false;}};
 const sessionKey=(date,periode,classe)=>JSON.stringify([date,String(periode),classe]);
-const validStatus=['','P','A','R'];
+const validStatus=['','P','A','S','R'];
 function roster(c){return Array.isArray(state.rosters[c])?state.rosters[c]:[];}
 function session(date,period,c){return state.sessions[sessionKey(date,period,c)];}
 function getSlots(c){return (window.topmathSchedule?.()||[]).filter(x=>x.classe===c);}
@@ -119,7 +119,7 @@ function render(c,slot){
  '<div><label for="attPeriod">Période</label><select id="attPeriod">'+periods.map(p=>'<option value="'+esc(p)+'"'+(selectedPeriod===p?' selected':'')+'>Période '+esc(p)+'</option>').join('')+'</select></div></div>'+
  (ss?'<p class="pill">Enregistré le '+esc(new Date(ss.updated).toLocaleString('fr-BE'))+'</p>':'<p class="muted small">Aucun appel enregistré pour cette séance.</p>')+
  '<div class="flex" style="margin:16px 0 8px"><strong>'+students.length+' élèves · '+nDone+' réponses renseignées</strong><span class="pill">'+(students.length-nDone)+' à renseigner</span></div>'+
- (students.length?students.map((name,i)=>'<div class="task flex"><div><strong>'+esc(name)+'</strong></div><div><label for="attStatus'+i+'" class="small">Statut</label><select id="attStatus'+i+'" data-att-student="'+esc(name)+'">'+[['','Non renseigné'],['P','Présent'],['A','Absent'],['R','Retard']].map(([v,l])=>'<option value="'+v+'"'+((map.get(name)||'')===v?' selected':'')+'>'+l+'</option>').join('')+'</select></div></div>').join(''):'<p class="notice">Aucune liste d’élèves importée pour cette classe. Ajoutez-la ci-dessous avant de faire l’appel.</p>')+
+ (students.length?students.map((name,i)=>'<div class="task"><strong>'+esc(name)+'</strong><div class="att-checks" role="group" aria-label="Présence de '+esc(name)+'">'+[['P','Présent'],['A','Absent'],['S','Stage']].map(([v,l])=>'<label class="att-choice"><input type="checkbox" data-att-student="'+esc(name)+'" value="'+v+'"'+((map.get(name)||'')===v?' checked':'')+'><span>'+l+'</span></label>').join('')+'</div></div>').join(''):'<p class="notice">Aucune liste d’élèves importée pour cette classe. Ajoutez-la ci-dessous avant de faire l’appel.</p>')+
  '<div class="actions"><button type="button" class="btn-primary" id="attSave"'+(!students.length?' disabled':'')+'>Enregistrer la présence</button><button type="button" id="attAll"'+(!students.length?' disabled':'')+'>Tous présents</button><button type="button" id="attClear">Effacer les choix affichés</button></div>'+
  '<hr><details><summary>📥 Importer ou modifier la liste des élèves</summary>'+
  '<p class="muted small">Collez un élève par ligne, ou importez un fichier TXT ou CSV (colonnes « Nom;Prénom »). Cette liste concerne uniquement la classe '+esc(c)+'.</p>'+
@@ -134,13 +134,14 @@ function render(c,slot){
  '<div id="attHistory"></div>';
  id('view').innerHTML=html;history(c);
  bindRosterControls(c,slot);
+ id('view').addEventListener('change',function onAttendanceCheckbox(e){const input=e.target.closest('input[type="checkbox"][data-att-student]');if(!input||!input.checked)return;document.querySelectorAll('[data-att-student]').forEach(other=>{if(other!==input&&other.dataset.attStudent===input.dataset.attStudent)other.checked=false;});},{once:false});
  if(!sharedRoster&&!sharedLoading&&Date.now()-lastFetch>300000)fetchShared(c);
  id('attDate').addEventListener('change',e=>{selectedDate=e.target.value||today();render(c,slot);});
  id('attPeriod').addEventListener('change',e=>{selectedPeriod=e.target.value;render(c,slot);});
  id('attStudent').addEventListener('change',e=>{selectedStudent=e.target.value;history(c);});
  id('attSave').addEventListener('click',()=>saveCall(c));
- id('attAll').addEventListener('click',()=>document.querySelectorAll('[data-att-student]').forEach(x=>x.value='P'));
- id('attClear').addEventListener('click',()=>document.querySelectorAll('[data-att-student]').forEach(x=>x.value=''));
+ id('attAll').addEventListener('click',()=>document.querySelectorAll('[data-att-student]').forEach(x=>x.checked=x.value==='P'));
+ id('attClear').addEventListener('click',()=>document.querySelectorAll('[data-att-student]').forEach(x=>x.checked=false));
  id('attImport').addEventListener('click',()=>{const names=rosterNames(id('attList').value);if(!names.length){alert('Aucun nom valide détecté.');return;}if(!confirm('Enregistrer '+names.length+' élèves pour '+c+' ?'))return;state.rosters[c]=names;if(persist()){selectedStudent='';render(c,slot);}});
  id('attFile').addEventListener('change',async e=>{const f=e.target.files?.[0];if(!f)return;if(f.size>500000){alert('Fichier trop volumineux.');return;}const raw=await f.text();id('attList').value=rosterNames(raw).join('\n');});
  id('attCsv').addEventListener('click',()=>exportCSV(c));
@@ -150,7 +151,7 @@ function render(c,slot){
 }
 function saveCall(c){
  const names=roster(c);
- const entries=names.map(name=>({name,status:document.querySelectorAll('[data-att-student]')?([...document.querySelectorAll('[data-att-student]')].find(x=>x.dataset.attStudent===name)?.value||''):''}));
+ const entries=names.map(name=>({name,status:[...document.querySelectorAll('[data-att-student]')].find(x=>x.dataset.attStudent===name&&x.checked)?.value||''}));
  if(!entries.every(x=>validStatus.includes(x.status))){alert('Statut non valide.');return;}
  const blank=entries.filter(x=>!x.status).length;
  if(blank&&!confirm(blank+' élève(s) sans statut. Enregistrer quand même l’appel incomplet ?'))return;
@@ -162,14 +163,14 @@ function history(c){
  const rows=records().filter(x=>x.classe===c&&(!selectedStudent||x.name===selectedStudent)).sort((a,b)=>b.date.localeCompare(a.date)||Number(b.periode)-Number(a.periode));
  const sessions=[...new Set(rows.map(x=>x.date+'|'+x.periode))];
  id('attHistory').innerHTML='<p class="muted small">'+sessions.length+' séance(s) trouvée(s) · '+rows.length+' ligne(s) de présence.</p>'+
- '<div style="max-height:290px;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:.9rem"><thead><tr><th style="text-align:left;padding:8px;border-bottom:1px solid #ccc">Date / Période</th><th style="text-align:left;padding:8px;border-bottom:1px solid #ccc">Élève</th><th style="text-align:left;padding:8px;border-bottom:1px solid #ccc">Statut</th></tr></thead><tbody>'+rows.slice(0,150).map(r=>'<tr><td style="padding:7px;border-bottom:1px solid #eee">'+esc(r.date)+' · P'+esc(r.periode)+'</td><td style="padding:7px;border-bottom:1px solid #eee">'+esc(r.name)+'</td><td style="padding:7px;border-bottom:1px solid #eee">'+esc(({P:'Présent',A:'Absent',R:'Retard'})[r.status]||'Non renseigné')+'</td></tr>').join('')+'</tbody></table></div>'+
+ '<div style="max-height:290px;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:.9rem"><thead><tr><th style="text-align:left;padding:8px;border-bottom:1px solid #ccc">Date / Période</th><th style="text-align:left;padding:8px;border-bottom:1px solid #ccc">Élève</th><th style="text-align:left;padding:8px;border-bottom:1px solid #ccc">Statut</th></tr></thead><tbody>'+rows.slice(0,150).map(r=>'<tr><td style="padding:7px;border-bottom:1px solid #eee">'+esc(r.date)+' · P'+esc(r.periode)+'</td><td style="padding:7px;border-bottom:1px solid #eee">'+esc(r.name)+'</td><td style="padding:7px;border-bottom:1px solid #eee">'+esc(({P:'Présent',A:'Absent',S:'Stage',R:'Retard'})[r.status]||'Non renseigné')+'</td></tr>').join('')+'</tbody></table></div>'+
  (rows.length>150?'<p class="small muted">Aperçu limité à 150 lignes : l’export contient tout l’historique.</p>':'');
 }
 function exportCSV(c){
  const scope=id('attClasseFilter').value;
  const rows=records().filter(x=>(scope==='all'||x.classe===c)&&(!selectedStudent||x.name===selectedStudent)).sort((a,b)=>a.date.localeCompare(b.date)||Number(a.periode)-Number(b.periode)||a.name.localeCompare(b.name,'fr'));
  if(!rows.length){alert('Aucune présence enregistrée pour ce filtre.');return;}
- const data=[['Date','Période','Classe','Élève','Statut','Dernière modification'],...rows.map(r=>[r.date,r.periode,r.classe,r.name,({P:'Présent',A:'Absent',R:'Retard'})[r.status]||'Non renseigné',r.updated])];
+ const data=[['Date','Période','Classe','Élève','Statut','Dernière modification'],...rows.map(r=>[r.date,r.periode,r.classe,r.name,({P:'Présent',A:'Absent',S:'Stage',R:'Retard'})[r.status]||'Non renseigné',r.updated])];
  download('topmath-presences-'+(scope==='all'?'toutes-classes':c.replace(/[^a-z0-9-]/gi,'-'))+'-'+today()+'.csv',csv(data),'text/csv;charset=utf-8');
 }
 window.TopMathAttendance={render,refreshFromTopMath:fetchShared,studentsForClass:c=>roster(c),linkedClassIds:autoMap};
