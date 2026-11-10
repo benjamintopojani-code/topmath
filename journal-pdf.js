@@ -1,4 +1,4 @@
-/* Top'Math — export hebdomadaire du journal en PDF A4 portrait, sans serveur. */
+/* Top'Math — journal de classe annuel PDF A4 portrait, sans serveur. */
 (function(){
 'use strict';
 function pdfText(v){
@@ -12,7 +12,7 @@ function makePdf(entries,start,end){
  let pages=[],lines=[],y=TOP,dayBefore='',pageNum=0;
  const tx=(x,v,size=10,bold=false)=>{lines.push('BT /F'+(bold?'2':'1')+' '+size+' Tf '+x.toFixed(2)+' '+(A4H-y).toFixed(2)+' Td ('+esc(v)+') Tj ET');};
  const rule=()=>{lines.push('0.78 0.84 0.91 RG 0.7 w '+LM+' '+(A4H-y).toFixed(2)+' m '+(A4W-RM)+' '+(A4H-y).toFixed(2)+' l S 0 0 0 RG');};
- const head=()=>{y=TOP;tx(LM,"TOP'MATH  /  JOURNAL DE CLASSE",15,true);y+=20;tx(LM,'Semaine du '+format(start)+' au '+format(end),10);y+=18;rule();y+=20;};
+ const head=()=>{y=TOP;tx(LM,"TOP'MATH  /  JOURNAL DE CLASSE",15,true);y+=20;tx(LM,'Annee scolaire : '+start.slice(0,4)+' - '+(Number(start.slice(0,4))+1),10,true);y+=16;tx(LM,'Du '+format(start)+' au '+format(end)+'  /  Toutes les classes',9);y+=18;rule();y+=20;};
  const page=()=>{
   if(!lines.length)return;
   y=A4H-34;tx(LM,'Document personnel  -  Export du '+new Date().toLocaleDateString('fr-BE'),8);
@@ -41,7 +41,12 @@ function makePdf(entries,start,end){
  const weekdays=['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
  const dayLabel=date=>{const d=new Date(date+'T12:00:00');return weekdays[d.getDay()]+' '+format(date);};
  head();
- if(!entries.length){tx(LM,'Aucun cours rédigé pour cette semaine.',11);y+=20;}
+ const classes=[...new Set(entries.map(x=>x.classe||'Classe non precisee'))].sort((a,b)=>a.localeCompare(b,'fr'));
+ tx(LM,'AIDE-MEMOIRE  /  RECAPITULATIF',11,true);y+=17;
+ tx(LM,entries.length+' seances redigees   |   '+classes.length+' classes   |   '+[...new Set(entries.map(x=>x.date))].length+' journees',9);y+=15;
+ for(const line of wrap('Classes : '+classes.join(', '),90)){ensure(14);tx(LM,line,9);y+=14;}
+ y+=14;rule();y+=18;
+ if(!entries.length){tx(LM,'Aucun cours redige depuis le debut de cette annee scolaire.',11);y+=20;}
  else for(const ent of entries){
   if(ent.date!==dayBefore){ensure(49);if(dayBefore){y+=6;}tx(LM,dayLabel(ent.date).toUpperCase(),11,true);y+=8;rule();y+=19;dayBefore=ent.date;}
   const title=(ent.classe||'Classe non précisée')+'   ·   Période '+(ent.period||'?');
@@ -76,5 +81,17 @@ function exportWeek(date,raw){
  a.href=url;a.download='TopMath-Journal-semaine-'+start+'.pdf';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
  return {start,end,count:entries.length};
 }
-window.TopMathJournalPdf={exportWeek,monday,plusDays,makePdf};
+function exportSchoolYear(date,raw){
+ const point=String(date||new Date().toISOString().slice(0,10));
+ const year=Number(point.slice(5,7))>=9?Number(point.slice(0,4)):Number(point.slice(0,4))-1;
+ const start=year+'-09-01',end=point;
+ const entries=Object.values(raw||{}).filter(x=>x&&x.date>=start&&x.date<=end&&String(x.text||'').trim())
+  .sort((a,b)=>a.date.localeCompare(b.date)||Number(a.period)-Number(b.period)||(a.classe||'').localeCompare(b.classe||'','fr'));
+ if(!entries.length)throw Error("Aucun cours redige depuis le 1er septembre "+year+".");
+ const blob=makePdf(entries,start,end),url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download='TopMath-Journal-de-classe-'+year+'-'+(year+1)+'.pdf';
+ document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
+ return {start,end,count:entries.length,classes:new Set(entries.map(x=>x.classe)).size};
+}
+window.TopMathJournalPdf={exportSchoolYear,exportWeek,monday,plusDays,makePdf};
 })();
