@@ -21,8 +21,6 @@ function refresh(c,slot,date,period){
  lastHtml=entry.text||'';
  lastTitle=entry.title||'';
  $('journalSaveState').textContent=entry.updated?'Dernière sauvegarde : '+new Date(entry.updated).toLocaleString('fr-BE'):'Aucun contenu enregistré pour ce cours';
- $('journalSize').textContent=store.fontSize+' px';
- $('journalEditor').style.fontSize=store.fontSize+'px';
 }
 function persistPrevious(c){
  const text=$('journalEditor').value,title=$('journalLessonTitle').value.trim();
@@ -48,24 +46,20 @@ function render(c,slot){
  $('view').innerHTML='<div class="journal-course-frame"><div class="journal-frame-top"><div class="journal-course-name"><span class="attendance-course-eyebrow">JOURNAL DE CLASSE</span><h2>'+esc(c)+'</h2><p class="journal-course-time">'+esc(slot&&slot.classe===c&&slot.start?slot.start+' – '+slot.end:'Cours sélectionné')+'</p></div></div>'+
  '<div class="journal-settings-body" id="journalSettingsBody" hidden>'+
  '<div class="journal-setting-group"><div class="journal-setting-title">Cours</div><div class="row"><div><label for="journalDate">Date</label><input type="date" id="journalDate" value="'+esc(oldDate)+'"></div><div><label for="journalPeriod">Heure de cours</label><select id="journalPeriod">'+periods.map(p=>'<option value="'+esc(p)+'"'+(chosenPeriod===p?' selected':'')+'>Période '+esc(p)+'</option>').join('')+'</select></div></div></div>'+
- '<div class="journal-setting-group"><div class="journal-setting-title">Écriture</div><div class="journal-size-row"><span>Taille du texte</span><div class="journal-toolbar"><button type="button" id="journalSmaller" aria-label="Réduire le texte">A−</button><strong id="journalSize"></strong><button type="button" id="journalBigger" aria-label="Agrandir le texte">A+</button></div></div></div>'+
+
  '<div class="journal-setting-group"><div class="journal-setting-title">Téléchargements</div><div class="journal-downloads"><button type="button" id="journalPrint">Imprimer ce cours</button><button type="button" id="journalExport">Texte</button><button type="button" id="journalBackup">Sauvegarde complète</button></div></div>'+
  '<p class="journal-settings-hint">Sauvegarde automatique sur cet iPad. Pense à conserver une copie : ce journal n’est pas synchronisé avec le journal officiel.</p></div></div>'+
  '<div class="journal-lesson-heading"><span class="journal-period-badge" id="journalPeriodBadge">P'+esc(chosenPeriod)+'</span><label for="journalLessonTitle" class="journal-lesson-title-label"><span class="sr-only">Titre de la leçon</span><input type="text" id="journalLessonTitle" maxlength="180" placeholder="Titre de la leçon…" autocomplete="off" aria-label="Titre de la leçon"></label></div>'+
- '<label for="journalEditor" class="journal-writing-label">Notes du cours</label><textarea id="journalEditor" class="journal-editor" rows="17" placeholder="Écrire ici ce que nous avons fait aujourd’hui…"></textarea>'+
+ '<textarea id="journalEditor" hidden style="display:none" aria-hidden="true" tabindex="-1"></textarea>'+
  '<p class="muted small" id="journalSaveState" role="status"></p>'+
  '<div class="journal-week-export"><button type="button" class="btn-primary" id="journalYearPdf">Créer le PDF de mon journal depuis le début de l’année scolaire</button><p class="muted small" style="margin:0">Toutes les classes et toutes les notes depuis le 1er septembre, avec un récapitulatif et les cours classés par date.</p></div>';
  const update=()=>refresh(c,slot,$('journalDate').value,$('journalPeriod').value);
  $('journalDate').addEventListener('change',()=>{if($('journalEditor').value!==lastHtml||$('journalLessonTitle').value.trim()!==lastTitle)persistPrevious(c);update();});
  $('journalPeriod').addEventListener('change',()=>{if($('journalEditor').value!==lastHtml||$('journalLessonTitle').value.trim()!==lastTitle)persistPrevious(c);update();});
 
- $('journalBigger').addEventListener('click',()=>{store.fontSize=Math.min(32,store.fontSize+2);saved();$('journalEditor').style.fontSize=store.fontSize+'px';$('journalSize').textContent=store.fontSize+' px';});
- $('journalSmaller').addEventListener('click',()=>{store.fontSize=Math.max(14,store.fontSize-2);saved();$('journalEditor').style.fontSize=store.fontSize+'px';$('journalSize').textContent=store.fontSize+' px';});
  let autoSaveTimer;
  $('journalLessonTitle').addEventListener('input',()=>{$('journalSaveState').textContent='Enregistrement…';clearTimeout(autoSaveTimer);autoSaveTimer=setTimeout(()=>persist(c),700);});
  $('journalLessonTitle').addEventListener('blur',()=>{clearTimeout(autoSaveTimer);if($('journalLessonTitle').value.trim()!==lastTitle)persist(c);});
- $('journalEditor').addEventListener('input',()=>{$('journalSaveState').textContent='Enregistrement…';clearTimeout(autoSaveTimer);autoSaveTimer=setTimeout(()=>persist(c),700);});
- $('journalEditor').addEventListener('blur',()=>{clearTimeout(autoSaveTimer);if($('journalEditor').value!==lastHtml||$('journalLessonTitle').value.trim()!==lastTitle)persist(c);});
  $('journalExport').addEventListener('click',()=>{persist(c);dl('topmath-journal-'+$('journalDate').value+'-'+c.replace(/[^a-z0-9-]/gi,'-')+'.txt',c+' · '+$('journalDate').value+' · Période '+$('journalPeriod').value+'\nTitre : '+$('journalLessonTitle').value+'\n\n'+$('journalEditor').value,'text/plain;charset=utf-8');});
  $('journalYearPdf').addEventListener('click',()=>{try{const editor=$('journalEditor');if(editor&&(editor.value!==lastHtml||$('journalLessonTitle').value.trim()!==lastTitle))persist(c);if(!window.TopMathJournalPdf)throw Error('Module PDF indisponible. Recharge la page.');window.TopMathJournalPdf.exportSchoolYear(nowDate(),store.entries);}catch(e){alert('Export impossible : '+(e.message||e));}});
  $('journalBackup').addEventListener('click',()=>dl('topmath-journaux-sauvegarde-'+nowDate()+'.json',JSON.stringify({format:KEY,exported:new Date().toISOString(),...store},null,2),'application/json;charset=utf-8'));
