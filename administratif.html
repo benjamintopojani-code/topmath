@@ -40,7 +40,7 @@ summary{font-weight:700;cursor:pointer;padding:8px 0}details{margin-top:20px}hr{
  <p class="muted small">Configuration de départ à réaliser une fois. Les réglages sont conservés uniquement dans ce navigateur sur cet iPad (sans synchronisation). N'enregistrez pas d'informations confidentielles sur un appareil partagé.</p>
  <h2>1. Horaire importé de la photo (2026-2027)</h2>
  <p class="muted small">Les jours et classes sont déjà saisis. Pour activer la sélection automatique, indiquez une seule fois les heures de début et de fin de chaque période. Elles s'appliquent à toute la semaine.</p>
- <div id="periodTimes"></div><div class="actions"><button type="button" class="btn-primary" id="savePeriodTimes">Enregistrer les heures des périodes</button><button type="button" id="importPhotoSchedule">Recharger l'horaire de la photo</button></div>
+ <p class="notice small" id="timeDisclaimer">Heures 1 à 8 préremplies d'après un ancien document du Chêneux (à vérifier pour 2026-2027). La 9e période est à confirmer. Les récréations et pauses ne déclenchent aucune classe.</p><div id="periodTimes"></div><div class="actions"><button type="button" class="btn-primary" id="savePeriodTimes">Enregistrer les heures des périodes</button><button type="button" id="importPhotoSchedule">Recharger l'horaire de la photo</button></div>
  <hr><h2>Ajouter exceptionnellement un cours</h2>
  <form id="slotForm">
   <div class="row"><div><label for="day">Jour</label><select id="day" required><option value="1">Lundi</option><option value="2">Mardi</option><option value="3">Mercredi</option><option value="4">Jeudi</option><option value="5">Vendredi</option></select></div>
@@ -76,9 +76,12 @@ const PHOTO_COURS=[
 [4,1,'OBS B'],[4,2,'3 MAC / 3 AB'],[4,3,'2 TB'],[4,4,'OBS B'],[4,5,'2 TB'],
 [5,1,'OBS B'],[5,2,'2 HORT'],[5,3,'DLC'],[5,4,'2 HORT'],[5,5,'2 TB'],[5,7,'2 TB'],[5,8,'OBS E'],[5,9,'OBS E']];
 const photoSlots=()=>PHOTO_COURS.map(([day,period,classe])=>({id:'photo-'+day+'-'+period,day,period,classe,start:'',end:''}));
-const defaultData=()=>({slots:photoSlots(),links:{},reports:[],periodTimes:{}});
+const DEFAULT_TIMES={1:{start:'08:25',end:'09:15'},2:{start:'09:15',end:'10:05'},3:{start:'10:15',end:'11:05'},4:{start:'11:05',end:'11:55'},5:{start:'12:40',end:'13:25'},6:{start:'13:25',end:'14:15'},7:{start:'14:25',end:'15:15'},8:{start:'15:15',end:'16:00'}};
+const defaultData=()=>({slots:photoSlots(),links:{},reports:[],periodTimes:structuredClone(DEFAULT_TIMES),timeSource:'provisoire'});
 let data;try{data=JSON.parse(localStorage.getItem(KEY))||defaultData();if(!Array.isArray(data.slots)||!Array.isArray(data.reports)||!data.links||typeof data.links!=='object')throw Error('Format incorrect');}catch{data=defaultData();}
 if(!data.periodTimes||typeof data.periodTimes!=='object')data.periodTimes={};
+if(Object.keys(data.periodTimes).length===0){data.periodTimes=structuredClone(DEFAULT_TIMES);data.timeSource='provisoire';}
+data.slots.forEach(x=>{if(x.period&&data.periodTimes[x.period]){x.start=data.periodTimes[x.period].start;x.end=data.periodTimes[x.period].end;}});
 let tab='journal',override='',autoSlot=null;
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function safeUrl(value){try{const u=new URL(value);return ['https:','http:'].includes(u.protocol)?u.href:'';}catch{return '';}}
@@ -98,12 +101,12 @@ function renderPeriodTimes(){
  $('periodTimes').innerHTML=Array.from({length:9},(_,i)=>{const n=i+1,v=data.periodTimes[n]||{};return '<div class="row" style="align-items:end"><div><label for="period-start-'+n+'">Période '+n+' — Début</label><input type="time" id="period-start-'+n+'" value="'+esc(v.start||'')+'"></div><div><label for="period-end-'+n+'">Période '+n+' — Fin</label><input type="time" id="period-end-'+n+'" value="'+esc(v.end||'')+'"></div></div>'}).join('');
 }
 function render(){autoSlot=determine();const old=$('manualClass').value;const all=classes();const selected=override||old;$('manualClass').innerHTML='<option value="">Automatique (horaire)</option>'+optionHTML(all,selected);$('manualClass').value=override||'';for(const id of ['linkClass','reportClass']){const prev=$(id).value;$(id).innerHTML='<option value="">Choisir une classe</option>'+optionHTML(all,prev);$(id).value=all.includes(prev)?prev:'';}
-updateHeader();renderPeriodTimes();document.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===tab?'true':'false'));renderView();
+updateHeader();renderPeriodTimes();$('timeDisclaimer').textContent=data.timeSource==='confirme'?'Horaires enregistrés par vous. La sélection automatique utilise les heures de votre iPad.':'Heures préremplies d’après un ancien document du Chêneux (à vérifier pour 2026-2027). La 9e période n’a pas d’heure confirmée.';document.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===tab?'true':'false'));renderView();
 $('slots').innerHTML=data.slots.length?'<h2 style="margin-top:20px">Cours enregistrés</h2>'+data.slots.slice().sort((a,b)=>a.day-b.day||a.start.localeCompare(b.start)).map(s=>'<div class="task flex"><span>'+days[s.day]+' '+(s.period?'P'+s.period+' · ':'')+(s.start&&s.end?esc(s.start)+'–'+esc(s.end):'heures non réglées')+' · <strong>'+esc(s.classe)+'</strong></span><button type="button" data-remove-slot="'+esc(s.id)+'">Supprimer</button></div>').join(''):'<p class="muted small">Aucun cours enregistré pour le moment.</p>';}
 $('savePeriodTimes').addEventListener('click',()=>{
  const times={};for(let n=1;n<=9;n++){const start=$('period-start-'+n).value,end=$('period-end-'+n).value;if(Boolean(start)!==Boolean(end)||(start&&start>=end)){alert('Vérifiez le début et la fin de la période '+n);return;}if(start)times[n]={start,end};}
  const sorted=Object.entries(times).sort((a,b)=>Number(a[0])-Number(b[0]));for(let i=1;i<sorted.length;i++)if(sorted[i][1].start<sorted[i-1][1].end){alert('Chevauchement entre les périodes '+sorted[i-1][0]+' et '+sorted[i][0]);return;}
- data.periodTimes=times;data.slots.forEach(x=>{if(x.period){x.start=times[x.period]?.start||'';x.end=times[x.period]?.end||'';}});save();alert('Heures enregistrées. La classe s’affichera automatiquement pendant chaque cours.');
+ data.periodTimes=times;data.timeSource='confirme';data.slots.forEach(x=>{if(x.period){x.start=times[x.period]?.start||'';x.end=times[x.period]?.end||'';}});save();alert('Heures enregistrées. La classe s’affichera automatiquement pendant chaque cours.');
 });
 $('importPhotoSchedule').addEventListener('click',()=>{if(!confirm('Remplacer uniquement l’horaire existant par celui de la photo ? Les liens et rapports seront conservés.'))return;data.slots=photoSlots();data.slots.forEach(x=>{x.start=data.periodTimes[x.period]?.start||'';x.end=data.periodTimes[x.period]?.end||''});override='';save();});
 document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>{tab=b.dataset.tab;render();}));
