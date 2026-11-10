@@ -24,6 +24,7 @@ summary{font-weight:700;cursor:pointer;padding:8px 0}details{margin-top:20px}hr{
 <header><strong>TOP'MATH · ADMINISTRATIF</strong><a href="enseignant.html">← Espace enseignant</a></header>
 <main>
 <section class="card hero" aria-live="polite">
+ <p class="notice small hidden" id="simulationNotice">Mode simulation : l’heure est fictive. Aucun changement de l’horloge de l’iPad.</p>
  <div class="flex"><div><h1>Mon cours actuel</h1><div id="time" class="muted"></div></div><span class="pill" id="status">Horaire à configurer</span></div>
  <h2 id="currentClass" style="font-size:1.65rem;margin:14px 0 5px">Aucun cours identifié</h2>
  <p id="currentSlot" class="muted">Ajoutez votre horaire pour afficher la classe automatiquement.</p>
@@ -72,6 +73,7 @@ summary{font-weight:700;cursor:pointer;padding:8px 0}details{margin-top:20px}hr{
 window.topmathSchedule=()=>data.slots;
 window.topmathCurrentSlot=()=>autoSlot;
 window.topmathAttendanceActive=()=>tab==='presences';
+window.topmathIsSimulation=()=>isSimulation;
 'use strict';
 const KEY='topmath-administratif-v1',days=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
 const PHOTO_COURS=[
@@ -87,16 +89,20 @@ if(data.slots.length===0)data.slots=photoSlots();
 if(!data.periodTimes||typeof data.periodTimes!=='object')data.periodTimes={};
 if(Object.keys(data.periodTimes).length===0){data.periodTimes=structuredClone(DEFAULT_TIMES);data.timeSource='provisoire';}
 data.slots.forEach(x=>{if(x.period&&data.periodTimes[x.period]){x.start=data.periodTimes[x.period].start;x.end=data.periodTimes[x.period].end;}});
+const searchParams=new URLSearchParams(location.search);
+const simulatedTime=searchParams.get('testTime');
+const simulatedDay=Number(searchParams.get('testDay'));
+const isSimulation=/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(simulatedTime||'')&&simulatedDay>=1&&simulatedDay<=5;
 let tab='journal',override='',autoSlot=null;
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function safeUrl(value){try{const u=new URL(value);return ['https:','http:'].includes(u.protocol)?u.href:'';}catch{return '';}}
 function save(){localStorage.setItem(KEY,JSON.stringify(data));render();}
 function classes(){return [...new Set([...data.slots.map(x=>x.classe),...Object.keys(data.links),...data.reports.map(x=>x.classe)])].filter(Boolean).sort((a,b)=>a.localeCompare(b,'fr'));}
 function optionHTML(items,selected=''){return items.map(s=>'<option value="'+esc(s)+'"'+(s===selected?' selected':'')+'>'+esc(s)+'</option>').join('');}
-function determine(){const d=new Date(),hm=d.toTimeString().slice(0,5),day=d.getDay();return data.slots.find(x=>Number(x.day)===day&&x.start&&x.end&&x.start<=hm&&hm<x.end)||null;}
+function determine(){const d=new Date(),hm=isSimulation?simulatedTime:d.toTimeString().slice(0,5),day=isSimulation?simulatedDay:d.getDay();return data.slots.find(x=>Number(x.day)===day&&x.start&&x.end&&x.start<=hm&&hm<x.end)||null;}
 function current(){return override||autoSlot?.classe||'';}
-function clock(){const now=new Date();$('time').textContent=new Intl.DateTimeFormat('fr-BE',{weekday:'long',hour:'2-digit',minute:'2-digit'}).format(now);const prev=autoSlot?.id;autoSlot=determine();if(prev!==autoSlot?.id)render();else updateHeader();}
-function updateHeader(){const c=current();$('currentClass').textContent=c||'Aucun cours identifié';$('status').textContent=override?'Consultation manuelle':autoSlot?'Cours en cours':'Aucun cours en cours';$('currentSlot').textContent=override?'Classe sélectionnée manuellement':autoSlot?autoSlot.start+' – '+autoSlot.end+' · '+days[autoSlot.day]:'Horaire non renseigné ou période libre';}
+function clock(){const now=new Date();$('time').textContent=isSimulation?days[simulatedDay]+' · '+simulatedTime+' (heure fictive)':new Intl.DateTimeFormat('fr-BE',{weekday:'long',hour:'2-digit',minute:'2-digit'}).format(now);const prev=autoSlot?.id;autoSlot=determine();if(prev!==autoSlot?.id)render();else updateHeader();}
+function updateHeader(){const c=current();$('simulationNotice').classList.toggle('hidden',!isSimulation);$('currentClass').textContent=c||'Aucun cours identifié';$('status').textContent=override?'Consultation manuelle':autoSlot?'Cours en cours':'Aucun cours en cours';$('currentSlot').textContent=override?'Classe sélectionnée manuellement':autoSlot?autoSlot.start+' – '+autoSlot.end+' · '+days[autoSlot.day]:'Horaire non renseigné ou période libre';}
 function external(url,label){const safe=safeUrl(url);return safe?'<a class="btn btn-primary" href="'+esc(safe)+'" target="_blank" rel="noopener noreferrer">'+esc(label)+' ↗</a>':'<p class="notice">Aucun lien configuré pour cette classe.</p>';}
 function renderView(){const c=current(),v=$('view');if(!c){v.innerHTML='<h2>Aucun cours sélectionné</h2><p class="muted">Ajoutez les cours dans la configuration, puis l’application reconnaîtra automatiquement la classe selon le jour et l’heure de l’iPad.</p>';return;}
 if(tab==='journal'){v.innerHTML='<h2>Journal de classe · '+esc(c)+'</h2><p class="muted">Accès direct à votre journal officiel pour cette classe.</p>'+external(data.links[c]?.journal,'Ouvrir le journal de classe');}
