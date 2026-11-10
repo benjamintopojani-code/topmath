@@ -235,7 +235,7 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
 .phase-import-row input{font-size:.87rem;padding:6px;min-width:0}
 .phase-import-row small{grid-column:2 / 4;color:#7b5a13}
 #schedulePhaseSave{width:100%;background:#e4f0ff;color:#164f88;border-color:#a9c8eb;margin-bottom:12px}
-</style></head><body>
+.catalog-fold{margin:12px 0;padding:12px;border:1px solid #d6e2ef;border-radius:10px}.catalog-fold>summary{font-weight:750;cursor:pointer;color:#1c4b80}.catalog-fold .row{grid-template-columns:1fr auto;align-items:end}.catalog-fold .row button{white-space:nowrap}#slotTimePreview{padding:10px 12px;background:#eef5ff;border-radius:8px;border-left:3px solid #2d70b7}@media(max-width:480px){.catalog-fold .row{grid-template-columns:1fr}}</style></head><body>
 <header><strong id="topbarTitle">TOP'MATH <span class="topbar-divider">·</span> ADMINISTRATIF</strong><div class="topbar-controls"><button id="topSettingsBtn" type="button" aria-label="Ouvrir les réglages" aria-expanded="false" title="Réglages">⚙️</button><a class="topbar-back" href="enseignant.html" aria-label="Retour à l’espace enseignant" title="Retour à l’espace enseignant">←</a></div></header>
 <main>
 <section id="adminClassBanner" class="admin-class-banner" aria-live="polite"><span class="admin-class-caption">CLASSE EN COURS</span><h1 id="adminClassTitle">Aucun cours en cours</h1><p id="adminClassPeriod">La classe s'affiche selon l'horaire.</p></section>
@@ -303,10 +303,14 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
  <details class="settings-group settings-fold settings-subsection"><summary><span class="settings-section-icon">04</span><span>Correction manuelle<small>Ajouter ou retirer un cours</small></span><span class="settings-chevron" aria-hidden="true">⌄</span></summary><div class="settings-subsection-body"><h3>Ajouter un cours</h3>
  <form id="slotForm">
   <div class="row"><div><label for="day">Jour</label><select id="day" required><option value="1">Lundi</option><option value="2">Mardi</option><option value="3">Mercredi</option><option value="4">Jeudi</option><option value="5">Vendredi</option></select></div>
-  <div><label for="slotClass">Classe</label><input id="slotClass" required maxlength="65" placeholder="Ex. : P2 TB"></div></div>
-  <div class="row"><div><label for="start">Début</label><input type="time" id="start" required></div><div><label for="end">Fin</label><input type="time" id="end" required></div></div>
-  <div class="actions"><button type="submit" class="btn-primary">Ajouter le cours</button></div>
- </form><div id="slots"></div></div></details>
+  <div><label for="slotPeriod">Période</label><select id="slotPeriod" required></select></div></div>
+  <label for="slotClass">Classe</label><select id="slotClass" required><option value="">Choisir une classe</option></select>
+  <label for="slotGroup">Grille horaire</label><select id="slotGroup" required><option value="first">1re · Observation · Phase 1</option><option value="upper">Phases 2 et 3</option></select>
+  <p id="slotTimePreview" class="muted small" role="status">Les heures sont calculées automatiquement selon le groupe choisi.</p>
+  <div class="actions"><button type="submit" class="btn-primary">Enregistrer ce cours</button></div>
+ </form>
+ <details class="catalog-fold"><summary>Gérer ma liste de classes</summary><p class="muted small">La liste sera complétée quand tu fourniras toutes les classes de l’école. Ajout possible ici sans modifier les horaires.</p><form id="classCatalogForm"><label for="classCatalogInput">Ajouter une classe</label><div class="row"><input id="classCatalogInput" required maxlength="65" placeholder="Ex. : P2 HORT"><button type="submit">Ajouter à la liste</button></div></form></details>
+ <div id="slots"></div></div></details>
  <details class="settings-legacy-links" hidden><summary><span class="settings-section-icon">05</span><span>Autres classes<small>Liens par classe</small></span><span class="settings-chevron" aria-hidden="true">⌄</span></summary><div class="settings-subsection-body">
  <form id="linkForm">
   <label for="linkClass">Classe</label><select id="linkClass" required></select>
@@ -354,9 +358,10 @@ const groupForSlot=x=>Number(x.day)===3?'first':classGroup(x.classe);
 const slotTimes=x=>x.period?data.periodTimesByGroup?.[groupForSlot(x)]?.[x.period]||null:null;
 function applyPeriodTimings(){data.slots.forEach(x=>{if(!x.period)return;const v=slotTimes(x);x.start=v?.start||'';x.end=v?.end||'';});}
 let editingPeriodGroup='first';
-const defaultData=()=>({slots:photoSlots(),links:{},reports:[],periodTimes:structuredClone(FIRST_GRID),periodTimesByGroup:structuredClone(DEFAULT_GROUP_TIMES),classScheduleGroups:{},timeSource:'photo-ecole'});
+const defaultData=()=>({slots:photoSlots(),links:{},reports:[],classCatalog:[],periodTimes:structuredClone(FIRST_GRID),periodTimesByGroup:structuredClone(DEFAULT_GROUP_TIMES),classScheduleGroups:{},timeSource:'photo-ecole'});
 let data;try{data=JSON.parse(localStorage.getItem(KEY))||defaultData();if(!Array.isArray(data.slots)||!Array.isArray(data.reports)||!data.links||typeof data.links!=='object')throw Error('Format incorrect');}catch{data=defaultData();}
 if(data.slots.length===0)data.slots=photoSlots();
+if(!Array.isArray(data.classCatalog))data.classCatalog=[];
 if(!data.periodTimes||typeof data.periodTimes!=='object')data.periodTimes={};
 if(!data.classScheduleGroups||typeof data.classScheduleGroups!=='object')data.classScheduleGroups={};
 if(!data.periodTimesByGroup||!data.periodTimesByGroup.first||!data.periodTimesByGroup.upper){
@@ -375,7 +380,7 @@ let tab=pagePanel||'journal',override='',autoSlot=null;
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function safeUrl(value){try{const u=new URL(value);return ['https:','http:'].includes(u.protocol)?u.href:'';}catch{return '';}}
 function save(){localStorage.setItem(KEY,JSON.stringify(data));render();}
-function classes(){return [...new Set([...data.slots.map(x=>x.classe),...Object.keys(data.links),...data.reports.map(x=>x.classe)])].filter(Boolean).sort((a,b)=>a.localeCompare(b,'fr'));}
+function classes(){return [...new Set([...data.classCatalog,...data.slots.map(x=>x.classe),...Object.keys(data.links),...data.reports.map(x=>x.classe)])].filter(Boolean).sort((a,b)=>a.localeCompare(b,'fr'));}
 function optionHTML(items,selected=''){return items.map(s=>'<option value="'+esc(s)+'"'+(s===selected?' selected':'')+'>'+esc(s)+'</option>').join('');}
 function determine(){const d=new Date(),hm=isSimulation?simulatedTime:d.toTimeString().slice(0,5),day=isSimulation?simulatedDay:d.getDay();return data.slots.find(x=>Number(x.day)===day&&x.start&&x.end&&x.start<=hm&&hm<x.end)||null;}
 function current(){return override||autoSlot?.classe||'';}
@@ -434,7 +439,7 @@ function renderPeriodTimes(){
   return '<div class="period-edit-row"><strong>Période '+n+'</strong>'+(paused?'<span class="period-break">Pause de midi · Pas de cours</span>':'<label>Début<input type="time" id="period-start-'+n+'" value="'+esc(v.start||'')+'"></label><label>Fin<input type="time" id="period-end-'+n+'" value="'+esc(v.end||'')+'"></label>')+'</div>';
  }).join('');
 }
-function render(){autoSlot=determine();const old=$('manualClass').value;const all=classes();const selected=override||old;$('manualClass').innerHTML='<option value="">Automatique (horaire)</option>'+optionHTML(all,selected);$('manualClass').value=override||'';for(const id of ['linkClass','reportClass']){const prev=$(id).value;$(id).innerHTML='<option value="">Choisir une classe</option>'+optionHTML(all,prev);$(id).value=all.includes(prev)?prev:'';}
+function render(){autoSlot=determine();const old=$('manualClass').value;const all=classes();const previousClass=$('slotClass').value;$('slotClass').innerHTML='<option value="">Choisir une classe</option>'+optionHTML(all,previousClass);$('slotClass').value=all.includes(previousClass)?previousClass:'';if(!$('slotPeriod').options.length){$('slotPeriod').innerHTML=Array.from({length:9},(_,i)=>'<option value="'+(i+1)+'">Période '+(i+1)+'</option>').join('');}const selected=override||old;$('manualClass').innerHTML='<option value="">Automatique (horaire)</option>'+optionHTML(all,selected);$('manualClass').value=override||'';for(const id of ['linkClass','reportClass']){const prev=$(id).value;$(id).innerHTML='<option value="">Choisir une classe</option>'+optionHTML(all,prev);$(id).value=all.includes(prev)?prev:'';}
 updateHeader();renderPeriodTimes();if($('classSettings')&&!$('classSettings').hidden)syncClassReportForm(current());$('timeDisclaimer').textContent=data.timeSource==='confirme'?'Horaires personnalisés enregistrés. Le mercredi, horaire 1re / Observation / P1 pour tous.':'Horaires tirés de la photo fournie. Les périodes et les pauses sont différentes selon le groupe ; mercredi : horaire 1re / Observation / P1 pour tous.';document.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===tab?'true':'false'));renderView();
 $('slots').innerHTML=data.slots.length?'<h2 style="margin-top:20px">Cours enregistrés</h2>'+data.slots.slice().sort((a,b)=>a.day-b.day||a.start.localeCompare(b.start)).map(s=>'<div class="task flex"><span>'+days[s.day]+' '+(s.period?'P'+s.period+' · ':'')+(s.start&&s.end?esc(s.start)+'–'+esc(s.end):'heures non réglées')+' · <strong>'+esc(s.classe)+'</strong></span><button type="button" data-remove-slot="'+esc(s.id)+'">Supprimer</button></div>').join(''):'<p class="muted small">Aucun cours enregistré pour le moment.</p>';}
 $('savePeriodTimes').addEventListener('click',()=>{
@@ -494,7 +499,40 @@ window.TopMathScheduleImport?.init({applyPhase:prepared=>{
  }
  applyPeriodTimings();override='';save();
 }});
-$('slotForm').addEventListener('submit',e=>{e.preventDefault();const start=$('start').value,end=$('end').value,day=Number($('day').value),classe=$('slotClass').value.trim();if(start>=end){alert('La fin doit être après le début.');return;}if(data.slots.some(x=>x.day===day&&start<x.end&&x.start<end)){alert('Ce créneau chevauche un cours existant.');return;}data.slots.push({id:crypto.randomUUID(),day,start,end,classe});e.target.reset();save();});
+function previewManualSlot(){
+ const day=Number($('day').value),period=Number($('slotPeriod').value),group=day===3?'first':$('slotGroup').value;
+ const time=data.periodTimesByGroup[group]?.[period];
+ $('slotGroup').disabled=day===3;
+ $('slotTimePreview').textContent=day===3?'Le mercredi, l’horaire 1re / Observation / Phase 1 est obligatoire. '+(time?time.start+' – '+time.end:'Aucun cours pour cette période.'):(time?'Heures appliquées automatiquement : '+time.start+' – '+time.end:'Cette période est une pause ou n’a pas d’horaire dans la grille choisie.');
+}
+$('day').addEventListener('change',previewManualSlot);
+$('slotPeriod').addEventListener('change',previewManualSlot);
+$('slotGroup').addEventListener('change',previewManualSlot);
+$('slotClass').addEventListener('change',()=>{
+ const c=$('slotClass').value;if(c)$('slotGroup').value=classGroup(c);
+ previewManualSlot();
+});
+$('classCatalogForm').addEventListener('submit',e=>{
+ e.preventDefault();const name=$('classCatalogInput').value.trim().replace(/\\s+/g,' ');
+ if(!name)return;
+ if(!classes().some(c=>c.toLocaleLowerCase('fr')===name.toLocaleLowerCase('fr')))data.classCatalog.push(name);
+ $('classCatalogInput').value='';save();$('slotClass').value=name;
+ previewManualSlot();
+});
+$('slotForm').addEventListener('submit',e=>{
+ e.preventDefault();
+ const day=Number($('day').value),period=Number($('slotPeriod').value),classe=$('slotClass').value;
+ const group=day===3?'first':$('slotGroup').value;
+ if(!classe||!Number.isInteger(period)||period<1||period>9||day<1||day>5)return;
+ const time=data.periodTimesByGroup[group]?.[period];
+ if(!time?.start||!time?.end){alert('Période sans cours dans cette grille. Choisis une autre période ou un autre groupe.');return;}
+ const existing=data.slots.find(x=>Number(x.day)===day&&Number(x.period)===period);
+ if(existing&&!confirm('Remplacer '+existing.classe+' par '+classe+' pour '+days[day]+' en période '+period+' ?'))return;
+ if(existing)data.slots=data.slots.filter(x=>x!==existing);
+ data.classScheduleGroups[classe]=$('slotGroup').value;
+ data.slots.push({id:crypto.randomUUID(),day,period,classe,start:time.start,end:time.end});
+ applyPeriodTimings();save();previewManualSlot();
+});
 $('linkClass').addEventListener('change',()=>{const o=data.links[$('linkClass').value]||{};$('journalUrl').value=o.journal||'';$('presenceUrl').value=o.presence||'';});
 $('linkForm').addEventListener('submit',e=>{e.preventDefault();const c=$('linkClass').value;if(!c)return;const journal=$('journalUrl').value.trim(),presence=$('presenceUrl').value.trim();if((journal&&!safeUrl(journal))||(presence&&!safeUrl(presence))){alert('Lien HTTP ou HTTPS requis.');return;}data.links[c]={journal,presence};save();});
 $('student').addEventListener('change',()=>{const c=current(),name=$('student').value.trim();const matches=data.reports.filter(r=>r.classe===c&&r.student===name);if(matches.length===1){$('reportTitle').value=matches[0].title;$('reportUrl').value=matches[0].url;}else{$('reportTitle').value='Fiche de comportement';$('reportUrl').value='';}});
@@ -536,5 +574,5 @@ $('topSettingsBtn').addEventListener('click',()=>{
  }
 });
 if(pagePanel){const title=({journal:'Journal de classe',presences:'Présences',rapports:'Rapports'})[pagePanel];document.getElementById('topbarTitle').textContent='TOP’MATH · '+title.toUpperCase();document.querySelector('header a').setAttribute('aria-label','Retour à Administratif');document.querySelector('header a').title='Retour à Administratif';document.querySelector('header a').target='_top';document.querySelector('header a').href='administratif.html'+(isSimulation?'?testDay='+simulatedDay+'&testTime='+encodeURIComponent(simulatedTime):'');}
-render();clock();setInterval(clock,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)clock();});
+render();previewManualSlot();clock();setInterval(clock,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)clock();});
 </script></body></html>
