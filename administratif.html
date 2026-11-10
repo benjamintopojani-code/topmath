@@ -58,7 +58,7 @@ summary{font-weight:700;cursor:pointer;padding:8px 0}details{margin-top:20px}hr{
  <hr><h2>3. Lier un rapport à un élève</h2>
  <form id="reportForm">
   <label for="reportClass">Classe</label><select id="reportClass" required></select>
-  <label for="student">Élève concerné</label><input id="student" maxlength="100" required placeholder="Nom de l'élève">
+  <label for="student">Élève concerné</label><input id="student" list="studentOptions" maxlength="100" required placeholder="Nom de l'élève"><datalist id="studentOptions"></datalist><p class="muted small">Les élèves de la classe liés dans « Présences » seront proposés automatiquement.</p>
   <label for="reportTitle">Intitulé du suivi</label><input id="reportTitle" maxlength="120" required placeholder="Ex. : observation du comportement">
   <label for="reportUrl">Lien direct du document en ligne</label><input id="reportUrl" type="url" placeholder="https://..." required>
   <div class="actions"><button type="submit" class="btn-primary">Ajouter le rapport</button></div>
@@ -71,6 +71,7 @@ summary{font-weight:700;cursor:pointer;padding:8px 0}details{margin-top:20px}hr{
 <script>
 window.topmathSchedule=()=>data.slots;
 window.topmathCurrentSlot=()=>autoSlot;
+window.topmathAttendanceActive=()=>tab==='presences';
 'use strict';
 const KEY='topmath-administratif-v1',days=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
 const PHOTO_COURS=[
@@ -105,7 +106,7 @@ function renderPeriodTimes(){
  $('periodTimes').innerHTML=Array.from({length:9},(_,i)=>{const n=i+1,v=data.periodTimes[n]||{};return '<div class="row" style="align-items:end"><div><label for="period-start-'+n+'">Période '+n+' — Début</label><input type="time" id="period-start-'+n+'" value="'+esc(v.start||'')+'"></div><div><label for="period-end-'+n+'">Période '+n+' — Fin</label><input type="time" id="period-end-'+n+'" value="'+esc(v.end||'')+'"></div></div>'}).join('');
 }
 function render(){autoSlot=determine();const old=$('manualClass').value;const all=classes();const selected=override||old;$('manualClass').innerHTML='<option value="">Automatique (horaire)</option>'+optionHTML(all,selected);$('manualClass').value=override||'';for(const id of ['linkClass','reportClass']){const prev=$(id).value;$(id).innerHTML='<option value="">Choisir une classe</option>'+optionHTML(all,prev);$(id).value=all.includes(prev)?prev:'';}
-updateHeader();renderPeriodTimes();$('timeDisclaimer').textContent=data.timeSource==='confirme'?'Horaires enregistrés par vous. La sélection automatique utilise les heures de votre iPad.':'Heures préremplies d’après un ancien document du Chêneux (à vérifier pour 2026-2027). La 9e période n’a pas d’heure confirmée.';document.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===tab?'true':'false'));renderView();
+updateHeader();renderPeriodTimes();if($('studentOptions'))$('studentOptions').innerHTML=(window.TopMathAttendance?.studentsForClass($('reportClass').value)||[]).map(n=>'<option value="'+esc(n)+'"></option>').join('');$('timeDisclaimer').textContent=data.timeSource==='confirme'?'Horaires enregistrés par vous. La sélection automatique utilise les heures de votre iPad.':'Heures préremplies d’après un ancien document du Chêneux (à vérifier pour 2026-2027). La 9e période n’a pas d’heure confirmée.';document.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===tab?'true':'false'));renderView();
 $('slots').innerHTML=data.slots.length?'<h2 style="margin-top:20px">Cours enregistrés</h2>'+data.slots.slice().sort((a,b)=>a.day-b.day||a.start.localeCompare(b.start)).map(s=>'<div class="task flex"><span>'+days[s.day]+' '+(s.period?'P'+s.period+' · ':'')+(s.start&&s.end?esc(s.start)+'–'+esc(s.end):'heures non réglées')+' · <strong>'+esc(s.classe)+'</strong></span><button type="button" data-remove-slot="'+esc(s.id)+'">Supprimer</button></div>').join(''):'<p class="muted small">Aucun cours enregistré pour le moment.</p>';}
 $('savePeriodTimes').addEventListener('click',()=>{
  const times={};for(let n=1;n<=9;n++){const start=$('period-start-'+n).value,end=$('period-end-'+n).value;if(Boolean(start)!==Boolean(end)||(start&&start>=end)){alert('Vérifiez le début et la fin de la période '+n);return;}if(start)times[n]={start,end};}
@@ -119,6 +120,7 @@ $('auto').addEventListener('click',()=>{override='';render();});
 $('slotForm').addEventListener('submit',e=>{e.preventDefault();const start=$('start').value,end=$('end').value,day=Number($('day').value),classe=$('slotClass').value.trim();if(start>=end){alert('La fin doit être après le début.');return;}if(data.slots.some(x=>x.day===day&&start<x.end&&x.start<end)){alert('Ce créneau chevauche un cours existant.');return;}data.slots.push({id:crypto.randomUUID(),day,start,end,classe});e.target.reset();save();});
 $('linkClass').addEventListener('change',()=>{const o=data.links[$('linkClass').value]||{};$('journalUrl').value=o.journal||'';$('presenceUrl').value=o.presence||'';});
 $('linkForm').addEventListener('submit',e=>{e.preventDefault();const c=$('linkClass').value;if(!c)return;const journal=$('journalUrl').value.trim(),presence=$('presenceUrl').value.trim();if((journal&&!safeUrl(journal))||(presence&&!safeUrl(presence))){alert('Lien HTTP ou HTTPS requis.');return;}data.links[c]={journal,presence};save();});
+$('reportClass').addEventListener('change',()=>{const c=$('reportClass').value;$('studentOptions').innerHTML=(window.TopMathAttendance?.studentsForClass(c)||[]).map(n=>'<option value="'+esc(n)+'"></option>').join('');});
 $('reportForm').addEventListener('submit',e=>{e.preventDefault();const url=safeUrl($('reportUrl').value.trim());if(!url){alert('Lien du formulaire invalide.');return;}data.reports.push({id:crypto.randomUUID(),classe:$('reportClass').value,student:$('student').value.trim(),title:$('reportTitle').value.trim(),url,done:false});e.target.reset();save();});
 document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.toggle){const r=data.reports.find(x=>x.id===b.dataset.toggle);if(r){r.done=!r.done;save();}}if(b.dataset.removeReport){if(confirm('Retirer ce suivi de l’affichage ?')){data.reports=data.reports.filter(x=>x.id!==b.dataset.removeReport);save();}}if(b.dataset.removeSlot){if(confirm('Supprimer ce cours ?')){data.slots=data.slots.filter(x=>x.id!==b.dataset.removeSlot);save();}}});
 $('exportConfig').addEventListener('click',()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='topmath-administratif-sauvegarde.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);});
