@@ -245,13 +245,29 @@ const PHOTO_COURS=[
 [4,1,'OBS B'],[4,2,'3 MAC / 3 AB'],[4,3,'2 TB'],[4,4,'OBS B'],[4,5,'2 TB'],
 [5,1,'OBS B'],[5,2,'2 HORT'],[5,3,'DLC'],[5,4,'2 HORT'],[5,5,'2 TB'],[5,7,'2 TB'],[5,8,'OBS E'],[5,9,'OBS E']];
 const photoSlots=()=>PHOTO_COURS.map(([day,period,classe])=>({id:'photo-'+day+'-'+period,day,period,classe,start:'',end:''}));
-const DEFAULT_TIMES={1:{start:'08:25',end:'09:15'},2:{start:'09:15',end:'10:05'},3:{start:'10:15',end:'11:05'},4:{start:'11:05',end:'11:55'},5:{start:'12:40',end:'13:25'},6:{start:'13:25',end:'14:15'},7:{start:'14:25',end:'15:15'},8:{start:'15:15',end:'16:00'}};
-const defaultData=()=>({slots:photoSlots(),links:{},reports:[],periodTimes:structuredClone(DEFAULT_TIMES),timeSource:'provisoire'});
+// Horaires officiels fournis sur la photo de l'école.
+const FIRST_GRID={1:{start:'08:25',end:'09:15'},2:{start:'09:15',end:'10:05'},3:{start:'10:15',end:'11:00'},4:{start:'11:00',end:'11:55'},6:{start:'12:40',end:'13:25'},7:{start:'13:25',end:'14:15'},8:{start:'14:25',end:'15:10'},9:{start:'15:10',end:'16:00'}};
+const UPPER_GRID={1:{start:'08:25',end:'09:15'},2:{start:'09:15',end:'10:05'},3:{start:'10:05',end:'11:00'},4:{start:'11:10',end:'11:55'},5:{start:'11:55',end:'12:40'},7:{start:'13:25',end:'14:15'},8:{start:'14:15',end:'15:10'},9:{start:'15:20',end:'16:00'}};
+const DEFAULT_TIMES=FIRST_GRID;
+const DEFAULT_GROUP_TIMES={first:FIRST_GRID,upper:UPPER_GRID};
+const inferGroup=classe=>{const c=String(classe||'').toUpperCase().trim();if(/^(?:OBS|OBSERVATION|1(?:ERE|ÈRE)?\\b|P1\\b|F1\\b|F2\\b)/.test(c))return 'first';if(/^(?:P?2\\b|P?3\\b|PHASE\\s*[23]\\b)/.test(c))return 'upper';return 'first';};
+const classGroup=classe=>data.classScheduleGroups?.[classe]||inferGroup(classe);
+const groupForSlot=x=>Number(x.day)===3?'first':classGroup(x.classe);
+const slotTimes=x=>x.period?data.periodTimesByGroup?.[groupForSlot(x)]?.[x.period]||null:null;
+function applyPeriodTimings(){data.slots.forEach(x=>{if(!x.period)return;const v=slotTimes(x);x.start=v?.start||'';x.end=v?.end||'';});}
+let editingPeriodGroup='first';
+const defaultData=()=>({slots:photoSlots(),links:{},reports:[],periodTimes:structuredClone(FIRST_GRID),periodTimesByGroup:structuredClone(DEFAULT_GROUP_TIMES),classScheduleGroups:{},timeSource:'photo-ecole'});
 let data;try{data=JSON.parse(localStorage.getItem(KEY))||defaultData();if(!Array.isArray(data.slots)||!Array.isArray(data.reports)||!data.links||typeof data.links!=='object')throw Error('Format incorrect');}catch{data=defaultData();}
 if(data.slots.length===0)data.slots=photoSlots();
 if(!data.periodTimes||typeof data.periodTimes!=='object')data.periodTimes={};
-if(Object.keys(data.periodTimes).length===0){data.periodTimes=structuredClone(DEFAULT_TIMES);data.timeSource='provisoire';}
-data.slots.forEach(x=>{if(x.period&&data.periodTimes[x.period]){x.start=data.periodTimes[x.period].start;x.end=data.periodTimes[x.period].end;}});
+if(!data.classScheduleGroups||typeof data.classScheduleGroups!=='object')data.classScheduleGroups={};
+if(!data.periodTimesByGroup||!data.periodTimesByGroup.first||!data.periodTimesByGroup.upper){
+ data.previousPeriodTimes=structuredClone(data.periodTimes);
+ data.periodTimesByGroup=structuredClone(DEFAULT_GROUP_TIMES);
+ data.timeSource='photo-ecole';
+}
+data.periodTimes=data.periodTimesByGroup.first;
+applyPeriodTimings();
 const searchParams=new URLSearchParams(location.search);
 const pagePanel=['journal','presences','rapports'].includes(searchParams.get('panel'))?searchParams.get('panel'):null;
 const simulatedTime=searchParams.get('testTime');
