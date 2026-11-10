@@ -307,6 +307,15 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
 .attendance-backup-tools{margin:18px 0 0;border-top:1px solid #e4ebf5;padding-top:12px}
 .attendance-backup-tools>summary{font-size:.82rem;color:#5a718b;cursor:pointer}
 .attendance-backup-tools .actions{margin-top:12px}
+
+/* Export hebdomadaire du journal, visible sans ouvrir les paramètres. */
+.journal-week-export{display:flex;flex-direction:column;gap:10px;border:1px solid #c9dbf0;background:#f4f9ff;padding:13px;border-radius:12px;margin:1px 0 17px}
+.journal-week-controls{display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap}
+.journal-week-controls label{display:flex;flex-direction:column;gap:4px;flex:1;min-width:175px;font-size:.8rem;color:#395e84;font-weight:750}
+.journal-week-controls input[type=date]{height:42px;min-height:42px;width:100%;font-size:.95rem;background:#fff;border:1px solid #afc5e4;border-radius:8px;padding:8px}
+.journal-week-controls button{min-width:44px;min-height:42px;border-radius:9px;background:#fff;border:1px solid #adc8e9;color:#24588c;font-size:1.15rem;font-weight:800;cursor:pointer}
+.journal-week-export #journalWeekPdf{width:100%;min-height:45px;font-size:.93rem}
+@media(max-width:450px){.journal-week-export{padding:10px}.journal-week-controls label{min-width:145px}.journal-week-export #journalWeekPdf{font-size:.86rem}}
 </style></head><body>
 <header><strong id="topbarTitle">TOP'MATH <span class="topbar-divider">·</span> ADMINISTRATIF</strong><div class="topbar-controls"><button id="topSettingsBtn" type="button" aria-label="Ouvrir les réglages" aria-expanded="false" title="Réglages">⚙️</button><a class="topbar-back" href="enseignant.html" aria-label="Retour à l’espace enseignant" title="Retour à l’espace enseignant">←</a></div></header>
 <main>
@@ -377,6 +386,7 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
 </main>
 <script src="presences-pdf.js"></script>
 <script src="presences.js"></script>
+<script src="journal-pdf.js"></script>
 <script src="journal.js"></script>
 <script>
 window.topmathSchedule=()=>data.slots;
