@@ -70,48 +70,65 @@ function makePdf(entries,start,end){
   objects.push('<< /Length '+stream.length+' >>\nstream\n'+stream+'endstream');
   ops=[];pageNo++;
  }
- // Page de garde : identité Top'Math lumineuse, sans surcharge.
+ // Page de garde inspirée de la maquette validée : bandeau bleu ondulé,
+ // deux informations essentielles, illustration scolaire et beaucoup de blanc.
  rect(0,0,W,H,[.985,.991,1]);
- rect(0,0,W,331,NAVY);
- // Bandeaux géométriques superposés, sobres et dynamiques.
- rounded(-58,229,410,108,34,[.10,.36,.67]);
- rounded(277,254,405,98,34,[.09,.53,.75]);
- rounded(374,295,245,29,13,[.29,.75,.83]);
- rounded(M,32,W-2*M,179,22,[.115,.265,.49],[.23,.40,.62],1);
- rounded(M+20,50,89,29,14,[.16,.64,.85]);
- text(M+33,69,"TOP'MATH",13,true,WHITE);
- text(M+20,113,'JOURNAL',32,true,WHITE);
- text(M+20,152,'DE CLASSE',32,true,WHITE);
- rect(M+20,174,170,4,[.28,.79,.9]);
- // Symboles mathématiques discrets dans un coin.
- rounded(RIGHT-108,67,74,74,15,[.18,.37,.60]);
- text(RIGHT-92,114,'x + y',19,true,WHITE);
- rounded(RIGHT-91,153,72,25,12,[.23,.62,.66]);
- text(RIGHT-78,170,'2026',11,true,WHITE);
- rounded(M+12,359,W-2*M-24,88,16,[.93,.965,1],[.75,.85,.96],.8);
- rounded(M+28,378,57,49,12,[.78,.87,.99]);
- text(M+38,410,'01/09',11,true,NAVY);
- text(M+104,391,'ANNEE SCOLAIRE',10,true,[.24,.40,.60]);
- text(M+104,420,start.slice(0,4)+' - '+(Number(start.slice(0,4))+1),23,true,NAVY);
- rounded(M+12,465,W-2*M-24,95,16,[.96,.975,.97],[.76,.87,.83],.8);
- rounded(M+28,485,57,53,12,[.77,.91,.86]);
- text(M+46,517,'E',23,true,[.16,.49,.39]);
- text(M+104,494,'ETABLISSEMENT',10,true,[.24,.40,.60]);
- text(M+104,523,'E.E.S.S.C.F. Le Chêneux',15,true,NAVY);
- text(M+104,540,'Amay',12,false,[.24,.40,.60]);
- // Pastilles de couleurs, comme les cartes des cours.
- rounded(M+20,592,95,29,14,[.88,.94,1],[.72,.84,.97]);
- text(M+36,610,'Maths',11,true,[.13,.38,.7]);
- rounded(M+127,592,115,29,14,[.90,.965,.93],[.75,.87,.78]);
- text(M+142,610,'Activités',11,true,[.16,.48,.32]);
- rounded(M+254,592,104,29,14,[1,.945,.89],[.96,.84,.71]);
- text(M+266,610,'Suivi',11,true,[.64,.35,.14]);
- text(M+20,666,'Un journal clair, jour après jour.',15,true,NAVY);
- text(M+20,691,'Cours et apprentissages classés par date et par période.',10,false,MUTED);
- text(M+20,714,'Du '+fmt(start)+' au '+fmt(end),10,false,MUTED);
- line(M,766,RIGHT,766,[.71,.81,.92]);
- text(M,789,"Top'Math  |  Journal de classe",8,false,MUTED);
- text(RIGHT-112,789,'Page de garde',8,false,MUTED);
+ const wave=(path,c)=>{fill(c);ops.push(path+' f');};
+ // Fond principal et courbes qui donnent l'esprit Top'Math.
+ rect(0,0,W,336,[.09,.19,.35]);
+ wave('0 '+(H-321)+' m 95 '+(H-283)+' 160 '+(H-338)+' 266 '+(H-308)+' c 390 '+(H-278)+' 477 '+(H-252)+' '+W+' '+(H-294)+' l '+W+' '+H+' l 0 '+H+' l h',[.13,.29,.50]);
+ wave('0 '+(H-364)+' m 101 '+(H-318)+' 194 '+(H-390)+' 303 '+(H-339)+' c 409 '+(H-296)+' 492 '+(H-314)+' '+W+' '+(H-283)+' l '+W+' '+(H-336)+' l 0 '+(H-336)+' l h',[.44,.64,.86]);
+ wave('0 '+(H-377)+' m 95 '+(H-337)+' 203 '+(H-391)+' 325 '+(H-352)+' c 435 '+(H-319)+' 518 '+(H-351)+' '+W+' '+(H-328)+' l '+W+' '+(H-336)+' l 0 '+(H-336)+' l h',[.83,.90,.98]);
+ // Logo mathématique discret en haut, sans occuper la place du titre.
+ rounded(M+18,30,80,81,15,[.29,.48,.72],[.60,.75,.92],1.1);
+ rounded(M+35,44,46,13,4,[.89,.95,1]);
+ for(let j=0;j<3;j++)for(let k=0;k<3;k++)rounded(M+35+k*16,65+j*13,10,8,2,[.86,.93,1]);
+ text(RIGHT-76,83,'x²',30,true,[.89,.95,1]);
+ text(M+18,178,"Top'Math",36,true,WHITE);
+ text(M+18,227,'Journal de classe',31,true,WHITE);
+ // Soulignement léger façon carnet.
+ line(M+18,246,M+280,246,[.85,.93,1]);
+ // Informations essentielles sous le bandeau, en deux cartes arrondies.
+ rounded(M+25,406,W-2*M-50,78,20,[.88,.935,1],[.79,.86,.97],.8);
+ rounded(M+41,420,63,50,12,[.78,.87,.98]);
+ // Calendrier dessiné.
+ rounded(M+61,430,23,26,3,WHITE,[.23,.40,.65],1);
+ rect(M+61,436,23,5,[.29,.51,.80]);
+ line(M+67,426,M+67,433,[.23,.40,.65]);
+ line(M+78,426,M+78,433,[.23,.40,.65]);
+ text(M+119,434,'Année scolaire',11,false,NAVY);
+ text(M+119,463,start.slice(0,4)+'–'+(Number(start.slice(0,4))+1),23,true,NAVY);
+ rounded(M+25,503,W-2*M-50,80,20,[.93,.93,.99],[.84,.82,.95],.8);
+ rounded(M+41,516,63,52,12,[.84,.86,.97]);
+ // École minimaliste dans l'icône.
+ rect(M+55,535,35,24,WHITE);
+ line(M+54,535,M+72,523,[.23,.40,.65]);
+ line(M+72,523,M+91,535,[.23,.40,.65]);
+ rounded(M+68,547,10,12,2,[.29,.51,.80]);
+ text(M+119,532,'Établissement',11,false,NAVY);
+ text(M+119,557,'E.E.S.S.C.F. Le Chêneux - Amay',13,true,NAVY);
+ // Illustration scolaire : des livres, un compas et une équerre.
+ // Tons clairs pour rester sobre sur papier.
+ wave((M+6)+' '+(H-755)+' m '+(M+90)+' '+(H-672)+' '+(M+170)+' '+(H-755)+' '+(M+260)+' '+(H-700)+' c '+(M+350)+' '+(H-641)+' '+(RIGHT-15)+' '+(H-690)+' '+RIGHT+' '+(H-758)+' l '+RIGHT+' '+(H-791)+' l '+(M+6)+' '+(H-791)+' l h',[.92,.955,1]);
+ // Équerre à gauche.
+ wave((M+30)+' '+(H-758)+' m '+(M+148)+' '+(H-758)+' l '+(M+121)+' '+(H-670)+' l h',[.61,.77,.94]);
+ wave((M+58)+' '+(H-745)+' m '+(M+129)+' '+(H-745)+' l '+(M+113)+' '+(H-692)+' l h',[.985,.991,1]);
+ // Livres superposés, bords arrondis, tranches claires.
+ rounded(M+177,725,194,29,8,[.17,.38,.69],[.10,.24,.48],1);
+ rounded(M+188,727,171,21,5,[.91,.96,1],[.62,.77,.92],.8);
+ rounded(M+194,697,194,33,7,[.25,.53,.83],[.12,.31,.59],1);
+ rounded(M+206,700,166,22,5,[.95,.98,1],[.70,.83,.95],.8);
+ rounded(M+191,664,179,38,8,[.12,.30,.59],[.10,.23,.43],1);
+ rounded(M+202,667,156,26,5,[.85,.93,1],[.59,.73,.88],.8);
+ text(M+264,687,'M',16,true,[.28,.52,.82]);
+ // Compas à droite.
+ line(RIGHT-58,649,RIGHT-111,758,[.22,.43,.72]);
+ line(RIGHT-58,649,RIGHT-19,760,[.22,.43,.72]);
+ rounded(RIGHT-68,638,21,22,11,[.24,.50,.80],[.11,.28,.50],1);
+ rounded(RIGHT-62,643,8,9,4,[.80,.91,1]);
+ line(M+15,779,RIGHT-15,779,[.77,.85,.94]);
+ text(M+20,801,"Top'Math - Journal de classe",8,false,MUTED);
+ text(RIGHT-110,801,'Page de garde',8,false,MUTED);
  emit();
  const topPage=()=>{
   rounded(M,27,W-2*M,53,10,NAVY);
