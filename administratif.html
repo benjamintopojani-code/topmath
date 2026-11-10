@@ -255,7 +255,7 @@ function optionHTML(items,selected=''){return items.map(s=>'<option value="'+esc
 function determine(){const d=new Date(),hm=isSimulation?simulatedTime:d.toTimeString().slice(0,5),day=isSimulation?simulatedDay:d.getDay();return data.slots.find(x=>Number(x.day)===day&&x.start&&x.end&&x.start<=hm&&hm<x.end)||null;}
 function current(){return override||autoSlot?.classe||'';}
 function populateClassSettings(){
- const c=current(),choices=classes();
+ const c=current(),choices=classes();$('classSettings').dataset.currentClasse=c;
  $('settingsClassTitle').textContent=c||'Aucune classe en cours';
  $('settingsClassChoice').innerHTML='<option value="">Classe automatique (horaire)</option>'+optionHTML(choices,c);
  $('settingsClassChoice').value=override||'';
@@ -277,7 +277,7 @@ function setClassSettingsOpen(open){
  if(open){populateClassSettings();panel.scrollIntoView({block:'nearest',behavior:'smooth'});}
 }
 function clock(){const now=new Date();$('time').textContent=isSimulation?days[simulatedDay]+' · '+simulatedTime+' (heure fictive)':new Intl.DateTimeFormat('fr-BE',{weekday:'long',hour:'2-digit',minute:'2-digit'}).format(now);const prev=autoSlot?.id;autoSlot=determine();if(prev!==autoSlot?.id)render();else updateHeader();}
-function updateHeader(){const c=current();if(!$('classSettings').hidden)populateClassSettings();$('adminClassTitle').textContent=c||'Aucun cours en cours';$('adminClassPeriod').textContent=override?'Classe sélectionnée manuellement':autoSlot?'Période '+(autoSlot.period||'')+' · '+autoSlot.start+' – '+autoSlot.end:'Aucun cours à cette heure';$('simulationNotice').classList.toggle('hidden',!isSimulation);$('currentClass').textContent=c||'Aucun cours identifié';$('status').textContent=override?'Consultation manuelle':autoSlot?'Cours en cours':'Aucun cours en cours';$('currentSlot').textContent=override?'Classe sélectionnée manuellement':autoSlot?autoSlot.start+' – '+autoSlot.end+' · '+days[autoSlot.day]:'Horaire non renseigné ou période libre';}
+function updateHeader(){const c=current();if(!$('classSettings').hidden&&$('classSettings').dataset.currentClasse!==c)populateClassSettings();$('adminClassTitle').textContent=c||'Aucun cours en cours';$('adminClassPeriod').textContent=override?'Classe sélectionnée manuellement':autoSlot?'Période '+(autoSlot.period||'')+' · '+autoSlot.start+' – '+autoSlot.end:'Aucun cours à cette heure';$('simulationNotice').classList.toggle('hidden',!isSimulation);$('currentClass').textContent=c||'Aucun cours identifié';$('status').textContent=override?'Consultation manuelle':autoSlot?'Cours en cours':'Aucun cours en cours';$('currentSlot').textContent=override?'Classe sélectionnée manuellement':autoSlot?autoSlot.start+' – '+autoSlot.end+' · '+days[autoSlot.day]:'Horaire non renseigné ou période libre';}
 function external(url,label){const safe=safeUrl(url);return safe?'<a class="btn btn-primary" href="'+esc(safe)+'" target="_blank" rel="noopener noreferrer">'+esc(label)+' ↗</a>':'<p class="notice">Aucun lien configuré pour cette classe.</p>';}
 function renderView(){const c=current(),v=$('view');if(!c){v.innerHTML='<h2>Aucun cours en cours</h2><p class="muted">La classe s’affichera automatiquement pendant une période de cours. En dehors de l’horaire, le tableau des présences reste indisponible.</p><a class="btn" href="administratif.html" target="_top">Retour à Administratif</a>';return;}
 if(tab==='journal'){window.TopMathJournal.render(c,autoSlot);}
@@ -312,7 +312,7 @@ $('settingsSaveLinks').addEventListener('click',()=>{
 $('settingsAdvanced').addEventListener('click',()=>{
  const advanced=$('adminSettings');advanced.open=!advanced.open;
  $('settingsAdvanced').setAttribute('aria-expanded',String(advanced.open));
- $('settingsAdvanced').querySelector('span').textContent=advanced.open?'⌃':'⌄';
+ $('settingsAdvanced').querySelector('.settings-chevron').textContent=advanced.open?'⌃':'⌄';
  if(advanced.open)advanced.scrollIntoView({block:'start',behavior:'smooth'});
 });
 $('auto').addEventListener('click',()=>{override='';render();});
