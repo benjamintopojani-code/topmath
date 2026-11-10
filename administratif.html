@@ -278,41 +278,14 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
 </section></details>
  
  <p class="muted small">Configuration de départ à réaliser une fois. Les réglages sont conservés uniquement dans ce navigateur sur cet iPad (sans synchronisation). N'enregistrez pas d'informations confidentielles sur un appareil partagé.</p>
- <details class="settings-group settings-fold settings-subsection"><summary><span class="settings-section-icon">03</span><span>Organisation de mon horaire<small>Importer une photo ou un PDF, vérifier et corriger</small></span><span class="settings-chevron" aria-hidden="true">⌄</span></summary><div class="settings-subsection-body">
- <div class="import-panel">
- <label for="scheduleImportFile">Photo ou PDF de l'horaire</label>
- <input id="scheduleImportFile" type="file" accept="image/jpeg,image/png,image/webp,application/pdf,.jpg,.jpeg,.png,.webp,.pdf">
- <p class="muted small">Lecture dans ton navigateur, sans envoyer le document à Top’Math. Une connexion est nécessaire au chargement du module de reconnaissance. Vérifie toujours les résultats avant de les enregistrer.</p>
- <button type="button" class="btn-primary" id="scheduleImportRead">Lire mon horaire</button>
- <button type="button" id="scheduleImportKnown" class="import-existing-btn">Préparer l'horaire de ma photo 2026-2027</button>
- <p class="muted small">Cette deuxième option utilise les 22 cours de ta photo déjà identifiés et permet de les vérifier avant de remplacer ton horaire.</p>
- <p class="muted small" id="scheduleImportStatus" role="status"></p>
- <details class="import-source-text"><summary>Texte reconnu — corriger si nécessaire</summary>
- <textarea id="scheduleImportText" rows="7" placeholder="Lundi 1 OBS B&#10;Mardi 3 OBS E"></textarea>
- <button type="button" id="scheduleImportReparse">Analyser ce texte</button>
- </details>
- <div id="scheduleImportPreview"></div>
- <div id="schedulePhasePreview"></div>
- <button type="button" id="schedulePhaseSave" hidden>Appliquer les horaires vérifiés</button>
- <div id="scheduleImportActions" hidden>
- <button type="button" id="scheduleImportAdd">+ Ajouter un cours</button>
- <label for="scheduleImportMode">Enregistrement</label>
- <select id="scheduleImportMode"><option value="replace">Remplacer mon horaire par celui vérifié</option><option value="merge">Ajouter les nouveaux cours sans supprimer les anciens</option></select>
- <button type="button" class="btn-primary" id="scheduleImportSave">Enregistrer l'horaire vérifié</button></div>
- </div>
- <details class="schedule-manual"><summary>Vérifier ou modifier les heures par phase</summary>
- <p class="muted small">Horaires relevés sur la photo de l'école. Chaque groupe a ses heures et ses récréations propres. Le mercredi, la grille 1re / Observation / Phase 1 s'applique à tous.</p><div class="schedule-group-tabs" role="group" aria-label="Choisir la grille horaire"><button type="button" data-period-group="first" aria-pressed="true">1re · Obs · P1</button><button type="button" data-period-group="upper" aria-pressed="false">P2 · P3</button></div>
- <div class="schedule-preview-status" id="periodGridStatus" role="status" aria-live="polite">Horaires : 1re · Observation · Phase 1</div>
- <p class="notice small" id="timeDisclaimer">Heures 1 à 8 préremplies d'après un ancien document du Chêneux (à vérifier pour 2026-2027). La 9e période est à confirmer. Les récréations et pauses ne déclenchent aucune classe.</p><div id="periodTimes"></div><div class="actions"><button type="button" class="btn-primary" id="savePeriodTimes">Enregistrer les heures des périodes</button><button type="button" id="importPhotoSchedule">Recharger l'horaire prérempli</button></div>
- </details></div></details>
- <details class="settings-group settings-fold settings-subsection"><summary><span class="settings-section-icon">04</span><span>Correction manuelle<small>Ajouter ou retirer un cours</small></span><span class="settings-chevron" aria-hidden="true">⌄</span></summary><div class="settings-subsection-body"><h3>Ajouter un cours</h3>
+ <details class="settings-group settings-fold settings-subsection"><summary><span class="settings-section-icon">03</span><span>Mon horaire<small>Classe, période et phase — ajouter un cours</small></span><span class="settings-chevron" aria-hidden="true">⌄</span></summary><div class="settings-subsection-body"><p class="muted small">Sélectionne le jour, la classe, la période et le groupe. Les heures correspondantes sont ajoutées automatiquement.</p>
  <form id="slotForm">
   <div class="row"><div><label for="day">Jour</label><select id="day" required><option value="1">Lundi</option><option value="2">Mardi</option><option value="3">Mercredi</option><option value="4">Jeudi</option><option value="5">Vendredi</option></select></div>
   <div><label for="slotPeriod">Période</label><select id="slotPeriod" required></select></div></div>
   <label for="slotClass">Classe</label><select id="slotClass" required><option value="">Choisir une classe</option></select>
   <label for="slotGroup">Grille horaire</label><select id="slotGroup" required><option value="first">1re · Observation · Phase 1</option><option value="upper">Phases 2 et 3</option></select>
   <p id="slotTimePreview" class="muted small" role="status">Les heures sont calculées automatiquement selon le groupe choisi.</p>
-  <div class="actions"><button type="submit" class="btn-primary">Enregistrer ce cours</button></div>
+  <div class="actions"><button type="submit" class="btn-primary">+ Ajouter le cours</button></div>
  </form>
  <details class="catalog-fold"><summary>Gérer ma liste de classes</summary><p class="muted small">La liste sera complétée quand tu fourniras toutes les classes de l’école. Ajout possible ici sans modifier les horaires.</p><form id="classCatalogForm"><label for="classCatalogInput">Ajouter une classe</label><div class="row"><input id="classCatalogInput" required maxlength="65" placeholder="Ex. : P2 HORT"><button type="submit">Ajouter à la liste</button></div></form></details>
  <div id="slots"></div></div></details>
@@ -324,7 +297,7 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
   <div class="actions"><button type="submit" class="btn-primary">Enregistrer les liens</button></div>
  </form></div></details>
 
- <details class="settings-group settings-fold settings-subsection"><summary><span class="settings-section-icon">05</span><span>Sauvegarde<small>Exporter ou réinitialiser</small></span><span class="settings-chevron" aria-hidden="true">⌄</span></summary><div class="settings-subsection-body"><div class="actions"><button type="button" id="exportConfig">Exporter une sauvegarde JSON</button><button type="button" id="reset" style="color:#9d2c35">Effacer la configuration locale</button></div></div></details>
+ <details class="settings-group settings-fold settings-subsection"><summary><span class="settings-section-icon">04</span><span>Sauvegarde<small>Exporter ou réinitialiser</small></span><span class="settings-chevron" aria-hidden="true">⌄</span></summary><div class="settings-subsection-body"><div class="actions"><button type="button" id="exportConfig">Exporter une sauvegarde JSON</button><button type="button" id="reset" style="color:#9d2c35">Effacer la configuration locale</button></div></div></details>
  </div>
 </div>
 </section>
@@ -337,7 +310,6 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
 
 </main>
 <script src="presences.js"></script>
-<script src="horaire-import.js?v=20261110-3"></script>
 <script src="journal.js"></script>
 <script>
 window.topmathSchedule=()=>data.slots;
@@ -433,43 +405,9 @@ function renderView(){const c=current(),v=$('view');if(!c){v.innerHTML='<h2>Aucu
 if(tab==='journal'){window.TopMathJournal.render(c,autoSlot);}
 if(tab==='presences'){if(isSimulation){v.innerHTML='<div class="attendance-course-head"><div class="attendance-course-eyebrow">CLASSE EN COURS · SIMULATION</div><h2>'+esc(c)+'</h2><div class="muted small">Cours de '+esc(autoSlot?.start||'')+' à '+esc(autoSlot?.end||'')+'</div></div><div id="simRows"></div><div class="actions"><button type="button" class="btn-primary" id="simSave">Tester l’enregistrement</button></div><p id="simResult" class="muted small"></p>';const fictifs=['Élève A','Élève B','Élève C','Élève D'];$('simRows').innerHTML='<div class="attendance-table-wrap"><table class="attendance-table"><thead><tr><th scope="col">Élèves</th><th scope="col">Présent</th><th scope="col">Absent</th><th scope="col">Stage</th></tr></thead><tbody>'+fictifs.map((n,i)=>'<tr><th scope="row">'+n+'</th>'+[['P','Présent'],['A','Absent'],['S','Stage']].map(([v,l])=>'<td><label class="attendance-cell"><input type="checkbox" data-sim-att="'+i+'" value="'+v+'" aria-label="'+l+' : '+n+'"></label></td>').join('')+'</tr>').join('')+'</tbody></table></div>';$('simRows').addEventListener('change',e=>{const x=e.target.closest('input[data-sim-att]');if(!x||!x.checked)return;$('simRows').querySelectorAll('input[data-sim-att]').forEach(y=>{if(y!==x&&y.dataset.simAtt===x.dataset.simAtt)y.checked=false;});});$('simSave').addEventListener('click',()=>{const chosen=[...document.querySelectorAll('[data-sim-att]:checked')];$('simResult').textContent='Simulation réussie : '+chosen.filter(x=>x.value==='P').length+' présents, '+chosen.filter(x=>x.value==='A').length+' absent(s), '+chosen.filter(x=>x.value==='S').length+' en stage. Aucune donnée conservée.';});}else window.TopMathAttendance.render(c,autoSlot);}
 if(tab==='rapports'){const arr=data.reports.filter(x=>x.classe===c);v.innerHTML='<div class="flex"><h2>Rapports · '+esc(c)+'</h2><span class="pill">'+arr.filter(x=>!x.done).length+' à compléter</span></div>'+(arr.length?arr.map(r=>'<article class="task"><div class="flex"><strong>'+esc(r.student)+'</strong><span class="pill">'+(r.done?'Marqué terminé':'À compléter')+'</span></div><p>'+esc(r.title)+'</p><div class="actions">'+external(r.url,'Ouvrir le document')+'<button type="button" data-toggle="'+esc(r.id)+'">'+(r.done?'Marquer à faire':'Marquer terminé')+'</button><button type="button" data-remove-report="'+esc(r.id)+'">Retirer</button></div></article>').join(''):'<p class="muted">Aucun suivi demandé pour cette classe.</p>')+'<p class="muted small">Le statut « terminé » est un suivi personnel : il ne confirme pas l’envoi du formulaire officiel.</p>';}}
-function renderPeriodTimes(){
- const group=editingPeriodGroup;
- const times=data.periodTimesByGroup?.[group]||DEFAULT_GROUP_TIMES[group];
- const inactive=group==='first'?5:6;
- document.querySelectorAll('[data-period-group]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.periodGroup===group)));
- $('periodGridStatus').textContent=group==='first'?'Horaires : 1re · Observation · Phase 1':'Horaires : Phases 2 et 3';
- $('periodTimes').innerHTML=Array.from({length:9},(_,i)=>{
-  const n=i+1,v=times[n]||{},paused=n===inactive;
-  return '<div class="period-edit-row"><strong>Période '+n+'</strong>'+(paused?'<span class="period-break">Pause de midi · Pas de cours</span>':'<label>Début<input type="time" id="period-start-'+n+'" value="'+esc(v.start||'')+'"></label><label>Fin<input type="time" id="period-end-'+n+'" value="'+esc(v.end||'')+'"></label>')+'</div>';
- }).join('');
-}
 function render(){autoSlot=determine();const old=$('manualClass').value;const all=classes();const previousClass=$('slotClass').value;$('slotClass').innerHTML='<option value="">Choisir une classe</option>'+optionHTML(all,previousClass);$('slotClass').value=all.includes(previousClass)?previousClass:'';if(!$('slotPeriod').options.length){$('slotPeriod').innerHTML=Array.from({length:9},(_,i)=>'<option value="'+(i+1)+'">Période '+(i+1)+'</option>').join('');}const selected=override||old;$('manualClass').innerHTML='<option value="">Automatique (horaire)</option>'+optionHTML(all,selected);$('manualClass').value=override||'';for(const id of ['linkClass','reportClass']){const prev=$(id).value;$(id).innerHTML='<option value="">Choisir une classe</option>'+optionHTML(all,prev);$(id).value=all.includes(prev)?prev:'';}
-updateHeader();renderPeriodTimes();if($('classSettings')&&!$('classSettings').hidden)syncClassReportForm(current());$('timeDisclaimer').textContent=data.timeSource==='confirme'?'Horaires personnalisés enregistrés. Le mercredi, horaire 1re / Observation / P1 pour tous.':'Horaires tirés de la photo fournie. Les périodes et les pauses sont différentes selon le groupe ; mercredi : horaire 1re / Observation / P1 pour tous.';document.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===tab?'true':'false'));renderView();
-$('slots').innerHTML=data.slots.length?'<h2 style="margin-top:20px">Cours enregistrés</h2>'+data.slots.slice().sort((a,b)=>a.day-b.day||a.start.localeCompare(b.start)).map(s=>'<div class="task flex"><span>'+days[s.day]+' '+(s.period?'P'+s.period+' · ':'')+(s.start&&s.end?esc(s.start)+'–'+esc(s.end):'heures non réglées')+' · <strong>'+esc(s.classe)+'</strong></span><button type="button" data-remove-slot="'+esc(s.id)+'">Supprimer</button></div>').join(''):'<p class="muted small">Aucun cours enregistré pour le moment.</p>';}
-$('savePeriodTimes').addEventListener('click',()=>{
- const times={},inactive=editingPeriodGroup==='first'?5:6;
- for(let n=1;n<=9;n++){
-  if(n===inactive)continue;
-  const start=$('period-start-'+n)?.value||'',end=$('period-end-'+n)?.value||'';
-  if(Boolean(start)!==Boolean(end)||(start&&start>=end)){alert('Vérifiez le début et la fin de la période '+n);return;}
-  if(start)times[n]={start,end};
- }
- const sorted=Object.entries(times).sort((a,b)=>Number(a[0])-Number(b[0]));
- for(let i=1;i<sorted.length;i++)if(sorted[i][1].start<sorted[i-1][1].end){alert('Chevauchement entre les périodes '+sorted[i-1][0]+' et '+sorted[i][0]);return;}
- data.periodTimesByGroup[editingPeriodGroup]=times;
- data.periodTimes=data.periodTimesByGroup.first;data.timeSource='confirme';
- applyPeriodTimings();save();alert('Horaires du groupe enregistrés.');
-});
-document.querySelector('.schedule-group-tabs').addEventListener('click',event=>{
- const button=event.target.closest('button[data-period-group]');
- if(!button)return;
- const next=button.dataset.periodGroup;
- if(!['first','upper'].includes(next))return;
- editingPeriodGroup=next;
- renderPeriodTimes();
-});
-$('importPhotoSchedule').addEventListener('click',()=>{if(!confirm('Remplacer uniquement l’horaire existant par celui de la photo ? Les liens et rapports seront conservés.'))return;data.slots=photoSlots();applyPeriodTimings();override='';save();});
+updateHeader();if($('classSettings')&&!$('classSettings').hidden)syncClassReportForm(current());document.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===tab?'true':'false'));renderView();
+$('slots').innerHTML=data.slots.length?'<h2 style="margin-top:20px">Mes cours enregistrés</h2>'+data.slots.slice().sort((a,b)=>a.day-b.day||a.period-b.period).map(s=>'<div class="task flex"><span>'+days[s.day]+' · '+(s.period?'Période '+s.period:'Cours')+' · <strong>'+esc(s.classe)+'</strong></span><button type="button" data-remove-slot="'+esc(s.id)+'">Supprimer</button></div>').join(''):'<p class="muted small">Aucun cours enregistré pour le moment.</p>';}
 document.querySelectorAll('[data-section-link]').forEach(a=>{const url=new URL(a.href);if(isSimulation){url.searchParams.set('testDay',String(simulatedDay));url.searchParams.set('testTime',simulatedTime);}a.href=url.pathname.split('/').pop()+url.search;});
 if(pagePanel){document.body.classList.add('section-page');document.title='Top’Math — '+({journal:'Journal de classe',presences:'Présences',rapports:'Rapports'})[pagePanel];}
 
@@ -490,20 +428,6 @@ $('settingsSaveLinks').addEventListener('click',()=>{
  alert('Liens de la classe '+c+' enregistrés sur cet appareil.');
 });
 $('auto').addEventListener('click',()=>{override='';render();});
-window.TopMathScheduleImport?.init({preset:()=>photoSlots().map(x=>({day:x.day,period:x.period,classe:x.classe})),applyPhase:prepared=>{
- for(const g of ['first','upper'])Object.assign(data.periodTimesByGroup[g],prepared[g]||{});
- data.periodTimes=data.periodTimesByGroup.first;
- data.timeSource='confirme';
- applyPeriodTimings();save();
-},apply:(items,mode)=>{
- const incoming=items.map((x,i)=>({id:'import-'+Date.now()+'-'+i,day:Number(x.day),period:Number(x.period),classe:x.classe,start:'',end:''}));
- if(mode==='replace')data.slots=incoming;
- else {
-  const keys=new Set(data.slots.map(x=>x.day+'-'+x.period));
-  for(const item of incoming)if(!keys.has(item.day+'-'+item.period)){data.slots.push(item);keys.add(item.day+'-'+item.period);}
- }
- applyPeriodTimings();override='';save();
-}});
 function previewManualSlot(){
  const day=Number($('day').value),period=Number($('slotPeriod').value),group=day===3?'first':$('slotGroup').value;
  const time=data.periodTimesByGroup[group]?.[period];
