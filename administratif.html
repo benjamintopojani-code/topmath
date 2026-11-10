@@ -334,11 +334,24 @@ function classes(){return [...new Set([...data.slots.map(x=>x.classe),...Object.
 function optionHTML(items,selected=''){return items.map(s=>'<option value="'+esc(s)+'"'+(s===selected?' selected':'')+'>'+esc(s)+'</option>').join('');}
 function determine(){const d=new Date(),hm=isSimulation?simulatedTime:d.toTimeString().slice(0,5),day=isSimulation?simulatedDay:d.getDay();return data.slots.find(x=>Number(x.day)===day&&x.start&&x.end&&x.start<=hm&&hm<x.end)||null;}
 function current(){return override||autoSlot?.classe||'';}
+function renderClassReportLinks(c){
+ const box=$('classReportLinks');if(!box)return;
+ const arr=data.reports.filter(r=>r.classe===c);
+ box.innerHTML='<h3 style="font-size:.91rem;margin:10px 0">Fiches enregistrées ('+arr.length+')</h3>'+
+  (arr.length?arr.map(r=>'<div class="report-link-row"><div><strong>'+esc(r.student)+'</strong><div class="muted small">'+esc(r.title)+'</div></div><div class="actions"><a href="'+esc(safeUrl(r.url)||'#')+'" target="_blank" rel="noopener noreferrer">Ouvrir</a><button type="button" data-class-report-edit="'+esc(r.id)+'">Modifier</button><button type="button" data-class-report-remove="'+esc(r.id)+'">Retirer</button></div></div>').join(''):'<p class="muted small">Aucune fiche liée à cette classe.</p>');
+}
+function syncClassReportForm(c){
+ $('reportClass').value=c;
+ const names=window.TopMathAttendance?.studentsForClass(c)||[];
+ $('studentOptions').innerHTML=[...new Set([...names,...data.reports.filter(r=>r.classe===c).map(r=>r.student)])].sort((a,b)=>a.localeCompare(b,'fr')).map(n=>'<option value="'+esc(n)+'"></option>').join('');
+ renderClassReportLinks(c);
+}
 function populateClassSettings(){
  const c=current(),choices=classes();$('classSettings').dataset.currentClasse=c;
  $('settingsClassTitle').textContent=c||'Aucune classe en cours';
  $('settingsClassChoice').innerHTML='<option value="">Classe automatique (horaire)</option>'+optionHTML(choices,c);
  $('settingsClassChoice').value=override||'';
+ syncClassReportForm(c);
  $('settingsClassGroup').value=c?classGroup(c):'first';
  $('settingsClassGroup').disabled=!c;
  const links=data.links[c]||{};
@@ -377,7 +390,7 @@ function renderPeriodTimes(){
  }).join('');
 }
 function render(){autoSlot=determine();const old=$('manualClass').value;const all=classes();const selected=override||old;$('manualClass').innerHTML='<option value="">Automatique (horaire)</option>'+optionHTML(all,selected);$('manualClass').value=override||'';for(const id of ['linkClass','reportClass']){const prev=$(id).value;$(id).innerHTML='<option value="">Choisir une classe</option>'+optionHTML(all,prev);$(id).value=all.includes(prev)?prev:'';}
-updateHeader();renderPeriodTimes();if($('studentOptions'))$('studentOptions').innerHTML=(window.TopMathAttendance?.studentsForClass($('reportClass').value)||[]).map(n=>'<option value="'+esc(n)+'"></option>').join('');$('timeDisclaimer').textContent=data.timeSource==='confirme'?'Horaires personnalisés enregistrés. Le mercredi, horaire 1re / Observation / P1 pour tous.':'Horaires tirés de la photo fournie. Les périodes et les pauses sont différentes selon le groupe ; mercredi : horaire 1re / Observation / P1 pour tous.';document.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===tab?'true':'false'));renderView();
+updateHeader();renderPeriodTimes();if($('classSettings')&&!$('classSettings').hidden)syncClassReportForm(current());$('timeDisclaimer').textContent=data.timeSource==='confirme'?'Horaires personnalisés enregistrés. Le mercredi, horaire 1re / Observation / P1 pour tous.':'Horaires tirés de la photo fournie. Les périodes et les pauses sont différentes selon le groupe ; mercredi : horaire 1re / Observation / P1 pour tous.';document.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===tab?'true':'false'));renderView();
 $('slots').innerHTML=data.slots.length?'<h2 style="margin-top:20px">Cours enregistrés</h2>'+data.slots.slice().sort((a,b)=>a.day-b.day||a.start.localeCompare(b.start)).map(s=>'<div class="task flex"><span>'+days[s.day]+' '+(s.period?'P'+s.period+' · ':'')+(s.start&&s.end?esc(s.start)+'–'+esc(s.end):'heures non réglées')+' · <strong>'+esc(s.classe)+'</strong></span><button type="button" data-remove-slot="'+esc(s.id)+'">Supprimer</button></div>').join(''):'<p class="muted small">Aucun cours enregistré pour le moment.</p>';}
 $('savePeriodTimes').addEventListener('click',()=>{
  const times={},inactive=editingPeriodGroup==='first'?5:6;
@@ -425,9 +438,30 @@ $('auto').addEventListener('click',()=>{override='';render();});
 $('slotForm').addEventListener('submit',e=>{e.preventDefault();const start=$('start').value,end=$('end').value,day=Number($('day').value),classe=$('slotClass').value.trim();if(start>=end){alert('La fin doit être après le début.');return;}if(data.slots.some(x=>x.day===day&&start<x.end&&x.start<end)){alert('Ce créneau chevauche un cours existant.');return;}data.slots.push({id:crypto.randomUUID(),day,start,end,classe});e.target.reset();save();});
 $('linkClass').addEventListener('change',()=>{const o=data.links[$('linkClass').value]||{};$('journalUrl').value=o.journal||'';$('presenceUrl').value=o.presence||'';});
 $('linkForm').addEventListener('submit',e=>{e.preventDefault();const c=$('linkClass').value;if(!c)return;const journal=$('journalUrl').value.trim(),presence=$('presenceUrl').value.trim();if((journal&&!safeUrl(journal))||(presence&&!safeUrl(presence))){alert('Lien HTTP ou HTTPS requis.');return;}data.links[c]={journal,presence};save();});
-$('reportClass').addEventListener('change',()=>{const c=$('reportClass').value;$('studentOptions').innerHTML=(window.TopMathAttendance?.studentsForClass(c)||[]).map(n=>'<option value="'+esc(n)+'"></option>').join('');});
-$('reportForm').addEventListener('submit',e=>{e.preventDefault();const url=safeUrl($('reportUrl').value.trim());if(!url){alert('Lien du formulaire invalide.');return;}data.reports.push({id:crypto.randomUUID(),classe:$('reportClass').value,student:$('student').value.trim(),title:$('reportTitle').value.trim(),url,done:false});e.target.reset();save();});
-document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.toggle){const r=data.reports.find(x=>x.id===b.dataset.toggle);if(r){r.done=!r.done;save();}}if(b.dataset.removeReport){if(confirm('Retirer ce suivi de l’affichage ?')){data.reports=data.reports.filter(x=>x.id!==b.dataset.removeReport);save();}}if(b.dataset.removeSlot){if(confirm('Supprimer ce cours ?')){data.slots=data.slots.filter(x=>x.id!==b.dataset.removeSlot);save();}}});
+$('student').addEventListener('change',()=>{const c=current(),name=$('student').value.trim();const matches=data.reports.filter(r=>r.classe===c&&r.student===name);if(matches.length===1){$('reportTitle').value=matches[0].title;$('reportUrl').value=matches[0].url;}else{$('reportTitle').value='Fiche de comportement';$('reportUrl').value='';}});
+$('reportForm').addEventListener('submit',e=>{
+ e.preventDefault();const url=safeUrl($('reportUrl').value.trim()),c=current(),student=$('student').value.trim(),title=$('reportTitle').value.trim()||'Fiche de comportement';
+ if(!c||!student||!url){alert('Choisissez un élève et indiquez un lien valide.');return;}
+ const existing=data.reports.find(r=>r.classe===c&&r.student===student&&r.title===title);
+ if(existing){existing.url=url;existing.done=false;}
+ else data.reports.push({id:crypto.randomUUID(),classe:c,student,title,url,done:false});
+ $('student').value='';$('reportTitle').value='Fiche de comportement';$('reportUrl').value='';
+ save();syncClassReportForm(c);
+});
+document.addEventListener('click',e=>{
+ const b=e.target.closest('button');if(!b)return;
+ if(b.dataset.classReportEdit){
+  const r=data.reports.find(x=>x.id===b.dataset.classReportEdit);
+  if(r){$('student').value=r.student;$('reportTitle').value=r.title;$('reportUrl').value=r.url;$('student').focus();}
+  return;
+ }
+ if(b.dataset.classReportRemove){
+  if(confirm('Retirer cette fiche de comportement ?')){
+   data.reports=data.reports.filter(x=>x.id!==b.dataset.classReportRemove);save();syncClassReportForm(current());
+  }
+  return;
+ }
+ if(b.dataset.toggle){const r=data.reports.find(x=>x.id===b.dataset.toggle);if(r){r.done=!r.done;save();}}if(b.dataset.removeReport){if(confirm('Retirer ce suivi de l’affichage ?')){data.reports=data.reports.filter(x=>x.id!==b.dataset.removeReport);save();}}if(b.dataset.removeSlot){if(confirm('Supprimer ce cours ?')){data.slots=data.slots.filter(x=>x.id!==b.dataset.removeSlot);save();}}});
 $('exportConfig').addEventListener('click',()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='topmath-administratif-sauvegarde.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);});
 $('reset').addEventListener('click',()=>{if(confirm('Effacer toutes les données administratives enregistrées sur cet iPad ?')){data=defaultData();override='';save();}});
 applyPeriodTimings();
