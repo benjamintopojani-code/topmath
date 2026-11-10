@@ -211,6 +211,23 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
 #classReportLinks a{color:#175db2;text-decoration:underline;font-weight:700}
 #classReportLinks .report-link-row button{font-size:.8rem;padding:7px 10px;min-height:38px}
 @media(max-width:480px){.class-link-reports{margin:12px 10px}.class-link-reports-body{padding:10px}}
+
+.import-panel{padding:12px;border:1px solid #c8d9ef;border-radius:12px;background:#f4f9ff;margin-bottom:12px}
+.import-panel>label{font-size:.9rem;font-weight:750}
+.import-panel button{margin-top:10px;max-width:100%}
+.import-panel input[type=file]{height:auto;max-width:100%;background:#fff}
+.import-panel [hidden]{display:none!important}
+.import-panel #scheduleImportStatus{font-weight:750;color:#195d94}
+.import-panel #scheduleImportStatus.import-error{color:#a02e36}
+.import-source-text,.schedule-manual{margin:12px 0 0;border-top:1px solid #d8e5f4;padding:10px 0 0}
+.import-source-text>summary,.schedule-manual>summary{font-weight:750;cursor:pointer;color:#1c4e81}
+.import-source-text textarea{margin:10px 0 3px}
+.import-row{display:grid;grid-template-columns:1.3fr 72px minmax(90px,2fr) 42px;gap:5px;margin:8px 0;align-items:center}
+.import-row input,.import-row select{min-width:0;padding:7px;font-size:.86rem;background:#fff}
+.import-row button{min-height:42px;height:42px;padding:0;margin:0;font-size:18px}
+#scheduleImportPreview{margin-top:10px}
+#scheduleImportSave{width:100%}
+@media(max-width:480px){.import-panel{padding:10px}.import-row{grid-template-columns:1fr 64px 1.35fr 40px;gap:4px}.import-row input,.import-row select{font-size:.76rem;padding:5px}}
 </style></head><body>
 <header><strong id="topbarTitle">TOP'MATH <span class="topbar-divider">·</span> ADMINISTRATIF</strong><div class="topbar-controls"><button id="topSettingsBtn" type="button" aria-label="Ouvrir les réglages" aria-expanded="false" title="Réglages">⚙️</button><a class="topbar-back" href="enseignant.html" aria-label="Retour à l’espace enseignant" title="Retour à l’espace enseignant">←</a></div></header>
 <main>
@@ -251,12 +268,30 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
 </section></details>
  
  <p class="muted small">Configuration de départ à réaliser une fois. Les réglages sont conservés uniquement dans ce navigateur sur cet iPad (sans synchronisation). N'enregistrez pas d'informations confidentielles sur un appareil partagé.</p>
- <details class="settings-group settings-fold settings-subsection"><summary><span class="settings-section-icon">03</span><span>Horaires<small>1re, observation, phases 1 à 3</small></span><span class="settings-chevron" aria-hidden="true">⌄</span></summary><div class="settings-subsection-body">
+ <details class="settings-group settings-fold settings-subsection"><summary><span class="settings-section-icon">03</span><span>Organisation de mon horaire<small>Importer une photo ou un PDF, vérifier et corriger</small></span><span class="settings-chevron" aria-hidden="true">⌄</span></summary><div class="settings-subsection-body">
+ <div class="import-panel">
+ <label for="scheduleImportFile">Photo ou PDF de l'horaire</label>
+ <input id="scheduleImportFile" type="file" accept="image/jpeg,image/png,image/webp,application/pdf,.jpg,.jpeg,.png,.webp,.pdf">
+ <p class="muted small">Lecture dans ton navigateur, sans envoyer le document à Top’Math. Une connexion est nécessaire au chargement du module de reconnaissance. Vérifie toujours les résultats avant de les enregistrer.</p>
+ <button type="button" class="btn-primary" id="scheduleImportRead">Lire mon horaire</button>
+ <p class="muted small" id="scheduleImportStatus" role="status"></p>
+ <details class="import-source-text"><summary>Texte reconnu — corriger si nécessaire</summary>
+ <textarea id="scheduleImportText" rows="7" placeholder="Lundi 1 OBS B&#10;Mardi 3 OBS E"></textarea>
+ <button type="button" id="scheduleImportReparse">Analyser ce texte</button>
+ </details>
+ <div id="scheduleImportPreview"></div>
+ <div id="scheduleImportActions" hidden>
+ <button type="button" id="scheduleImportAdd">+ Ajouter un cours</button>
+ <label for="scheduleImportMode">Enregistrement</label>
+ <select id="scheduleImportMode"><option value="replace">Remplacer mon horaire par celui vérifié</option><option value="merge">Ajouter les nouveaux cours sans supprimer les anciens</option></select>
+ <button type="button" class="btn-primary" id="scheduleImportSave">Enregistrer l'horaire vérifié</button></div>
+ </div>
+ <details class="schedule-manual"><summary>Vérifier ou modifier les heures par phase</summary>
  <p class="muted small">Horaires relevés sur la photo de l'école. Chaque groupe a ses heures et ses récréations propres. Le mercredi, la grille 1re / Observation / Phase 1 s'applique à tous.</p><div class="schedule-group-tabs" role="group" aria-label="Choisir la grille horaire"><button type="button" data-period-group="first" aria-pressed="true">1re · Obs · P1</button><button type="button" data-period-group="upper" aria-pressed="false">P2 · P3</button></div>
  <div class="schedule-preview-status" id="periodGridStatus" role="status" aria-live="polite">Horaires : 1re · Observation · Phase 1</div>
- <p class="notice small" id="timeDisclaimer">Heures 1 à 8 préremplies d'après un ancien document du Chêneux (à vérifier pour 2026-2027). La 9e période est à confirmer. Les récréations et pauses ne déclenchent aucune classe.</p><div id="periodTimes"></div><div class="actions"><button type="button" class="btn-primary" id="savePeriodTimes">Enregistrer les heures des périodes</button><button type="button" id="importPhotoSchedule">Recharger l'horaire de la photo</button></div>
- </div></details>
- <details class="settings-group settings-fold settings-subsection"><summary><span class="settings-section-icon">04</span><span>Cours<small>Ajouter ou retirer un créneau</small></span><span class="settings-chevron" aria-hidden="true">⌄</span></summary><div class="settings-subsection-body"><h3>Ajouter un cours</h3>
+ <p class="notice small" id="timeDisclaimer">Heures 1 à 8 préremplies d'après un ancien document du Chêneux (à vérifier pour 2026-2027). La 9e période est à confirmer. Les récréations et pauses ne déclenchent aucune classe.</p><div id="periodTimes"></div><div class="actions"><button type="button" class="btn-primary" id="savePeriodTimes">Enregistrer les heures des périodes</button><button type="button" id="importPhotoSchedule">Recharger l'horaire prérempli</button></div>
+ </details></div></details>
+ <details class="settings-group settings-fold settings-subsection"><summary><span class="settings-section-icon">04</span><span>Correction manuelle<small>Ajouter ou retirer un cours</small></span><span class="settings-chevron" aria-hidden="true">⌄</span></summary><div class="settings-subsection-body"><h3>Ajouter un cours</h3>
  <form id="slotForm">
   <div class="row"><div><label for="day">Jour</label><select id="day" required><option value="1">Lundi</option><option value="2">Mardi</option><option value="3">Mercredi</option><option value="4">Jeudi</option><option value="5">Vendredi</option></select></div>
   <div><label for="slotClass">Classe</label><input id="slotClass" required maxlength="65" placeholder="Ex. : P2 TB"></div></div>
@@ -284,6 +319,7 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
 
 </main>
 <script src="presences.js"></script>
+<script src="horaire-import.js"></script>
 <script src="journal.js"></script>
 <script>
 window.topmathSchedule=()=>data.slots;
@@ -435,6 +471,15 @@ $('settingsSaveLinks').addEventListener('click',()=>{
  alert('Liens de la classe '+c+' enregistrés sur cet appareil.');
 });
 $('auto').addEventListener('click',()=>{override='';render();});
+window.TopMathScheduleImport?.init({apply:(items,mode)=>{
+ const incoming=items.map((x,i)=>({id:'import-'+Date.now()+'-'+i,day:Number(x.day),period:Number(x.period),classe:x.classe,start:'',end:''}));
+ if(mode==='replace')data.slots=incoming;
+ else {
+  const keys=new Set(data.slots.map(x=>x.day+'-'+x.period));
+  for(const item of incoming)if(!keys.has(item.day+'-'+item.period)){data.slots.push(item);keys.add(item.day+'-'+item.period);}
+ }
+ applyPeriodTimings();override='';save();
+}});
 $('slotForm').addEventListener('submit',e=>{e.preventDefault();const start=$('start').value,end=$('end').value,day=Number($('day').value),classe=$('slotClass').value.trim();if(start>=end){alert('La fin doit être après le début.');return;}if(data.slots.some(x=>x.day===day&&start<x.end&&x.start<end)){alert('Ce créneau chevauche un cours existant.');return;}data.slots.push({id:crypto.randomUUID(),day,start,end,classe});e.target.reset();save();});
 $('linkClass').addEventListener('change',()=>{const o=data.links[$('linkClass').value]||{};$('journalUrl').value=o.journal||'';$('presenceUrl').value=o.presence||'';});
 $('linkForm').addEventListener('submit',e=>{e.preventDefault();const c=$('linkClass').value;if(!c)return;const journal=$('journalUrl').value.trim(),presence=$('presenceUrl').value.trim();if((journal&&!safeUrl(journal))||(presence&&!safeUrl(presence))){alert('Lien HTTP ou HTTPS requis.');return;}data.links[c]={journal,presence};save();});
