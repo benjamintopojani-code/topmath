@@ -38,7 +38,10 @@ summary{font-weight:700;cursor:pointer;padding:8px 0}details{margin-top:20px}hr{
 <section id="view" class="card" style="margin-top:16px" aria-live="polite"></section>
 <details class="card"><summary>⚙️ Configurer mon horaire et mes liens</summary>
  <p class="muted small">Configuration de départ à réaliser une fois. Les réglages sont conservés uniquement dans ce navigateur sur cet iPad (sans synchronisation). N'enregistrez pas d'informations confidentielles sur un appareil partagé.</p>
- <h2>1. Ajouter un cours à l'horaire</h2>
+ <h2>1. Horaire importé de la photo (2026-2027)</h2>
+ <p class="muted small">Les jours et classes sont déjà saisis. Pour activer la sélection automatique, indiquez une seule fois les heures de début et de fin de chaque période. Elles s'appliquent à toute la semaine.</p>
+ <div id="periodTimes"></div><div class="actions"><button type="button" class="btn-primary" id="savePeriodTimes">Enregistrer les heures des périodes</button><button type="button" id="importPhotoSchedule">Recharger l'horaire de la photo</button></div>
+ <hr><h2>Ajouter exceptionnellement un cours</h2>
  <form id="slotForm">
   <div class="row"><div><label for="day">Jour</label><select id="day" required><option value="1">Lundi</option><option value="2">Mardi</option><option value="3">Mercredi</option><option value="4">Jeudi</option><option value="5">Vendredi</option></select></div>
   <div><label for="slotClass">Classe</label><input id="slotClass" required maxlength="65" placeholder="Ex. : P2 TB"></div></div>
@@ -67,15 +70,22 @@ summary{font-weight:700;cursor:pointer;padding:8px 0}details{margin-top:20px}hr{
 <script>
 'use strict';
 const KEY='topmath-administratif-v1',days=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
-const defaultData=()=>({slots:[],links:{},reports:[]});
+const PHOTO_COURS=[
+[2,1,'3 MAC / 3 AB'],[2,2,'3 MAC / 3 AB'],[2,3,'OBS E'],[2,4,'OBS B'],[2,5,'TC'],
+[3,1,'TC'],[3,2,'OBS E'],[3,3,'2 TB'],[3,4,'2 HORT'],
+[4,1,'OBS B'],[4,2,'3 MAC / 3 AB'],[4,3,'2 TB'],[4,4,'OBS B'],[4,5,'2 TB'],
+[5,1,'OBS B'],[5,2,'2 HORT'],[5,3,'DLC'],[5,4,'2 HORT'],[5,5,'2 TB'],[5,7,'2 TB'],[5,8,'OBS E'],[5,9,'OBS E']];
+const photoSlots=()=>PHOTO_COURS.map(([day,period,classe])=>({id:'photo-'+day+'-'+period,day,period,classe,start:'',end:''}));
+const defaultData=()=>({slots:photoSlots(),links:{},reports:[],periodTimes:{}});
 let data;try{data=JSON.parse(localStorage.getItem(KEY))||defaultData();if(!Array.isArray(data.slots)||!Array.isArray(data.reports)||!data.links||typeof data.links!=='object')throw Error('Format incorrect');}catch{data=defaultData();}
+if(!data.periodTimes||typeof data.periodTimes!=='object')data.periodTimes={};
 let tab='journal',override='',autoSlot=null;
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function safeUrl(value){try{const u=new URL(value);return ['https:','http:'].includes(u.protocol)?u.href:'';}catch{return '';}}
 function save(){localStorage.setItem(KEY,JSON.stringify(data));render();}
 function classes(){return [...new Set([...data.slots.map(x=>x.classe),...Object.keys(data.links),...data.reports.map(x=>x.classe)])].filter(Boolean).sort((a,b)=>a.localeCompare(b,'fr'));}
 function optionHTML(items,selected=''){return items.map(s=>'<option value="'+esc(s)+'"'+(s===selected?' selected':'')+'>'+esc(s)+'</option>').join('');}
-function determine(){const d=new Date(),hm=d.toTimeString().slice(0,5),day=d.getDay();return data.slots.find(x=>Number(x.day)===day&&x.start<=hm&&hm<x.end)||null;}
+function determine(){const d=new Date(),hm=d.toTimeString().slice(0,5),day=d.getDay();return data.slots.find(x=>Number(x.day)===day&&x.start&&x.end&&x.start<=hm&&hm<x.end)||null;}
 function current(){return override||autoSlot?.classe||'';}
 function clock(){const now=new Date();$('time').textContent=new Intl.DateTimeFormat('fr-BE',{weekday:'long',hour:'2-digit',minute:'2-digit'}).format(now);const prev=autoSlot?.id;autoSlot=determine();if(prev!==autoSlot?.id)render();else updateHeader();}
 function updateHeader(){const c=current();$('currentClass').textContent=c||'Aucun cours identifié';$('status').textContent=override?'Consultation manuelle':autoSlot?'Cours en cours':'Aucun cours en cours';$('currentSlot').textContent=override?'Classe sélectionnée manuellement':autoSlot?autoSlot.start+' – '+autoSlot.end+' · '+days[autoSlot.day]:'Horaire non renseigné ou période libre';}
@@ -84,9 +94,18 @@ function renderView(){const c=current(),v=$('view');if(!c){v.innerHTML='<h2>Aucu
 if(tab==='journal'){v.innerHTML='<h2>Journal de classe · '+esc(c)+'</h2><p class="muted">Accès direct à votre journal officiel pour cette classe.</p>'+external(data.links[c]?.journal,'Ouvrir le journal de classe');}
 if(tab==='presences'){v.innerHTML='<h2>Présences · '+esc(c)+'</h2><p class="muted">Accès au registre des présences de cette classe.</p>'+external(data.links[c]?.presence,'Faire les présences');}
 if(tab==='rapports'){const arr=data.reports.filter(x=>x.classe===c);v.innerHTML='<div class="flex"><h2>Rapports · '+esc(c)+'</h2><span class="pill">'+arr.filter(x=>!x.done).length+' à compléter</span></div>'+(arr.length?arr.map(r=>'<article class="task"><div class="flex"><strong>'+esc(r.student)+'</strong><span class="pill">'+(r.done?'Marqué terminé':'À compléter')+'</span></div><p>'+esc(r.title)+'</p><div class="actions">'+external(r.url,'Ouvrir le document')+'<button type="button" data-toggle="'+esc(r.id)+'">'+(r.done?'Marquer à faire':'Marquer terminé')+'</button><button type="button" data-remove-report="'+esc(r.id)+'">Retirer</button></div></article>').join(''):'<p class="muted">Aucun suivi demandé pour cette classe.</p>')+'<p class="muted small">Le statut « terminé » est un suivi personnel : il ne confirme pas l’envoi du formulaire officiel.</p>';}}
+function renderPeriodTimes(){
+ $('periodTimes').innerHTML=Array.from({length:9},(_,i)=>{const n=i+1,v=data.periodTimes[n]||{};return '<div class="row" style="align-items:end"><div><label for="period-start-'+n+'">Période '+n+' — Début</label><input type="time" id="period-start-'+n+'" value="'+esc(v.start||'')+'"></div><div><label for="period-end-'+n+'">Période '+n+' — Fin</label><input type="time" id="period-end-'+n+'" value="'+esc(v.end||'')+'"></div></div>'}).join('');
+}
 function render(){autoSlot=determine();const old=$('manualClass').value;const all=classes();const selected=override||old;$('manualClass').innerHTML='<option value="">Automatique (horaire)</option>'+optionHTML(all,selected);$('manualClass').value=override||'';for(const id of ['linkClass','reportClass']){const prev=$(id).value;$(id).innerHTML='<option value="">Choisir une classe</option>'+optionHTML(all,prev);$(id).value=all.includes(prev)?prev:'';}
-updateHeader();document.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===tab?'true':'false'));renderView();
-$('slots').innerHTML=data.slots.length?'<h2 style="margin-top:20px">Cours enregistrés</h2>'+data.slots.slice().sort((a,b)=>a.day-b.day||a.start.localeCompare(b.start)).map(s=>'<div class="task flex"><span>'+days[s.day]+' '+esc(s.start)+'–'+esc(s.end)+' · <strong>'+esc(s.classe)+'</strong></span><button type="button" data-remove-slot="'+esc(s.id)+'">Supprimer</button></div>').join(''):'<p class="muted small">Aucun cours enregistré pour le moment.</p>';}
+updateHeader();renderPeriodTimes();document.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===tab?'true':'false'));renderView();
+$('slots').innerHTML=data.slots.length?'<h2 style="margin-top:20px">Cours enregistrés</h2>'+data.slots.slice().sort((a,b)=>a.day-b.day||a.start.localeCompare(b.start)).map(s=>'<div class="task flex"><span>'+days[s.day]+' '+(s.period?'P'+s.period+' · ':'')+(s.start&&s.end?esc(s.start)+'–'+esc(s.end):'heures non réglées')+' · <strong>'+esc(s.classe)+'</strong></span><button type="button" data-remove-slot="'+esc(s.id)+'">Supprimer</button></div>').join(''):'<p class="muted small">Aucun cours enregistré pour le moment.</p>';}
+$('savePeriodTimes').addEventListener('click',()=>{
+ const times={};for(let n=1;n<=9;n++){const start=$('period-start-'+n).value,end=$('period-end-'+n).value;if(Boolean(start)!==Boolean(end)||(start&&start>=end)){alert('Vérifiez le début et la fin de la période '+n);return;}if(start)times[n]={start,end};}
+ const sorted=Object.entries(times).sort((a,b)=>Number(a[0])-Number(b[0]));for(let i=1;i<sorted.length;i++)if(sorted[i][1].start<sorted[i-1][1].end){alert('Chevauchement entre les périodes '+sorted[i-1][0]+' et '+sorted[i][0]);return;}
+ data.periodTimes=times;data.slots.forEach(x=>{if(x.period){x.start=times[x.period]?.start||'';x.end=times[x.period]?.end||'';}});save();alert('Heures enregistrées. La classe s’affichera automatiquement pendant chaque cours.');
+});
+$('importPhotoSchedule').addEventListener('click',()=>{if(!confirm('Remplacer uniquement l’horaire existant par celui de la photo ? Les liens et rapports seront conservés.'))return;data.slots=photoSlots();data.slots.forEach(x=>{x.start=data.periodTimes[x.period]?.start||'';x.end=data.periodTimes[x.period]?.end||''});override='';save();});
 document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>{tab=b.dataset.tab;render();}));
 $('manualClass').addEventListener('change',e=>{override=e.target.value;render();});
 $('auto').addEventListener('click',()=>{override='';render();});
@@ -97,5 +116,6 @@ $('reportForm').addEventListener('submit',e=>{e.preventDefault();const url=safeU
 document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.toggle){const r=data.reports.find(x=>x.id===b.dataset.toggle);if(r){r.done=!r.done;save();}}if(b.dataset.removeReport){if(confirm('Retirer ce suivi de l’affichage ?')){data.reports=data.reports.filter(x=>x.id!==b.dataset.removeReport);save();}}if(b.dataset.removeSlot){if(confirm('Supprimer ce cours ?')){data.slots=data.slots.filter(x=>x.id!==b.dataset.removeSlot);save();}}});
 $('exportConfig').addEventListener('click',()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='topmath-administratif-sauvegarde.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);});
 $('reset').addEventListener('click',()=>{if(confirm('Effacer toutes les données administratives enregistrées sur cet iPad ?')){data=defaultData();override='';save();}});
+data.slots.forEach(x=>{if(x.period&&data.periodTimes[x.period]){x.start=data.periodTimes[x.period].start;x.end=data.periodTimes[x.period].end;}});
 render();clock();setInterval(clock,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)clock();});
 </script></body></html>
