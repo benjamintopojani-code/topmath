@@ -282,12 +282,12 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
  <form id="slotForm">
   <div class="row"><div><label for="day">Jour</label><select id="day" required><option value="1">Lundi</option><option value="2">Mardi</option><option value="3">Mercredi</option><option value="4">Jeudi</option><option value="5">Vendredi</option></select></div>
   <div><label for="slotPeriod">Période</label><select id="slotPeriod" required></select></div></div>
-  <label for="slotClass">Classe</label><select id="slotClass" required><option value="">Choisir une classe</option></select>
+  <label for="slotClass">Classe (forme 3)</label><select id="slotClass" required><option value="">Choisir une classe</option></select>
   <label for="slotGroup">Grille horaire</label><select id="slotGroup" required><option value="first">1re · Observation · Phase 1</option><option value="upper">Phases 2 et 3</option></select>
   <p id="slotTimePreview" class="muted small" role="status">Les heures sont calculées automatiquement selon le groupe choisi.</p>
   <div class="actions"><button type="submit" class="btn-primary">+ Ajouter le cours</button></div>
  </form>
- <details class="catalog-fold"><summary>Gérer ma liste de classes</summary><p class="muted small">La liste sera complétée quand tu fourniras toutes les classes de l’école. Ajout possible ici sans modifier les horaires.</p><form id="classCatalogForm"><label for="classCatalogInput">Ajouter une classe</label><div class="row"><input id="classCatalogInput" required maxlength="65" placeholder="Ex. : P2 HORT"><button type="submit">Ajouter à la liste</button></div></form></details>
+ <details class="catalog-fold"><summary>Gérer ma liste de classes</summary><p class="muted small">Les 36 classes de forme 3 de l'école sont déjà proposées, observation comprise. Tu peux ajouter une classe complémentaire ici.</p><form id="classCatalogForm"><label for="classCatalogInput">Ajouter une classe</label><div class="row"><input id="classCatalogInput" required maxlength="65" placeholder="Ex. : P2 HORT"><button type="submit">Ajouter à la liste</button></div></form></details>
  <div id="slots"></div></div></details>
  <details class="settings-legacy-links" hidden><summary><span class="settings-section-icon">05</span><span>Autres classes<small>Liens par classe</small></span><span class="settings-chevron" aria-hidden="true">⌄</span></summary><div class="settings-subsection-body">
  <form id="linkForm">
@@ -318,6 +318,8 @@ window.topmathAttendanceActive=()=>tab==='presences';
 window.topmathIsSimulation=()=>isSimulation;
 'use strict';
 const KEY='topmath-administratif-v1',days=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+// Classes de forme 3 communiquées par l'école (observation + phases 1 à 3).
+const SCHOOL_FORM3_CLASSES=["OBSA","OBSB","OBSC","OBSD","OBSE","1AGRO","2HORT","3JE","3OEH","1IND","2CM","2MECA/CAR","3FER","3PC","3PEC","3TC","1CONST","2CGO","3MAC","3PAV","1HOT","2REST","3CCC","3PCC","1ECO/TB","1ECO/TM","2TB","2TM","3ART","3AUX","3ED","1SP","2SSF","3ALC","3ALMSC","3TSN"];
 const PHOTO_COURS=[
 [2,1,'3 MAC / 3 AB'],[2,2,'3 MAC / 3 AB'],[2,3,'OBS E'],[2,4,'OBS B'],[2,5,'TC'],
 [3,1,'TC'],[3,2,'OBS E'],[3,3,'2 TB'],[3,4,'2 HORT'],
@@ -335,10 +337,12 @@ const groupForSlot=x=>Number(x.day)===3?'first':classGroup(x.classe);
 const slotTimes=x=>x.period?data.periodTimesByGroup?.[groupForSlot(x)]?.[x.period]||null:null;
 function applyPeriodTimings(){data.slots.forEach(x=>{if(!x.period)return;const v=slotTimes(x);x.start=v?.start||'';x.end=v?.end||'';});}
 let editingPeriodGroup='first';
-const defaultData=()=>({slots:photoSlots(),links:{},reports:[],classCatalog:[],periodTimes:structuredClone(FIRST_GRID),periodTimesByGroup:structuredClone(DEFAULT_GROUP_TIMES),classScheduleGroups:{},timeSource:'photo-ecole'});
+const defaultData=()=>({slots:photoSlots(),links:{},reports:[],classCatalog:structuredClone(SCHOOL_FORM3_CLASSES),periodTimes:structuredClone(FIRST_GRID),periodTimesByGroup:structuredClone(DEFAULT_GROUP_TIMES),classScheduleGroups:{},timeSource:'photo-ecole'});
 let data;try{data=JSON.parse(localStorage.getItem(KEY))||defaultData();if(!Array.isArray(data.slots)||!Array.isArray(data.reports)||!data.links||typeof data.links!=='object')throw Error('Format incorrect');}catch{data=defaultData();}
 if(data.slots.length===0)data.slots=photoSlots();
 if(!Array.isArray(data.classCatalog))data.classCatalog=[];
+// Enrichit également les configurations déjà enregistrées sans effacer les cours, liens et rapports.
+data.classCatalog=[...new Set([...SCHOOL_FORM3_CLASSES,...data.classCatalog])];
 if(!data.periodTimes||typeof data.periodTimes!=='object')data.periodTimes={};
 if(!data.classScheduleGroups||typeof data.classScheduleGroups!=='object')data.classScheduleGroups={};
 if(!data.periodTimesByGroup||!data.periodTimesByGroup.first||!data.periodTimesByGroup.upper){
