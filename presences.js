@@ -6,7 +6,7 @@ let state;
 try{state=JSON.parse(localStorage.getItem(KEY))||{};}catch{state={};}
 if(!state.rosters||typeof state.rosters!=='object')state.rosters={};
 if(!state.sessions||typeof state.sessions!=='object')state.sessions={};
-let selectedDate='',selectedPeriod='',selectedStudent='',selectedClass='';
+let selectedDate='',selectedPeriod='',selectedStudent='',selectedClass='',lastSlotKey='';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const id=s=>document.getElementById(s);
 const today=()=>{const d=new Date(),n=d.getTimezoneOffset()*60000;return new Date(d-n).toISOString().slice(0,10);};
@@ -33,9 +33,12 @@ function rosterNames(text){
  return result.sort((a,b)=>a.localeCompare(b,'fr',{sensitivity:'base'}));
 }
 function render(c,slot){
+ if(selectedClass!==c){selectedPeriod='';selectedStudent='';}
  selectedClass=c;
  if(!selectedDate)selectedDate=today();
  const cur=slot&&slot.classe===c&&slot.period?String(slot.period):'';
+ const slotKey=slot?.id||'';
+ if(slotKey!==lastSlotKey){if(cur)selectedPeriod=cur;lastSlotKey=slotKey;}
  const periods=periodOptions(c);
  if(!selectedPeriod||!periods.includes(selectedPeriod))selectedPeriod=cur||periods[0];
  const students=roster(c),ss=session(selectedDate,selectedPeriod,c);
