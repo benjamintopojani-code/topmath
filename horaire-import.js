@@ -130,7 +130,7 @@ function parseSchedule(text){
   const periodMatch=n.match(/(?:p(?:ériode|eriode)?|heure|h)\s*[°o:]?\s*([1-9])\b|\b([1-9])\s*(?:ere|eme|e)\s*(?:heure|periode)/);
   if(periodMatch)activePeriod=Number(periodMatch[1]||periodMatch[2]);
   let cellMatches=[...line.matchAll(/(?:^|[;|,\t])\s*(?:([1-9])\s*[-.:]\s*)?((?:OBS(?:ERVATION)?\s*[A-Z]|P?[123]\s*(?:HORT|TB|MAC|CGO|ECO|TC|PC|AB|TM)|[123]\s+[A-Z]{1,5}(?:\s*\/\s*[123]\s*[A-Z]{1,5})?|DLC|TC))\s*(?=$|[;|,\t])/gi)];
-  if(!cellMatches.length && activeDay && activePeriod && !reject.test(line) && line.length<65 && /(?:OBS|HORT|MAC|TB|CGO|TC|DLC|P[123])/i.test(line))cellMatches=[{1:null,2:line.trim()}];
+  if(!cellMatches.length && activeDay && activePeriod && !dayMatches.length && !reject.test(line) && line.length<65 && /^(?:OBS(?:ERVATION)?\s*[A-Z]|P?[123]\s*[A-Z]{1,6}|DLC|TC)(?:\s*\/\s*P?[123]\s*[A-Z]{1,6})?$/i.test(line.trim()))cellMatches=[{1:null,2:line.trim()}];
   for(let i=0;i<cellMatches.length;i++){
    const m=cellMatches[i],period=Number(m[1]||activePeriod),day=activeDay|| (daysInHeader.length===1?daysInHeader[0]:0);
    if(day>=1&&day<=5&&period>=1&&period<=9){
