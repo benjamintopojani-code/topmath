@@ -48,9 +48,9 @@ function render(c,slot){
  '<div class="journal-setting-group"><div class="journal-setting-title">Écriture</div><div class="journal-size-row"><span>Taille du texte</span><div class="journal-toolbar"><button type="button" id="journalSmaller" aria-label="Réduire le texte">A−</button><strong id="journalSize"></strong><button type="button" id="journalBigger" aria-label="Agrandir le texte">A+</button></div></div></div>'+
  '<div class="journal-setting-group"><div class="journal-setting-title">Téléchargements</div><div class="journal-downloads"><button type="button" id="journalPrint">Imprimer ce cours</button><button type="button" id="journalExport">Texte</button><button type="button" id="journalBackup">Sauvegarde complète</button></div></div>'+
  '<p class="journal-settings-hint">Sauvegarde automatique sur cet iPad. Pense à conserver une copie : ce journal n’est pas synchronisé avec le journal officiel.</p></div></div>'+
- '<div class="journal-week-export"><button type="button" class="btn-primary" id="journalYearPdf">Créer le PDF de mon journal depuis le début de l’année scolaire</button><p class="muted small" style="margin:0">Toutes les classes et toutes les notes depuis le 1er septembre, avec un récapitulatif et les cours classés par date.</p></div>'+
  '<label for="journalEditor" class="journal-writing-label">Notes du cours</label><textarea id="journalEditor" class="journal-editor" rows="17" placeholder="Écrire ici ce que nous avons fait aujourd’hui…"></textarea>'+
- '<p class="muted small" id="journalSaveState" role="status"></p>';
+ '<p class="muted small" id="journalSaveState" role="status"></p>'+
+ '<div class="journal-week-export"><button type="button" class="btn-primary" id="journalYearPdf">Créer le PDF de mon journal depuis le début de l’année scolaire</button><p class="muted small" style="margin:0">Toutes les classes et toutes les notes depuis le 1er septembre, avec un récapitulatif et les cours classés par date.</p></div>';
  const update=()=>refresh(c,slot,$('journalDate').value,$('journalPeriod').value);
  $('journalDate').addEventListener('change',()=>{if($('journalEditor').value!==lastHtml)persistPrevious(c);update();});
  $('journalPeriod').addEventListener('change',()=>{if($('journalEditor').value!==lastHtml)persistPrevious(c);update();});
