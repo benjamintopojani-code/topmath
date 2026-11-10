@@ -280,6 +280,19 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
 .agenda-open-button{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;background:#e8f1ff;border:1px solid #abc8ec;color:#1b528e;text-decoration:none;border-radius:9px;padding:13px;font-size:.92rem;font-weight:800;min-height:48px}
 .agenda-open-button:hover{background:#dcecff}
 .agenda-open-button:focus-visible{outline:3px solid #3175c5;outline-offset:2px}
+
+/* Présences : date et période compactes directement avant le tableau d'appel */
+.attendance-compact-head{display:flex;align-items:end;justify-content:space-between;flex-wrap:wrap;gap:10px;margin:0 0 7px}
+.attendance-compact-class{font-size:1.02rem;color:#193f74;line-height:1.3}
+.attendance-compact-controls{display:flex;align-items:end;gap:8px;max-width:100%}
+.attendance-compact-field{display:flex;flex-direction:column;gap:3px;margin:0;font-weight:600;font-size:.73rem;color:#56708c}
+.attendance-compact-field input,.attendance-compact-field select{height:39px;min-height:39px;padding:5px 9px;font-size:.88rem;border-radius:8px;background:#fff;margin:0}
+.attendance-compact-field input[type=date]{width:157px;max-width:100%}
+.attendance-period-field select{width:68px;min-width:68px}
+.section-page .attendance-compact-head+.attendance-table-wrap{margin-top:5px}
+.section-page .attendance-table th,.section-page .attendance-table td{padding-top:7px;padding-bottom:7px}
+.section-page .attendance-cell{min-height:40px}
+@media(max-width:500px){.attendance-compact-head{gap:7px}.attendance-compact-class{font-size:.95rem}.attendance-compact-controls{gap:6px}.attendance-compact-field input[type=date]{width:142px;font-size:.79rem}.attendance-period-field select{width:61px;min-width:61px;font-size:.8rem}.section-page #view{padding:12px!important}.section-page .attendance-table-wrap{margin-bottom:11px}}
 </style></head><body>
 <header><strong id="topbarTitle">TOP'MATH <span class="topbar-divider">·</span> ADMINISTRATIF</strong><div class="topbar-controls"><button id="topSettingsBtn" type="button" aria-label="Ouvrir les réglages" aria-expanded="false" title="Réglages">⚙️</button><a class="topbar-back" href="enseignant.html" aria-label="Retour à l’espace enseignant" title="Retour à l’espace enseignant">←</a></div></header>
 <main>
