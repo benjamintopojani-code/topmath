@@ -134,7 +134,7 @@ function render(c,slot){
  '<div id="attHistory"></div>';
  id('view').innerHTML=html;history(c);
  bindRosterControls(c,slot);
- id('view').addEventListener('change',function onAttendanceCheckbox(e){const input=e.target.closest('input[type="checkbox"][data-att-student]');if(!input||!input.checked)return;document.querySelectorAll('[data-att-student]').forEach(other=>{if(other!==input&&other.dataset.attStudent===input.dataset.attStudent)other.checked=false;});},{once:false});
+
  if(!sharedRoster&&!sharedLoading&&Date.now()-lastFetch>300000)fetchShared(c);
  id('attDate').addEventListener('change',e=>{selectedDate=e.target.value||today();render(c,slot);});
  id('attPeriod').addEventListener('change',e=>{selectedPeriod=e.target.value;render(c,slot);});
@@ -173,5 +173,6 @@ function exportCSV(c){
  const data=[['Date','Période','Classe','Élève','Statut','Dernière modification'],...rows.map(r=>[r.date,r.periode,r.classe,r.name,({P:'Présent',A:'Absent',S:'Stage',R:'Retard'})[r.status]||'Non renseigné',r.updated])];
  download('topmath-presences-'+(scope==='all'?'toutes-classes':c.replace(/[^a-z0-9-]/gi,'-'))+'-'+today()+'.csv',csv(data),'text/csv;charset=utf-8');
 }
+document.addEventListener('change',e=>{const input=e.target.closest('input[type="checkbox"][data-att-student]');if(!input||!input.checked)return;document.querySelectorAll('[data-att-student]').forEach(other=>{if(other!==input&&other.dataset.attStudent===input.dataset.attStudent)other.checked=false;});});
 window.TopMathAttendance={render,refreshFromTopMath:fetchShared,studentsForClass:c=>roster(c),linkedClassIds:autoMap};
 })();
