@@ -36,10 +36,39 @@ summary{font-weight:700;cursor:pointer;padding:8px 0}details{margin-top:20px}hr{
 .attendance-cell input{width:24px;height:24px;min-height:24px;margin:0;accent-color:#1561b8}
 @media(max-width:430px){.attendance-table{font-size:13px}.attendance-table thead th{font-size:12px}.attendance-table thead th:first-child{width:43%;padding-left:9px}.attendance-table thead th:not(:first-child){width:19%}.attendance-table tbody th{padding-left:9px}}
 .section-page #adminNav,.section-page details.card{display:none}.section-page main{padding-top:12px}.section-page .hero{padding:14px}.section-page .hero h1{font-size:1.12rem}.section-page #view{margin-top:12px!important}.section-page header{position:sticky;top:0;z-index:10}
+
+/* Accueil : 3 accès directs, paramètres légers. Pages enfants : contenu seul. */
+#adminSettings{box-shadow:none;border:0;background:transparent;padding:0;margin-top:14px}
+#adminSettings>summary{display:flex;align-items:center;justify-content:center;gap:7px;min-height:43px;width:max-content;margin-left:auto;border:1px solid #c2d5ea;border-radius:10px;background:#fff;padding:8px 13px;color:#17467e;font-size:.92rem;font-weight:800;list-style:none}
+#adminSettings>summary::-webkit-details-marker{display:none}
+#adminSettings>summary::marker{content:''}
+#adminSettings[open]{background:#fff;border:1px solid #d5e1f0;padding:14px;border-radius:14px;box-shadow:0 3px 10px #182b4510}
+#adminSettings[open]>summary{margin-bottom:16px}
+#adminSettings .settings-content{max-width:100%}
+#adminSettings .hero{margin:0 0 14px}
+#adminNav{margin:24px 0 0}
+#adminNav .tile{min-height:160px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:8px;font-size:1.55rem}
+#adminNav .tile strong{margin:0;font-size:1.14rem}
+#adminNav .tile small{font-size:.84rem}
+body:not(.section-page) #view{display:none}
+.section-page #adminNav,.section-page #adminSettings{display:none!important}
+.section-page #view{display:block!important}
+.section-page main{padding-top:16px}
+@media(max-width:650px){#adminNav{grid-template-columns:1fr;gap:13px}#adminNav .tile{min-height:105px;gap:4px;font-size:1.35rem}}
 </style></head><body>
 <header><strong>TOP'MATH · ADMINISTRATIF</strong><a href="enseignant.html">← Espace enseignant</a></header>
 <main>
-<section class="card hero" aria-live="polite">
+
+<div class="grid" id="adminNav" aria-label="Rubriques administratives">
+ <a class="tile" data-section-link="journal" href="journal.html">📖<strong>Journal de classe</strong><small>Ouvrir la page du journal</small></a>
+ <a class="tile" data-section-link="presences" href="presences.html">👥<strong>Présences</strong><small>Ouvrir la feuille d'appel</small></a>
+ <a class="tile" data-section-link="rapports" href="rapports.html">📋<strong>Rapports</strong><small>Ouvrir les suivis</small></a>
+</div>
+<section id="view" class="card" style="margin-top:16px" aria-live="polite"></section>
+<details id="adminSettings" class="card settings-panel"><summary aria-label="Réglages" title="Réglages"><span aria-hidden="true">⚙️</span><span class="settings-label">Réglages</span></summary>
+ <div class="settings-content">
+ <h2>Mon cours et ma classe</h2>
+ <section class="card hero" aria-live="polite">
  <p class="notice small hidden" id="simulationNotice">Mode simulation : l’heure est fictive. Aucun changement de l’horloge de l’iPad.</p>
  <div class="flex"><div><h1>Mon cours actuel</h1><div id="time" class="muted"></div></div><span class="pill" id="status">Horaire à configurer</span></div>
  <h2 id="currentClass" style="font-size:1.65rem;margin:14px 0 5px">Aucun cours identifié</h2>
@@ -47,13 +76,7 @@ summary{font-weight:700;cursor:pointer;padding:8px 0}details{margin-top:20px}hr{
  <div class="row"><div><label for="manualClass">Consulter une autre classe</label><select id="manualClass"></select></div>
  <div style="align-self:end"><button type="button" id="auto">Revenir au cours actuel</button></div></div>
 </section>
-<div class="grid" id="adminNav" aria-label="Rubriques administratives">
- <a class="tile" data-section-link="journal" href="journal.html">📖<strong>Journal de classe</strong><small>Ouvrir la page du journal</small></a>
- <a class="tile" data-section-link="presences" href="presences.html">👥<strong>Présences</strong><small>Ouvrir la feuille d'appel</small></a>
- <a class="tile" data-section-link="rapports" href="rapports.html">📋<strong>Rapports</strong><small>Ouvrir les suivis</small></a>
-</div>
-<section id="view" class="card" style="margin-top:16px" aria-live="polite"></section>
-<details class="card"><summary>⚙️ Configurer mon horaire et mes liens</summary>
+ <hr><h2>Paramètres administratifs</h2>
  <p class="muted small">Configuration de départ à réaliser une fois. Les réglages sont conservés uniquement dans ce navigateur sur cet iPad (sans synchronisation). N'enregistrez pas d'informations confidentielles sur un appareil partagé.</p>
  <h2>1. Horaire importé de la photo (2026-2027)</h2>
  <p class="muted small">Les jours et classes sont déjà saisis. Pour activer la sélection automatique, indiquez une seule fois les heures de début et de fin de chaque période. Elles s'appliquent à toute la semaine.</p>
@@ -82,6 +105,7 @@ summary{font-weight:700;cursor:pointer;padding:8px 0}details{margin-top:20px}hr{
  </form>
  <p class="notice small">Attention : les noms des élèves et leurs liens de suivi restent stockés localement dans ce navigateur. Avant une utilisation réelle avec des données d'élèves, prévoir une authentification, des accès autorisés et une solution de stockage conforme aux règles de l'établissement.</p>
  <div class="actions"><button type="button" id="exportConfig">Exporter une sauvegarde JSON</button><button type="button" id="reset" style="color:#9d2c35">Effacer la configuration locale</button></div>
+ </div>
 </details>
 </main>
 <script src="presences.js"></script>
