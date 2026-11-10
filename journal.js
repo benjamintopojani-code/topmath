@@ -21,6 +21,14 @@ function refresh(c,slot,date,period){
  $('journalSize').textContent=store.fontSize+' px';
  $('journalEditor').style.fontSize=store.fontSize+'px';
 }
+function persistPrevious(c){
+ const text=$('journalEditor').value;
+ const old=store.entries[activeKey]||{};
+ let coordinates;try{coordinates=JSON.parse(activeKey);}catch{return;}
+ const [date,period,classe]=coordinates;
+ store.entries[activeKey]={...old,date,period,classe,text,updated:new Date().toISOString()};
+ saved();
+}
 function persist(c){
  const date=$('journalDate').value,period=$('journalPeriod').value;
  if(!date){alert('Sélectionnez une date.');return;}
@@ -42,8 +50,8 @@ function render(c,slot){
  '<div class="actions"><button type="button" class="btn-primary" id="journalSave">Enregistrer ce cours</button><button type="button" id="journalPrint">Imprimer / Enregistrer en PDF</button><button type="button" id="journalExport">Exporter en texte</button><button type="button" id="journalBackup">Sauvegarder tous mes journaux (JSON)</button></div>'+
  '<div class="notice small" style="margin-top:18px">Ce journal est sauvegardé uniquement dans ce navigateur. Il ne remplace pas le journal officiel et n’est pas synchronisé entre appareils. Gardez une sauvegarde régulière.</div>';
  const update=()=>refresh(c,slot,$('journalDate').value,$('journalPeriod').value);
- $('journalDate').addEventListener('change',()=>{if($('journalEditor').value!==lastHtml)persist(c);update();});
- $('journalPeriod').addEventListener('change',()=>{if($('journalEditor').value!==lastHtml)persist(c);update();});
+ $('journalDate').addEventListener('change',()=>{if($('journalEditor').value!==lastHtml)persistPrevious(c);update();});
+ $('journalPeriod').addEventListener('change',()=>{if($('journalEditor').value!==lastHtml)persistPrevious(c);update();});
  $('journalSave').addEventListener('click',()=>persist(c));
  $('journalBigger').addEventListener('click',()=>{store.fontSize=Math.min(32,store.fontSize+2);saved();$('journalEditor').style.fontSize=store.fontSize+'px';$('journalSize').textContent=store.fontSize+' px';});
  $('journalSmaller').addEventListener('click',()=>{store.fontSize=Math.max(14,store.fontSize-2);saved();$('journalEditor').style.fontSize=store.fontSize+'px';$('journalSize').textContent=store.fontSize+' px';});
