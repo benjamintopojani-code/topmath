@@ -170,7 +170,7 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
 <section id="classSettings" class="class-settings card" hidden aria-label="Réglages de la classe">
  <div class="class-settings-heading"><div><span class="admin-class-caption">RÉGLAGES DE LA CLASSE</span><h2 id="settingsClassTitle">Classe</h2></div><button type="button" id="closeClassSettings" class="class-settings-close" aria-label="Fermer les réglages">✕</button></div>
  <div class="settings-group"><div class="settings-section-title"><span class="settings-section-icon">01</span><span>Classe affichée</span></div>
- <label for="settingsClassChoice">Choisir une classe</label><select id="settingsClassChoice"></select>
+ <label for="settingsClassChoice">Choisir une classe</label><select id="settingsClassChoice"></select><label for="settingsClassGroup">Grille horaire de cette classe</label><select id="settingsClassGroup"><option value="first">1re · Observation · Phase 1</option><option value="upper">Phases 2 et 3</option></select><p class="muted small">Le mercredi, la première grille s'applique automatiquement à toutes les classes.</p>
  <button type="button" id="settingsAuto" class="settings-auto-btn">↺ Afficher mon cours actuel</button></div>
  <details class="settings-group settings-fold"><summary><span class="settings-section-icon">02</span><span>Liens de cette classe<small>Journal et présences</small></span><span class="settings-chevron">⌄</span></summary>
  <div class="settings-short">
@@ -191,8 +191,8 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
 </section></details>
  <h2 class="settings-advanced-heading">Options complémentaires</h2>
  <p class="muted small">Configuration de départ à réaliser une fois. Les réglages sont conservés uniquement dans ce navigateur sur cet iPad (sans synchronisation). N'enregistrez pas d'informations confidentielles sur un appareil partagé.</p>
- <details class="settings-subsection"><summary>Horaires des périodes</summary><div class="settings-subsection-body">
- <p class="muted small">Les jours et classes sont déjà saisis. Pour activer la sélection automatique, indiquez une seule fois les heures de début et de fin de chaque période. Elles s'appliquent à toute la semaine.</p>
+ <details class="settings-subsection"><summary>Horaires des périodes par groupe</summary><div class="settings-subsection-body">
+ <p class="muted small">Horaires relevés sur la photo de l'école. Chaque groupe a ses heures et ses récréations propres. Le mercredi, la grille 1re / Observation / Phase 1 s'applique à tous.</p><div class="schedule-group-tabs" role="group" aria-label="Choisir la grille horaire"><button type="button" data-period-group="first" aria-pressed="true">1re · Obs · P1</button><button type="button" data-period-group="upper" aria-pressed="false">P2 · P3</button></div>
  <p class="notice small" id="timeDisclaimer">Heures 1 à 8 préremplies d'après un ancien document du Chêneux (à vérifier pour 2026-2027). La 9e période est à confirmer. Les récréations et pauses ne déclenchent aucune classe.</p><div id="periodTimes"></div><div class="actions"><button type="button" class="btn-primary" id="savePeriodTimes">Enregistrer les heures des périodes</button><button type="button" id="importPhotoSchedule">Recharger l'horaire de la photo</button></div>
  </div></details>
  <details class="settings-subsection"><summary>Ajouter ou retirer un cours</summary><div class="settings-subsection-body"><h3>Ajouter un cours</h3>
