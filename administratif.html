@@ -228,6 +228,13 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
 #scheduleImportPreview{margin-top:10px}
 #scheduleImportSave{width:100%}
 @media(max-width:480px){.import-panel{padding:10px}.import-row{grid-template-columns:1fr 64px 1.35fr 40px;gap:4px}.import-row input,.import-row select{font-size:.76rem;padding:5px}}
+
+.phase-import-group{margin:12px 0;background:#fff;padding:10px;border:1px solid #d3e1f2;border-radius:9px}
+.phase-import-group h4{margin:3px 0 9px;font-size:.92rem;color:#174c82}
+.phase-import-row{display:grid;grid-template-columns:45px 1fr 1fr;gap:6px;align-items:center;padding:6px 0;border-bottom:1px solid #ecf1f7}
+.phase-import-row input{font-size:.87rem;padding:6px;min-width:0}
+.phase-import-row small{grid-column:2 / 4;color:#7b5a13}
+#schedulePhaseSave{width:100%;background:#e4f0ff;color:#164f88;border-color:#a9c8eb;margin-bottom:12px}
 </style></head><body>
 <header><strong id="topbarTitle">TOP'MATH <span class="topbar-divider">·</span> ADMINISTRATIF</strong><div class="topbar-controls"><button id="topSettingsBtn" type="button" aria-label="Ouvrir les réglages" aria-expanded="false" title="Réglages">⚙️</button><a class="topbar-back" href="enseignant.html" aria-label="Retour à l’espace enseignant" title="Retour à l’espace enseignant">←</a></div></header>
 <main>
@@ -280,6 +287,8 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
  <button type="button" id="scheduleImportReparse">Analyser ce texte</button>
  </details>
  <div id="scheduleImportPreview"></div>
+ <div id="schedulePhasePreview"></div>
+ <button type="button" id="schedulePhaseSave" hidden>Appliquer les horaires vérifiés</button>
  <div id="scheduleImportActions" hidden>
  <button type="button" id="scheduleImportAdd">+ Ajouter un cours</button>
  <label for="scheduleImportMode">Enregistrement</label>
@@ -471,7 +480,12 @@ $('settingsSaveLinks').addEventListener('click',()=>{
  alert('Liens de la classe '+c+' enregistrés sur cet appareil.');
 });
 $('auto').addEventListener('click',()=>{override='';render();});
-window.TopMathScheduleImport?.init({apply:(items,mode)=>{
+window.TopMathScheduleImport?.init({applyPhase:prepared=>{
+ for(const g of ['first','upper'])Object.assign(data.periodTimesByGroup[g],prepared[g]||{});
+ data.periodTimes=data.periodTimesByGroup.first;
+ data.timeSource='confirme';
+ applyPeriodTimings();save();
+},apply:(items,mode)=>{
  const incoming=items.map((x,i)=>({id:'import-'+Date.now()+'-'+i,day:Number(x.day),period:Number(x.period),classe:x.classe,start:'',end:''}));
  if(mode==='replace')data.slots=incoming;
  else {
