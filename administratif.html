@@ -316,6 +316,16 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
 .journal-week-controls button{min-width:44px;min-height:42px;border-radius:9px;background:#fff;border:1px solid #adc8e9;color:#24588c;font-size:1.15rem;font-weight:800;cursor:pointer}
 .journal-week-export #journalWeekPdf{width:100%;min-height:45px;font-size:.93rem}
 @media(max-width:450px){.journal-week-export{padding:10px}.journal-week-controls label{min-width:145px}.journal-week-export #journalWeekPdf{font-size:.86rem}}
+
+/* Journal : période à gauche, titre de leçon à côté, visible dès l'ouverture */
+.journal-lesson-heading{display:flex;align-items:stretch;gap:10px;margin:0 0 11px;min-height:52px}
+.journal-period-badge{flex:0 0 auto;display:flex;align-items:center;justify-content:center;min-width:67px;padding:9px 13px;background:#1d5fa6;border-radius:10px;color:#fff;font-size:1.15rem;font-weight:800}
+.journal-lesson-title-label{display:flex;flex:1;min-width:0;margin:0}
+.journal-lesson-title-label input{width:100%;min-width:0;min-height:52px;margin:0;padding:10px 14px;border:1px solid #bbd0e9;border-radius:10px;background:#f3f8ff;color:#173d72;font-size:1.08rem;font-weight:750}
+.journal-lesson-title-label input::placeholder{color:#637c99;font-weight:500}
+.journal-lesson-title-label input:focus-visible{outline:3px solid #4381cd;outline-offset:2px}
+.journal-lesson-title-label .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:480px){.journal-lesson-heading{gap:7px}.journal-period-badge{min-width:54px;padding:8px;font-size:1rem}.journal-lesson-title-label input{font-size:1rem;padding:9px}}
 </style></head><body>
 <header><strong id="topbarTitle">TOP'MATH <span class="topbar-divider">·</span> ADMINISTRATIF</strong><div class="topbar-controls"><button id="topSettingsBtn" type="button" aria-label="Ouvrir les réglages" aria-expanded="false" title="Réglages">⚙️</button><a class="topbar-back" href="enseignant.html" aria-label="Retour à l’espace enseignant" title="Retour à l’espace enseignant">←</a></div></header>
 <main>
