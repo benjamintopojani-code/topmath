@@ -1,0 +1,43 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Top'Math — Test journal annuel</title>
+<style>*{box-sizing:border-box}body{margin:0;background:#f1f6fd;color:#17395e;font:16px Arial,sans-serif}header{background:#142e56;color:#fff;padding:20px 17px;font-weight:800}.card{max-width:740px;margin:25px auto;background:white;border:1px solid #ceddf0;border-radius:15px;padding:24px}h1{font-size:1.5rem}p{line-height:1.55}button{border:0;border-radius:10px;background:#205fa8;color:#fff;font:700 1rem Arial,sans-serif;padding:15px 18px;cursor:pointer;min-height:48px;width:100%}.stats{display:flex;gap:12px;flex-wrap:wrap;margin:18px 0}.stats div{flex:1;min-width:130px;background:#ebf3ff;padding:14px;border-radius:9px;text-align:center}.stats strong{display:block;font-size:1.6rem}.hint{font-size:.87rem;color:#536e8e}a{color:#215f9e}</style></head>
+<body><header>TOP'MATH · TEST DU JOURNAL DE CLASSE</header><main class="card"><h1>Journal annuel — démonstration</h1>
+<p>Ce test crée un <strong>journal de professeur fictif</strong> avec plusieurs classes et des cours répartis depuis le 1er septembre 2026. Il n'enregistre et ne modifie aucune donnée de ton vrai journal.</p>
+<div class="stats"><div><strong>5</strong>classes</div><div><strong id="count">0</strong>cours fictifs</div><div><strong>Sept. → Nov.</strong>2026</div></div>
+<p class="hint">Le PDF comprend un récapitulatif « aide-mémoire », puis les journées, périodes, classes et contenus des cours, sur plusieurs pages A4.</p>
+<button id="generate" type="button">Créer et télécharger le PDF d'essai</button>
+<p id="status" class="hint" role="status">Prêt : données fictives uniquement.</p><p><a href="journal.html">Revenir à mon journal de classe</a></p></main>
+<script src="journal-pdf.js"></script>
+<script>
+'use strict';
+const classes=['OBSB','OBSE','2TB','2HORT','3MAC'];
+const notes=[
+ 'Accueil de la classe. Rappel des objectifs, présentation des consignes et organisation du travail. Exercices courts de diagnostic.',
+ 'Calcul mental et décomposition de nombres. Mise en commun des stratégies. Correction et aide individualisée.',
+ 'Révision des additions posées. Exercices progressifs. Vérification des retenues et correction collective.',
+ 'Lecture et compréhension de problèmes concrets liés à la vie quotidienne. Recherche des données utiles.',
+ 'Mesures de longueurs : conversions simples et activités de manipulation. Utilisation du tableau de conversion.',
+ 'Géométrie : reconnaissance des droites parallèles et perpendiculaires. Tracés à la règle et à l’équerre.',
+ 'Travail sur les surfaces : calcul d’aires de rectangles et situations concrètes en atelier.',
+ 'Multiplications et calculs de quantités. Utilisation d’exemples professionnels de chantier.',
+ 'Évaluation formative sur les compétences travaillées. Retour oral et préparation de la remédiation.',
+ 'Remédiation différenciée. Chaque élève reprend les exercices qui ont posé problème. Bilan de séance.'
+];
+const raw={},start=new Date('2026-09-01T12:00:00'),end=new Date('2026-11-10T12:00:00');
+let n=0;
+for(let d=new Date(start);d<=end;d.setDate(d.getDate()+1)){
+ const weekday=d.getDay();if(weekday===0||weekday===6)continue;
+ const date=[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
+ const dayIndex=Math.round((d-start)/86400000);
+ for(let p=0;p<3;p++){
+  const classe=classes[(dayIndex+p*2)%classes.length],period=[1,3,7][p];
+  const key=JSON.stringify([date,String(period),classe]);
+  raw[key]={date,period:String(period),classe,text:notes[(dayIndex+p)%notes.length]+(p===1?'\nExercices terminés ou poursuivis selon le rythme des élèves.':''),updated:date+'T15:00:00Z'};
+  n++;
+ }
+}
+document.getElementById('count').textContent=n;
+document.getElementById('generate').addEventListener('click',()=>{
+ try{const r=window.TopMathJournalPdf.exportSchoolYear('2026-11-10',raw);document.getElementById('status').textContent='PDF généré : '+r.count+' cours fictifs, '+r.classes+' classes, du '+r.start+' au '+r.end+'.';}
+ catch(e){document.getElementById('status').textContent='Erreur : '+e.message;}
+});
+</script></body></html>
