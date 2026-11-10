@@ -64,5 +64,17 @@ function render(c,slot){
  $('journalPrint').addEventListener('click',()=>{persist(c);const w=window.open('','_blank');if(!w){alert('Autorisez les fenêtres pour imprimer.');return;}const h='<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Journal de classe</title><style>body{font:17px Arial,sans-serif;margin:30mm 20mm;color:#222}h1{font-size:24px}pre{font:inherit;white-space:pre-wrap;overflow-wrap:anywhere}</style></head><body><h1>Journal de classe — '+esc(c)+'</h1><p>'+esc($('journalDate').value)+' · Période '+esc($('journalPeriod').value)+'</p><hr><pre>'+esc($('journalEditor').value)+'</pre></body></html>';w.document.write(h);w.document.close();w.focus();setTimeout(()=>w.print(),250);});
  refresh(c,slot,oldDate,chosenPeriod);
 }
-window.TopMathJournal={render};
+function toggleSettings(){
+ const body=$('journalSettingsBody'),button=$('topSettingsBtn');
+ if(!body){return false;}
+ const opening=body.hidden;
+ body.hidden=!opening;
+ if(button){
+  button.setAttribute('aria-expanded',String(opening));
+  button.setAttribute('aria-label',opening?'Fermer les réglages du journal':'Ouvrir les réglages du journal');
+  button.title=opening?'Fermer les réglages':'Ouvrir les réglages';
+ }
+ return true;
+}
+window.TopMathJournal={render,toggleSettings};
 })();
