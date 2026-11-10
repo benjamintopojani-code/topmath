@@ -32,6 +32,73 @@ function rosterNames(text){
  }
  return result.sort((a,b)=>a.localeCompare(b,'fr',{sensitivity:'base'}));
 }
+
+/* Connexion commune aux listes de l'année active de Top'Math (Cloudflare D1). */
+let sharedRoster=null,sharedYear='',sharedLoading=false,sharedError='',lastFetch=0;
+const norm=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+function autoMap(c){
+ if(!sharedRoster)return [];
+ const existing=state.classLinks?.[c];
+ if(existing?.year===sharedYear&&Array.isArray(existing.ids))return existing.ids;
+ const names=String(c).split(/\s*\/\s*/).map(x=>norm(x)).filter(Boolean);
+ const found=[];
+ for(const name of names){
+   const exact=sharedRoster.classes.filter(x=>norm(x.name)===name);
+   if(exact.length===1)found.push(String(exact[0].id));
+ }
+ return [...new Set(found)];
+}
+function syncFromDb(c,rerender){
+ if(!sharedRoster)return false;
+ const ids=autoMap(c);
+ if(!ids.length)return false;
+ const people=sharedRoster.students.filter(x=>ids.includes(String(x.class_id)));
+ const names=[...new Set(people.map(x=>[x.last_name,x.first_name].filter(Boolean).join(' ').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'fr'));
+ if(!names.length)return false;
+ const old=roster(c);
+ if(old.length===names.length&&old.every((v,i)=>v===names[i]))return true;
+ state.rosters[c]=names;
+ if(persist()&&rerender)render(c,window.topmathCurrentSlot?.());
+ return true;
+}
+async function fetchShared(c,force=false){
+ if(sharedLoading)return;
+ if(!force&&Date.now()-lastFetch<300000)return;
+ sharedLoading=true;sharedError='';
+ try{
+  const response=await fetch('/api/roster',{credentials:'same-origin',headers:{'Accept':'application/json'},cache:'no-store'});
+  if(!response.ok)throw Error('HTTP '+response.status);
+  const json=await response.json();
+  if(!json.ok||!Array.isArray(json.classes)||!Array.isArray(json.students))throw Error(json.error||'Réponse incorrecte');
+  sharedRoster={classes:json.classes,students:json.students};
+  sharedYear=String(json.year?.label||'');
+  lastFetch=Date.now();
+  if(state.classLinks?.[c]&&state.classLinks[c].year!==sharedYear)delete state.classLinks[c];
+  syncFromDb(c,false);
+ }catch(err){sharedError=String(err.message||err);}
+ finally{sharedLoading=false;if(selectedClass===c&&id('view'))render(c,window.topmathCurrentSlot?.());}
+}
+function rosterSyncPanel(c){
+ if(sharedLoading)return '<p class="muted small">Synchronisation des classes depuis Top’Math en cours…</p>';
+ if(!sharedRoster)return '<div class="notice small">Liste commune indisponible'+(sharedError?' : '+esc(sharedError):'')+'. Vérifiez la connexion et la base scolaire active.</div><div class="actions"><button type="button" id="attRefreshDb">Réessayer la synchronisation</button></div>';
+ const mapped=autoMap(c),linked=sharedRoster.classes.filter(x=>mapped.includes(String(x.id)));
+ return '<p class="muted small">Source : Top’Math · année active '+esc(sharedYear||'non définie')+'. Synchronisation automatique lorsque la classe correspond à l’horaire.</p>'+
+ (linked.length?'<p class="pill">Liée à '+linked.map(x=>esc(x.name)).join(' + ')+'</p>':'<p class="notice small">Correspondance non trouvée automatiquement : choisissez la ou les classes importées dans Top’Math.</p>')+
+ '<label for="attDbClasses">Classes provenant de Top’Math (sélection multiple)</label><select id="attDbClasses" multiple size="'+Math.min(8,Math.max(3,sharedRoster.classes.length))+'">'+
+ sharedRoster.classes.map(x=>'<option value="'+esc(x.id)+'"'+(mapped.includes(String(x.id))?' selected':'')+'>'+esc(x.name)+'</option>').join('')+
+ '</select><div class="actions"><button type="button" id="attLinkDb">Lier ces classes</button><button type="button" id="attRefreshDb">Actualiser les listes</button></div>';
+}
+function bindRosterControls(c,slot){
+ id('attRefreshDb')?.addEventListener('click',()=>fetchShared(c,true));
+ id('attLinkDb')?.addEventListener('click',()=>{
+   const ids=[...id('attDbClasses').selectedOptions].map(o=>o.value);
+   if(!ids.length){alert('Sélectionnez au moins une classe.');return;}
+   state.classLinks ||= {};
+   state.classLinks[c]={year:sharedYear,ids};
+   if(persist()){syncFromDb(c,false);render(c,slot);}
+ });
+}
+
 function render(c,slot){
  if(selectedClass!==c){selectedPeriod='';selectedStudent='';}
  selectedClass=c;
@@ -47,6 +114,7 @@ function render(c,slot){
  const html='<h2>Présences · '+esc(c)+'</h2>'+
  '<p class="muted small">Feuille de présence indépendante, avec conservation locale sur cet iPad. Les anciennes séances sont consultables et exportables.</p>'+
  '<div class="notice small"><strong>Confidentialité :</strong> prototype sans compte individuel ni synchronisation sécurisée. Ne l’utilisez pas pour le registre officiel ou avec des données personnelles réelles sans validation de l’établissement. Une suppression des données Safari efface l’historique local.</div>'+
+ '<div class="task"><strong>Listes d’élèves communes</strong>'+rosterSyncPanel(c)+'</div>'+ 
  '<div class="row"><div><label for="attDate">Date du cours</label><input type="date" id="attDate" value="'+esc(selectedDate)+'"></div>'+
  '<div><label for="attPeriod">Période</label><select id="attPeriod">'+periods.map(p=>'<option value="'+esc(p)+'"'+(selectedPeriod===p?' selected':'')+'>Période '+esc(p)+'</option>').join('')+'</select></div></div>'+
  (ss?'<p class="pill">Enregistré le '+esc(new Date(ss.updated).toLocaleString('fr-BE'))+'</p>':'<p class="muted small">Aucun appel enregistré pour cette séance.</p>')+
@@ -65,6 +133,8 @@ function render(c,slot){
  '<div class="actions"><button id="attCsv" type="button">Télécharger l’historique CSV</button><button id="attJson" type="button">Sauvegarder toutes les présences (JSON)</button><button id="attRestore" type="button">Restaurer une sauvegarde</button><input type="file" accept=".json,application/json" id="attRestoreFile" style="display:none"></div>'+
  '<div id="attHistory"></div>';
  id('view').innerHTML=html;history(c);
+ bindRosterControls(c,slot);
+ if(!sharedRoster&&!sharedLoading)fetchShared(c);
  id('attDate').addEventListener('change',e=>{selectedDate=e.target.value||today();render(c,slot);});
  id('attPeriod').addEventListener('change',e=>{selectedPeriod=e.target.value;render(c,slot);});
  id('attStudent').addEventListener('change',e=>{selectedStudent=e.target.value;history(c);});
@@ -102,5 +172,5 @@ function exportCSV(c){
  const data=[['Date','Période','Classe','Élève','Statut','Dernière modification'],...rows.map(r=>[r.date,r.periode,r.classe,r.name,({P:'Présent',A:'Absent',R:'Retard'})[r.status]||'Non renseigné',r.updated])];
  download('topmath-presences-'+(scope==='all'?'toutes-classes':c.replace(/[^a-z0-9-]/gi,'-'))+'-'+today()+'.csv',csv(data),'text/csv;charset=utf-8');
 }
-window.TopMathAttendance={render};
+window.TopMathAttendance={render,refreshFromTopMath:fetchShared};
 })();
