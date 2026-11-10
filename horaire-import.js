@@ -69,9 +69,13 @@ function parseGridFromPositions(words){
  const normalizeWord=w=>norm(w.text).replace(/[^a-z0-9]/g,'');
  const validClass=raw=>{
   let value=clean(raw).toUpperCase().replace(/\s*\/\s*/g,' / ').replace(/\s+/g,' ');
-  value=value.replace(/^(?:MATHEMATIQUES?|MATHS?|COURS)\s*[:\-]?\s*/,'').trim();
-  if(/^(?:OBS(?:ERVATION)?\s*[A-Z]|P?[123]\s*(?:[A-Z]{1,6})(?:\s*\/\s*P?[123]\s*[A-Z]{1,6})?|DLC|TC)$/.test(value))return value;
-  return '';
+  value=value.replace(/\b(?:MATHE|MATH|MATHS|MATHEMATIQUES?|MATHEMATIQUE|P\s?5[29]|SALLE|LOCAL|COURS)\b/gi,' ').replace(/\s+/g,' ').trim();
+  // School timetable often prints "3MAC" and "3AB" at opposite ends of the cell.
+  const matched=value.match(/(?:\b(?:OBS(?:ERVATION)?\s*[A-Z]|[123]\s*[A-Z]{1,6}|DLC|TC)\b)/g)||[];
+  const names=matched.filter(x=>!/^(?:P59|P52)$/i.test(x)).map(x=>x.replace(/^OBSERVATION\s*/,'OBS ').replace(/^OBS([A-Z])$/,'OBS $1').replace(/^([123])\s*/,'$1 ').replace(/\s+/g,' ').trim());
+  if(!names.length||names.length>2)return '';
+  if(names.length===2&&names[0]===names[1])return names[0];
+  return names.join(' / ');
  };
  const pages=[...new Set(words.map(w=>w.page||1))];
  for(const page of pages){
@@ -104,13 +108,14 @@ function parseGridFromPositions(words){
     if(!cell.length)continue;
     const yGroups=[];
     for(const w of cell){let group=yGroups.find(g=>Math.abs(g.y-w.cy)<Math.max(10,(w.height||12)*.8));if(!group){group={y:w.cy,words:[]};yGroups.push(group);}group.words.push(w);}
-    let value='';
-    for(const group of yGroups){
-     const raw=group.words.sort((a,b)=>a.x-b.x).map(w=>w.text).join(' ');
-     value=validClass(raw);
+    const useful=cell.filter(w=>!/(?:^(?:MATHE|MATHS?|COURS|P59|P52)$)/i.test(normalizeWord(w)));
+    // Split labels can appear across one or several lines; read the entire cell,
+    // excluding the subject label (MATHE) and room identifier (P59/P52).
+    let value=validClass(useful.sort((a,b)=>a.cy-b.cy||a.x-b.x).map(w=>w.text).join(' '));
+    if(!value)for(const group of yGroups){
+     value=validClass(group.words.sort((a,b)=>a.x-b.x).map(w=>w.text).join(' '));
      if(value)break;
     }
-    if(!value)value=validClass(cell.map(w=>w.text).join(' '));
     if(value&&!results.some(x=>x.day===h.day&&x.period===r.period))results.push({day:h.day,period:r.period,classe:value});
    }
   }
