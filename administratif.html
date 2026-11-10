@@ -118,19 +118,56 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
 .class-settings .settings-advanced-btn{width:100%;text-align:left}
 #adminSettings:not([open]){display:none!important}
 @media(max-width:480px){.class-settings{padding:14px}.class-settings-heading h2{font-size:1.15rem}}
+
+/* Réglages regroupés dans un parcours clair */
+.class-settings{max-width:760px;margin:14px auto 0;padding:18px;background:#fff}
+.class-settings-heading{padding-bottom:12px;border-bottom:1px solid #e1e8f1}
+.class-settings .settings-group{border:1px solid #d9e4f2;border-radius:12px;padding:14px;margin-top:12px;background:#fbfdff}
+.settings-section-title{display:flex;gap:10px;align-items:center;color:#1c416f;font-weight:800}
+.settings-section-icon{display:grid;place-items:center;width:30px;height:30px;min-width:30px;border-radius:9px;background:#e8f1ff;color:#1c568e;font-weight:800;font-size:.78rem}
+.settings-group label{margin:13px 0 7px}
+.settings-group select{max-width:100%;background:#fff}
+.class-settings .settings-auto-btn{margin-top:10px;width:100%;background:#eff5ff;text-align:center}
+.settings-fold{padding:0!important}
+.settings-fold>summary{display:flex;gap:10px;align-items:center;padding:15px;cursor:pointer;list-style:none}
+.settings-fold>summary::-webkit-details-marker{display:none}
+.settings-fold>summary::marker{content:''}
+.settings-fold>summary span:nth-child(2),.settings-advanced-btn>span:nth-child(2){flex:1;text-align:left;font-size:.94rem;font-weight:800;color:#244672}
+.settings-fold small,.settings-advanced-btn small{display:block;font-size:.77rem;font-weight:400;color:#637b99;margin-top:3px}
+.settings-chevron{color:#486c96;font-size:1.2rem}
+.settings-fold[open] .settings-chevron{transform:rotate(180deg)}
+.class-settings .settings-short{border-top:1px solid #e4ebf5;margin:0;padding:10px 14px 15px}
+.class-settings .settings-short h3{display:none}
+.class-settings .settings-advanced-btn{width:100%;display:flex;gap:10px;align-items:center;padding:14px;background:#f5f9ff;border:1px solid #d9e4f2;border-radius:12px;margin-top:12px;min-height:62px}
+.class-settings .settings-advanced-btn .settings-chevron{margin-left:auto}
+.class-settings .settings-advanced-btn[aria-expanded=true] .settings-chevron{transform:rotate(180deg)}
+#adminSettings{max-width:760px;margin:12px auto 0;border:1px solid #dce6f2;box-shadow:none;padding:12px}
+#adminSettings .settings-advanced-heading{font-size:1rem;margin:4px 5px 12px}
+#adminSettings .settings-content>p:first-of-type{font-size:.77rem}
+#adminSettings .settings-subsection{border:1px solid #dce6f2;background:#fff;border-radius:10px;margin:8px 0}
+#adminSettings .settings-subsection>summary{padding:13px 14px;cursor:pointer;list-style:none;font-weight:750;color:#204979;display:list-item}
+#adminSettings .settings-subsection>summary::marker{color:#3c79ae}
+#adminSettings .settings-subsection-body{padding:0 14px 15px;border-top:1px solid #e3ebf5}
+#adminSettings .settings-subsection-body h3{font-size:.95rem;margin:14px 0 8px}
+#adminSettings .hero{padding:12px;margin:8px 0}
+#adminSettings .hero h1{font-size:1.05rem}
+#adminSettings button{max-width:100%}
+@media(max-width:480px){.class-settings{padding:12px}#adminSettings{padding:8px}#adminSettings .settings-subsection-body{padding:0 10px 12px}#adminSettings .row{grid-template-columns:1fr}}
 </style></head><body>
 <header><strong id="topbarTitle">TOP'MATH <span class="topbar-divider">·</span> ADMINISTRATIF</strong><div class="topbar-controls"><button id="topSettingsBtn" type="button" aria-label="Ouvrir les réglages" aria-expanded="false" title="Réglages">⚙️</button><a class="topbar-back" href="enseignant.html" aria-label="Retour à l’espace enseignant" title="Retour à l’espace enseignant">←</a></div></header>
 <main>
 <section id="adminClassBanner" class="admin-class-banner" aria-live="polite"><span class="admin-class-caption">CLASSE EN COURS</span><h1 id="adminClassTitle">Aucun cours en cours</h1><p id="adminClassPeriod">La classe s'affiche selon l'horaire.</p></section>
 <section id="classSettings" class="class-settings card" hidden aria-label="Réglages de la classe">
  <div class="class-settings-heading"><div><span class="admin-class-caption">RÉGLAGES DE LA CLASSE</span><h2 id="settingsClassTitle">Classe</h2></div><button type="button" id="closeClassSettings" class="class-settings-close" aria-label="Fermer les réglages">✕</button></div>
- <label for="settingsClassChoice">Classe à consulter</label><select id="settingsClassChoice"></select>
- <button type="button" id="settingsAuto" class="settings-auto-btn">↺ Revenir au cours actuel</button>
- <div class="settings-short"><h3>Liens de cette classe</h3>
+ <div class="settings-group"><div class="settings-section-title"><span class="settings-section-icon">01</span><span>Classe affichée</span></div>
+ <label for="settingsClassChoice">Choisir une classe</label><select id="settingsClassChoice"></select>
+ <button type="button" id="settingsAuto" class="settings-auto-btn">↺ Afficher mon cours actuel</button></div>
+ <details class="settings-group settings-fold"><summary><span class="settings-section-icon">02</span><span>Liens de cette classe<small>Journal et présences</small></span><span class="settings-chevron">⌄</span></summary>
+ <div class="settings-short">
  <label for="settingsJournalLink">Journal de classe</label><input type="url" id="settingsJournalLink" placeholder="https://...">
  <label for="settingsPresenceLink">Présences</label><input type="url" id="settingsPresenceLink" placeholder="https://...">
- <button type="button" class="btn-primary" id="settingsSaveLinks">Enregistrer les liens de cette classe</button></div>
- <button type="button" id="settingsAdvanced" class="settings-advanced-btn" aria-expanded="false">Autres réglages : horaires, cours et rapports <span aria-hidden="true">⌄</span></button>
+ <button type="button" class="btn-primary" id="settingsSaveLinks">Enregistrer ces liens</button></div></details>
+ <button type="button" id="settingsAdvanced" class="settings-advanced-btn" aria-expanded="false"><span class="settings-section-icon">03</span><span>Plus d'options<small>Horaire, cours, rapports et sauvegarde</small></span><span class="settings-chevron" aria-hidden="true">⌄</span></button>
 </section>
 <div class="grid" id="adminNav" aria-label="Rubriques administratives">
  <a class="tile" data-section-link="journal" href="journal.html">📖<strong>Journal de classe</strong><small>Ouvrir la page du journal</small></a>
@@ -140,7 +177,7 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
 <section id="view" class="card" style="margin-top:16px" aria-live="polite"></section>
 <details id="adminSettings" class="card settings-panel"><summary class="visually-hidden">Réglages administratifs</summary>
  <div class="settings-content">
- <h2>Mon cours et ma classe</h2>
+ <details class="settings-subsection"><summary>Autre sélection de classe</summary>
  <section class="card hero" aria-live="polite">
  <p class="notice small hidden" id="simulationNotice">Mode simulation : l’heure est fictive. Aucun changement de l’horloge de l’iPad.</p>
  <div class="flex"><div><h1>Mon cours actuel</h1><div id="time" class="muted"></div></div><span class="pill" id="status">Horaire à configurer</span></div>
@@ -148,27 +185,28 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
  <p id="currentSlot" class="muted">Ajoutez votre horaire pour afficher la classe automatiquement.</p>
  <div class="row"><div><label for="manualClass">Consulter une autre classe</label><select id="manualClass"></select></div>
  <div style="align-self:end"><button type="button" id="auto">Revenir au cours actuel</button></div></div>
-</section>
- <hr><h2>Paramètres administratifs</h2>
+</section></details>
+ <h2 class="settings-advanced-heading">Options complémentaires</h2>
  <p class="muted small">Configuration de départ à réaliser une fois. Les réglages sont conservés uniquement dans ce navigateur sur cet iPad (sans synchronisation). N'enregistrez pas d'informations confidentielles sur un appareil partagé.</p>
- <h2>1. Horaire importé de la photo (2026-2027)</h2>
+ <details class="settings-subsection"><summary>Horaires des périodes</summary><div class="settings-subsection-body">
  <p class="muted small">Les jours et classes sont déjà saisis. Pour activer la sélection automatique, indiquez une seule fois les heures de début et de fin de chaque période. Elles s'appliquent à toute la semaine.</p>
  <p class="notice small" id="timeDisclaimer">Heures 1 à 8 préremplies d'après un ancien document du Chêneux (à vérifier pour 2026-2027). La 9e période est à confirmer. Les récréations et pauses ne déclenchent aucune classe.</p><div id="periodTimes"></div><div class="actions"><button type="button" class="btn-primary" id="savePeriodTimes">Enregistrer les heures des périodes</button><button type="button" id="importPhotoSchedule">Recharger l'horaire de la photo</button></div>
- <hr><h2>Ajouter exceptionnellement un cours</h2>
+ </div></details>
+ <details class="settings-subsection"><summary>Ajouter ou retirer un cours</summary><div class="settings-subsection-body"><h3>Ajouter un cours</h3>
  <form id="slotForm">
   <div class="row"><div><label for="day">Jour</label><select id="day" required><option value="1">Lundi</option><option value="2">Mardi</option><option value="3">Mercredi</option><option value="4">Jeudi</option><option value="5">Vendredi</option></select></div>
   <div><label for="slotClass">Classe</label><input id="slotClass" required maxlength="65" placeholder="Ex. : P2 TB"></div></div>
   <div class="row"><div><label for="start">Début</label><input type="time" id="start" required></div><div><label for="end">Fin</label><input type="time" id="end" required></div></div>
   <div class="actions"><button type="submit" class="btn-primary">Ajouter le cours</button></div>
- </form><div id="slots"></div>
- <hr><h2>2. Liens vers les outils officiels</h2>
+ </form><div id="slots"></div></div></details>
+ <details class="settings-subsection"><summary>Liens des autres classes</summary><div class="settings-subsection-body">
  <form id="linkForm">
   <label for="linkClass">Classe</label><select id="linkClass" required></select>
   <label for="journalUrl">Lien du journal de classe</label><input type="url" id="journalUrl" placeholder="https://...">
   <label for="presenceUrl">Lien des présences</label><input type="url" id="presenceUrl" placeholder="https://...">
   <div class="actions"><button type="submit" class="btn-primary">Enregistrer les liens</button></div>
- </form>
- <hr><h2>3. Lier un rapport à un élève</h2>
+ </form></div></details>
+ <details class="settings-subsection"><summary>Associer un rapport à un élève</summary><div class="settings-subsection-body">
  <form id="reportForm">
   <label for="reportClass">Classe</label><select id="reportClass" required></select>
   <label for="student">Élève concerné</label><input id="student" list="studentOptions" maxlength="100" required placeholder="Nom de l'élève"><datalist id="studentOptions"></datalist><p class="muted small">Les élèves de la classe liés dans « Présences » seront proposés automatiquement.</p>
@@ -176,8 +214,8 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
   <label for="reportUrl">Lien direct du document en ligne</label><input id="reportUrl" type="url" placeholder="https://..." required>
   <div class="actions"><button type="submit" class="btn-primary">Ajouter le rapport</button></div>
  </form>
- <p class="notice small">Attention : les noms des élèves et leurs liens de suivi restent stockés localement dans ce navigateur. Avant une utilisation réelle avec des données d'élèves, prévoir une authentification, des accès autorisés et une solution de stockage conforme aux règles de l'établissement.</p>
- <div class="actions"><button type="button" id="exportConfig">Exporter une sauvegarde JSON</button><button type="button" id="reset" style="color:#9d2c35">Effacer la configuration locale</button></div>
+ <p class="notice small">Attention : les noms des élèves et leurs liens de suivi restent stockés localement dans ce navigateur. Avant une utilisation réelle avec des données d'élèves, prévoir une authentification, des accès autorisés et une solution de stockage conforme aux règles de l'établissement.</p></div></details>
+ <details class="settings-subsection"><summary>Sauvegarde et réinitialisation</summary><div class="settings-subsection-body"><div class="actions"><button type="button" id="exportConfig">Exporter une sauvegarde JSON</button><button type="button" id="reset" style="color:#9d2c35">Effacer la configuration locale</button></div></div></details>
  </div>
 </details>
 </main>
