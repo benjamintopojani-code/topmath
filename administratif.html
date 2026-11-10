@@ -246,10 +246,41 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
 .agenda-entry small{display:block;font-size:.77rem;color:#637b99;margin-top:4px}
 .agenda-entry .agenda-arrow{font-size:1.35rem;color:#2667aa}
 .agenda-entry:focus-visible{outline:3px solid #3175c5;border-radius:10px}
+
+.admin-class-select{width:100%;display:block;font:inherit;cursor:pointer;touch-action:manipulation}
+.admin-class-select:focus-visible{outline:3px solid #2a72c7;outline-offset:3px}
+.class-pick-hint{display:block;margin-top:14px;font-size:.82rem;color:#2e659d;font-weight:750;letter-spacing:0}
+.course-picker-dialog{border:0;border-radius:18px;padding:0;width:min(970px,calc(100vw - 20px));max-height:calc(100dvh - 26px);box-shadow:0 24px 90px #10264b66;color:#1c385b}
+.course-picker-dialog::backdrop{background:#0b234c88}
+.course-picker-head{display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid #dbe5f1;padding:16px 18px}
+.course-picker-head h2{font-size:1.3rem;margin:6px 0 0}
+.course-picker-close{font-size:1.35rem;background:#eff4fc;border:1px solid #d1deed;border-radius:9px;min-width:44px;min-height:44px;cursor:pointer}
+.course-picker-note{font-size:.85rem;margin:12px 16px;color:#536d88}
+.course-picker-scroller{overflow:auto;max-height:min(68dvh,640px);margin:0 12px}
+.course-picker-table{border-collapse:separate;border-spacing:0;width:100%;min-width:670px;table-layout:fixed}
+.course-picker-table th{background:#eaf2fc;color:#23527f;font-size:.86rem;position:sticky;top:0;z-index:1;padding:12px 3px;border-bottom:1px solid #cfdff1}
+.course-picker-table th:first-child{width:50px}
+.course-picker-table td{border-bottom:1px solid #e1eaf4;padding:4px;height:70px}
+.course-picker-table tbody th{border-bottom:1px solid #e1eaf4;background:#f5f8fd;color:#365d85;font-size:.8rem}
+.course-picker-choice{width:100%;height:100%;min-height:62px;background:#eaf3ff;color:#1d4879;border:1px solid #b5cdeb;border-radius:9px;cursor:pointer;font:inherit;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:3px;padding:5px;touch-action:manipulation}
+.course-picker-choice strong{font-size:.83rem;overflow-wrap:anywhere}
+.course-picker-choice small{font-size:.69rem;color:#506c8a}
+.course-picker-choice.active{outline:3px solid #286ac0;outline-offset:-3px}
+.course-picker-choice:focus-visible{outline:3px solid #286ac0}
+.course-picker-empty{background:#fafbfe;border:1px dashed #e2eaf4;border-radius:9px;min-height:62px}
+.course-picker-foot{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:14px 16px;border-top:1px solid #dbe5f1}
+.course-picker-foot button,.course-picker-foot a{padding:11px 13px;border:1px solid #aac7e7;border-radius:9px;color:#20558e;background:#f3f8ff;font-size:.9rem;font-weight:750;text-decoration:none;cursor:pointer}
+@media(max-width:700px){.course-picker-dialog{width:calc(100vw - 10px)}.course-picker-scroller{margin:0 6px}.course-picker-head{padding:12px}.course-picker-note{margin:9px 12px}.class-pick-hint{font-size:.76rem}}
 </style></head><body>
 <header><strong id="topbarTitle">TOP'MATH <span class="topbar-divider">·</span> ADMINISTRATIF</strong><div class="topbar-controls"><button id="topSettingsBtn" type="button" aria-label="Ouvrir les réglages" aria-expanded="false" title="Réglages">⚙️</button><a class="topbar-back" href="enseignant.html" aria-label="Retour à l’espace enseignant" title="Retour à l’espace enseignant">←</a></div></header>
 <main>
-<section id="adminClassBanner" class="admin-class-banner" aria-live="polite"><span class="admin-class-caption">CLASSE EN COURS</span><h1 id="adminClassTitle">Aucun cours en cours</h1><p id="adminClassPeriod">La classe s'affiche selon l'horaire.</p></section>
+<button type="button" id="adminClassBanner" class="admin-class-banner admin-class-select" aria-haspopup="dialog" aria-controls="coursePicker" aria-label="Choisir une classe dans mon horaire"><span class="admin-class-caption">CLASSE EN COURS</span><h1 id="adminClassTitle">Aucun cours en cours</h1><p id="adminClassPeriod">La classe s'affiche selon l'horaire.</p><span class="class-pick-hint"><span aria-hidden="true">▦</span> Toucher pour choisir une autre classe dans mon horaire</span></button>
+<dialog id="coursePicker" class="course-picker-dialog" aria-labelledby="coursePickerTitle">
+ <div class="course-picker-head"><div><span class="admin-class-caption">MON HORAIRE</span><h2 id="coursePickerTitle">Choisir un cours</h2></div><button type="button" class="course-picker-close" id="closeCoursePicker" aria-label="Fermer">✕</button></div>
+ <p class="course-picker-note">Touche un cours passé ou à venir. Tu travailleras sur sa classe sans modifier ton horaire.</p>
+ <div class="course-picker-scroller"><table class="course-picker-table"><thead><tr><th>P.</th><th>Lundi</th><th>Mardi</th><th>Mercredi</th><th>Jeudi</th><th>Vendredi</th></tr></thead><tbody id="coursePickerBody"></tbody></table></div>
+ <div class="course-picker-foot"><button type="button" id="coursePickerAuto">↺ Revenir à la classe automatique</button><a href="horaire.html">Modifier mon horaire</a></div>
+</dialog>
 <section id="classSettings" class="class-settings card" hidden aria-label="Réglages de la classe">
  <div class="class-settings-heading"><div><span class="admin-class-caption">RÉGLAGES DE LA CLASSE</span><h2 id="settingsClassTitle">Classe</h2></div><button type="button" id="closeClassSettings" class="class-settings-close" aria-label="Fermer les réglages">✕</button></div>
  <div class="settings-group"><div class="settings-section-title"><span class="settings-section-icon">01</span><span>Classe affichée</span></div>
