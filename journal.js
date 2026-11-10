@@ -42,7 +42,7 @@ function render(c,slot){
  let periods=[...new Set([...available,'1','2','3','4','5','6','7','8','9'])].sort((a,b)=>Number(a)-Number(b));
  const oldDate=$('journalDate')?.value||date,oldPeriod=$('journalPeriod')?.value||cur||periods[0];
  const chosenPeriod=(slot&&slot.classe===c&&cur)?cur:oldPeriod;
- $('view').innerHTML='<div class="journal-course-frame"><div class="journal-frame-top"><div class="journal-course-name"><span class="attendance-course-eyebrow">JOURNAL DE CLASSE</span><h2>'+esc(c)+'</h2><p class="journal-course-time">'+esc(slot&&slot.classe===c&&slot.start?slot.start+' – '+slot.end:'Cours sélectionné')+'</p></div><details class="journal-settings" id="journalSettings"><summary aria-label="Ouvrir les réglages du journal" title="Réglages">⚙️ <span>Réglages</span></summary></details></div>'+
+ $('view').innerHTML='<div class="journal-course-frame"><div class="journal-frame-top"><div class="journal-course-name"><span class="attendance-course-eyebrow">JOURNAL DE CLASSE</span><h2>'+esc(c)+'</h2><p class="journal-course-time">'+esc(slot&&slot.classe===c&&slot.start?slot.start+' – '+slot.end:'Cours sélectionné')+'</p></div></div>'+
  '<div class="journal-settings-body" id="journalSettingsBody" hidden>'+
  '<div class="journal-setting-group"><div class="journal-setting-title">Cours</div><div class="row"><div><label for="journalDate">Date</label><input type="date" id="journalDate" value="'+esc(oldDate)+'"></div><div><label for="journalPeriod">Heure de cours</label><select id="journalPeriod">'+periods.map(p=>'<option value="'+esc(p)+'"'+(chosenPeriod===p?' selected':'')+'>Période '+esc(p)+'</option>').join('')+'</select></div></div></div>'+
  '<div class="journal-setting-group"><div class="journal-setting-title">Écriture</div><div class="journal-size-row"><span>Taille du texte</span><div class="journal-toolbar"><button type="button" id="journalSmaller" aria-label="Réduire le texte">A−</button><strong id="journalSize"></strong><button type="button" id="journalBigger" aria-label="Agrandir le texte">A+</button></div></div></div>'+
@@ -50,8 +50,6 @@ function render(c,slot){
  '<p class="journal-settings-hint">Sauvegarde automatique sur cet iPad. Pense à conserver une copie : ce journal n’est pas synchronisé avec le journal officiel.</p></div></div>'+
  '<label for="journalEditor" class="journal-writing-label">Notes du cours</label><textarea id="journalEditor" class="journal-editor" rows="17" placeholder="Écrire ici ce que nous avons fait aujourd’hui…"></textarea>'+
  '<p class="muted small" id="journalSaveState" role="status"></p>';
- const settings=$('journalSettings'),settingsBody=$('journalSettingsBody');
- settings.addEventListener('toggle',()=>{settingsBody.hidden=!settings.open;});
  const update=()=>refresh(c,slot,$('journalDate').value,$('journalPeriod').value);
  $('journalDate').addEventListener('change',()=>{if($('journalEditor').value!==lastHtml)persistPrevious(c);update();});
  $('journalPeriod').addEventListener('change',()=>{if($('journalEditor').value!==lastHtml)persistPrevious(c);update();});
