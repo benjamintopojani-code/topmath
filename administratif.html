@@ -226,7 +226,8 @@ $('reset').addEventListener('click',()=>{if(confirm('Effacer toutes les données
 data.slots.forEach(x=>{if(x.period&&data.periodTimes[x.period]){x.start=data.periodTimes[x.period].start;x.end=data.periodTimes[x.period].end;}});
 $('topSettingsBtn').addEventListener('click',()=>{
  if(pagePanel==='journal'){
-  const body=$('journalSettingsBody');if(!body)return;
+  if(window.TopMathJournal?.toggleSettings){window.TopMathJournal.toggleSettings();return;}
+  const body=$('journalSettingsBody');if(!body){renderView();return;}
   body.hidden=!body.hidden;
   $('topSettingsBtn').setAttribute('aria-expanded',String(!body.hidden));
   $('topSettingsBtn').setAttribute('aria-label',body.hidden?'Ouvrir les réglages du journal':'Fermer les réglages du journal');
