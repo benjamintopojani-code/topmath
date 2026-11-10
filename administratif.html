@@ -271,6 +271,15 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
 .course-picker-foot{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:14px 16px;border-top:1px solid #dbe5f1}
 .course-picker-foot button,.course-picker-foot a{padding:11px 13px;border:1px solid #aac7e7;border-radius:9px;color:#20558e;background:#f3f8ff;font-size:.9rem;font-weight:750;text-decoration:none;cursor:pointer}
 @media(max-width:700px){.course-picker-dialog{width:calc(100vw - 10px)}.course-picker-scroller{margin:0 6px}.course-picker-head{padding:12px}.course-picker-note{margin:9px 12px}.class-pick-hint{font-size:.76rem}}
+
+/* Menus de paramètres : trois rubriques cohérentes, sélection de classe dans le cadre supérieur. */
+.settings-legacy-class-selection{display:none!important}
+.class-settings .settings-agenda-first{margin-top:12px}
+.class-settings .settings-storage-note{margin:14px 2px 0!important;padding:0!important}
+.class-settings .settings-agenda-first .settings-subsection-body{display:block}
+.agenda-open-button{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;background:#e8f1ff;border:1px solid #abc8ec;color:#1b528e;text-decoration:none;border-radius:9px;padding:13px;font-size:.92rem;font-weight:800;min-height:48px}
+.agenda-open-button:hover{background:#dcecff}
+.agenda-open-button:focus-visible{outline:3px solid #3175c5;outline-offset:2px}
 </style></head><body>
 <header><strong id="topbarTitle">TOP'MATH <span class="topbar-divider">·</span> ADMINISTRATIF</strong><div class="topbar-controls"><button id="topSettingsBtn" type="button" aria-label="Ouvrir les réglages" aria-expanded="false" title="Réglages">⚙️</button><a class="topbar-back" href="enseignant.html" aria-label="Retour à l’espace enseignant" title="Retour à l’espace enseignant">←</a></div></header>
 <main>
@@ -282,10 +291,9 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
  <div class="course-picker-foot"><button type="button" id="coursePickerAuto">↺ Revenir à la classe automatique</button><a href="horaire.html">Modifier mon horaire</a></div>
 </dialog>
 <section id="classSettings" class="class-settings card" hidden aria-label="Réglages de la classe">
- <div class="class-settings-heading"><div><span class="admin-class-caption">RÉGLAGES DE LA CLASSE</span><h2 id="settingsClassTitle">Classe</h2></div><button type="button" id="closeClassSettings" class="class-settings-close" aria-label="Fermer les réglages">✕</button></div>
- <div class="settings-group"><div class="settings-section-title"><span class="settings-section-icon">01</span><span>Classe affichée</span></div>
- <label for="settingsClassChoice">Choisir une classe</label><select id="settingsClassChoice"></select><label for="settingsClassGroup">Grille horaire de cette classe</label><select id="settingsClassGroup"><option value="first">1re · Observation · Phase 1</option><option value="upper">Phases 2 et 3</option></select><p class="muted small">Le mercredi, la première grille s'applique automatiquement à toutes les classes.</p>
- <button type="button" id="settingsAuto" class="settings-auto-btn">↺ Afficher mon cours actuel</button></div>
+ <div class="class-settings-heading"><div><span class="admin-class-caption">PARAMÈTRES</span><h2 id="settingsClassTitle">Réglages administratifs</h2></div><button type="button" id="closeClassSettings" class="class-settings-close" aria-label="Fermer les réglages">✕</button></div>
+ <div class="settings-legacy-class-selection" hidden aria-hidden="true"><select id="settingsClassChoice" tabindex="-1"></select><select id="settingsClassGroup" tabindex="-1"><option value="first">1re · Observation · Phase 1</option><option value="upper">Phases 2 et 3</option></select><button type="button" id="settingsAuto" tabindex="-1">Afficher mon cours actuel</button></div>
+ <details class="settings-group settings-fold settings-subsection settings-agenda-first"><summary><span class="settings-section-icon">01</span><span>Mon horaire<small>Ajouter, modifier ou supprimer mes cours</small></span><span class="settings-chevron" aria-hidden="true">⌄</span></summary><div class="settings-subsection-body"><p class="muted small">Retrouve toute ta semaine dans un agenda interactif. Touche une période pour choisir une classe et sa grille horaire, sans encoder les heures.</p><a class="agenda-open-button" href="horaire.html"><span aria-hidden="true">▦</span> Ouvrir l’horaire interactif <span aria-hidden="true">→</span></a></div></details>
  <details class="settings-group settings-fold"><summary><span class="settings-section-icon">02</span><span>Liens de cette classe<small>Journal, présences et fiches d'élèves</small></span><span class="settings-chevron">⌄</span></summary>
  <div class="settings-short">
  <label for="settingsJournalLink">Journal de classe</label><input type="url" id="settingsJournalLink" placeholder="https://...">
@@ -316,8 +324,8 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
  <div style="align-self:end"><button type="button" id="auto">Revenir au cours actuel</button></div></div>
 </section></details>
  
- <p class="muted small">Configuration de départ à réaliser une fois. Les réglages sont conservés uniquement dans ce navigateur sur cet iPad (sans synchronisation). N'enregistrez pas d'informations confidentielles sur un appareil partagé.</p>
- <div class="settings-group agenda-settings-link"><a class="agenda-entry" href="horaire.html"><span class="settings-section-icon">03</span><span><strong>Mon horaire</strong><small>Ouvrir l’agenda interactif des périodes 1 à 9</small></span><span class="agenda-arrow" aria-hidden="true">→</span></a></div>
+ <p class="muted small settings-storage-note">Les réglages sont conservés uniquement sur cet appareil. N'enregistrez pas d'informations confidentielles sur un appareil partagé.</p>
+
  <details class="settings-legacy-links" hidden><summary><span class="settings-section-icon">05</span><span>Autres classes<small>Liens par classe</small></span><span class="settings-chevron" aria-hidden="true">⌄</span></summary><div class="settings-subsection-body">
  <form id="linkForm">
   <label for="linkClass">Classe</label><select id="linkClass" required></select>
@@ -326,7 +334,7 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
   <div class="actions"><button type="submit" class="btn-primary">Enregistrer les liens</button></div>
  </form></div></details>
 
- <details class="settings-group settings-fold settings-subsection"><summary><span class="settings-section-icon">04</span><span>Sauvegarde<small>Exporter ou réinitialiser</small></span><span class="settings-chevron" aria-hidden="true">⌄</span></summary><div class="settings-subsection-body"><div class="actions"><button type="button" id="exportConfig">Exporter une sauvegarde JSON</button><button type="button" id="reset" style="color:#9d2c35">Effacer la configuration locale</button></div></div></details>
+ <details class="settings-group settings-fold settings-subsection"><summary><span class="settings-section-icon">03</span><span>Sauvegarde<small>Exporter ou réinitialiser</small></span><span class="settings-chevron" aria-hidden="true">⌄</span></summary><div class="settings-subsection-body"><div class="actions"><button type="button" id="exportConfig">Exporter une sauvegarde JSON</button><button type="button" id="reset" style="color:#9d2c35">Effacer la configuration locale</button></div></div></details>
  </div>
 </div>
 </section>
@@ -414,7 +422,7 @@ function syncClassReportForm(c){
 }
 function populateClassSettings(){
  const c=current(),choices=classes();$('classSettings').dataset.currentClasse=c;
- $('settingsClassTitle').textContent=c||'Aucune classe en cours';
+ $('settingsClassTitle').textContent='Réglages administratifs';
  $('settingsClassChoice').innerHTML='<option value="">Classe automatique (horaire)</option>'+optionHTML(choices,c);
  $('settingsClassChoice').value=override||'';
  syncClassReportForm(c);
