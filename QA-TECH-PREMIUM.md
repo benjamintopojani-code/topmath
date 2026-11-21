@@ -24,3 +24,32 @@ Portée : branche `design/tech-premium-2026`. Aucun test d'écriture sur le D1 r
 
 ## Publication
 **Non validée.** Garder la pull request en brouillon et ne pas fusionner vers `main` tant que les tests sur un D1 de démonstration et la vérification des autorisations ne sont pas réalisés.
+
+
+## Deuxième série de tests — 21 novembre 2026
+
+### API élèves : simulation sans données réelles
+- [x] `/api/student-save` : ajout d'un élève et de son inscription (base simulée).
+- [x] `/api/student-save` : modification du prénom d'un élève existant.
+- [x] `/api/student-save` : date de naissance impossible (30 février) rejetée (HTTP 400).
+
+### API années : simulation sans données réelles
+- [x] `/api/year-manage` : création d'une nouvelle année qui devient active.
+- [x] `/api/year-manage` : suppression simulée d'une ancienne année, année active conservée.
+- [x] Vérification du correctif : aucune suppression globale de `evaluation_schedule_overrides` basée uniquement sur `student_id`.
+
+### PDF : vérification fonctionnelle isolée
+- [x] La couverture utilise les données d'identité et l'année active.
+- [x] Les trois dates figurent dans le tableau de compétences.
+- [x] Trois dates donnent « Validé ».
+- [x] Effacement d'une date la retire du contenu PDF et revient à « En cours ».
+- [ ] Vérifier le PDF complet sur iPad et dans un lecteur PDF, pour NORMAL et ÉCO.
+
+### Bloquants persistants
+- Contrôle d'autorisation côté serveur des routes D1 non confirmé. Ne pas publier avant vérification.
+- Retrait individuel d'un élève non repéré dans les routes examinées.
+- Progrès d'exercices historiques alimentés par des données de démonstration.
+- L'intégration Tech Premium utilise encore une iframe du moteur historique.
+- Aucun test sur D1 réel, aucune suppression de données réelles.
+
+**Statut global : vérifications de code et simulations encourageantes, mais réception en production non validée.**
