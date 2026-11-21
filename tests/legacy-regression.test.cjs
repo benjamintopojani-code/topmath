@@ -151,7 +151,7 @@ test('official PDF writer generates a four-page PDF structure without real data'
   const str=arr.toString('latin1');
   assert.match(str,/^%PDF-1\.4/);
   assert.match(str,/\/Type \/Pages \/Count 4/);
-  assert.match(str,/xref 0 16/);
+  assert.match(str,/xref\s+0 16/);
   assert.match(str,/startxref/);
   assert.match(str,/%%EOF$/);
 });
