@@ -10,6 +10,8 @@ const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,
 const save=()=>localStorage.setItem(KEY,JSON.stringify(db));
 const options=(arr,chosen)=>arr.map(x=>'<option value="'+esc(x)+'"'+(x===chosen?' selected':'')+'>'+esc(x)+'</option>').join('');
 const evaluationStatus=e=>e.open?'Ouverte':'Fermée';
+const progress=e=>{const ss=db.students.filter(s=>s.className===e.className);const done=ss.filter(s=>s.results?.[e.id]&&s.results[e.id]!=='Non évalué').length;return done+' / '+ss.length+' élèves évalués'};
+const when=e=>{if(!e.date)return 'À planifier';const d=new Date(e.date+'T12:00:00');const day=new Date();day.setHours(0,0,0,0);return d.getTime()<day.getTime()?'Date passée':d.getTime()<day.getTime()+7*86400000?'Prochainement':'Programmée'};
 const formClass=()=>'<label>Classe<select id="cls">'+options(db.classes,selectedClass)+'</select></label>';
 const alertBox=()=>'<div class="notice"><strong>Mode de test local.</strong> Les changements sont sauvegardés uniquement dans ce navigateur. Ils ne modifient pas les comptes élèves, ni leurs évaluations réelles.</div>';
 const toolBar=()=>'<div class="toolbar">'+formClass()+'<a class="smallbtn" href="competences-enseignant.html">← Menu Compétences</a></div>';
@@ -23,7 +25,7 @@ if(!selectedClass||!db.classes.includes(selectedClass))selectedClass=db.classes[
 let html=alertBox()+toolBar()+(message?'<div class="feedback" role="status">'+esc(message)+'</div>':'');
 if(page==='evaluations'){
 const items=entries();
-html+='<section class="panel"><h2>Évaluations par classe</h2><p class="minor">'+esc(selectedClass)+' · '+items.length+' évaluation(s) enregistrée(s)</p><div class="list">'+(items.length?items.map(e=>'<div class="entry"><div><strong>'+esc(e.code)+' · '+esc(e.title)+'</strong><p>'+esc(e.date||'Date non fixée')+' · <span class="'+(e.open?'open':'closed')+'">'+evaluationStatus(e)+'</span></p></div><a class="smallbtn" href="ouverture-competences.html">Gérer l’accès</a></div>').join(''):'<p>Aucune évaluation enregistrée pour cette classe.</p>')+'</div></section>';
+html+='<section class="panel"><h2>Évaluations par classe</h2><p class="minor">'+esc(selectedClass)+' · '+items.length+' évaluation(s) enregistrée(s)</p><div class="list">'+(items.length?items.map(e=>'<div class="entry"><div><strong>'+esc(e.code)+' · '+esc(e.title)+'</strong><p>'+esc(e.date||'Date non fixée')+' · '+when(e)+' · '+progress(e)+' · <span class="'+(e.open?'open':'closed')+'">'+evaluationStatus(e)+'</span></p></div><a class="smallbtn" href="ouverture-competences.html">Gérer l’accès</a></div>').join(''):'<p>Aucune évaluation enregistrée pour cette classe.</p>')+'</div></section>';
 html+='<section class="panel"><h2>Créer une évaluation</h2><form id="newEval" class="fields"><label>Code compétence<input name="code" required placeholder="Ex. N104"></label><label>Intitulé<input name="title" required placeholder="Addition posée"></label><label>Date prévue<input name="date" type="date"></label><button type="submit">Ajouter l’évaluation (fermée)</button></form></section>';
 }
 if(page==='eleves'){
