@@ -100,3 +100,19 @@ Couverture :
 Les contrôles d'autorisation des routes Cloudflare D1, les opérations de retrait individuel, la synchronisation des résultats réels, l'ouverture des évaluations côté élève, l'inspection PDF NORMAL / ÉCO et la navigation iPad demeurent à traiter / vérifier avec un environnement isolé.
 
 Aucun écrit ni suppression sur la base réelle.
+
+
+## Cinquième série — gestion des classes, 21 novembre 2026
+
+GitHub Actions `44930388086` : **succès**, 14 tests automatisés réussis sur la branche.
+Nouveau fichier : `tests/class-management.test.cjs`.
+
+- [x] Création et renommage d'une classe sur base simulée, sans supprimer un élève.
+- [x] Affectation d'un élève sans classe, suppression de la classe, conservation de sa ligne d'inscription et retour en non-affecté.
+- [x] Rejet des noms de classes vides et de la suppression sans identifiant.
+- [ ] Retrait individuel d'un élève : route spécifique non encore implémentée / vérifiée.
+- [ ] Authentification serveur : l'ancien accès enseignant repose sur une vérification locale par le navigateur. Les endpoints D1 modifiant les données ne comportent pas d'autorisation explicite. La protection par configuration Cloudflare externe reste à confirmer.
+
+Les tests simulent D1 sans atteindre de données de production ; ce ne sont pas des tests bout en bout sur l'école.
+
+**Ne pas fusionner la branche avant contrôle d'accès serveur et tests D1 isolés.**
