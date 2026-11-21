@@ -23,3 +23,20 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 .competency-fields input,.competency-fields select{width:100%;min-height:46px}
 @media(max-width:720px){.competency-entry{align-items:stretch;flex-direction:column}.competency-fields{width:100%;flex:none}}
 @media(max-width:400px){.competency-fields{grid-template-columns:1fr}}
+
+/* Trois validations datées par compétence */
+.competency-table-wrap{overflow-x:auto;max-width:100%;margin-bottom:16px}
+.competency-table{width:100%;border-collapse:separate;border-spacing:0;min-width:720px;color:#17395d}
+.competency-table th,.competency-table td{text-align:left;vertical-align:middle;padding:14px 10px;border-bottom:1px solid #d6e4f2}
+.competency-table thead th{background:#edf5ff;color:#244a77;font-size:13px}
+.competency-table tbody th{min-width:135px;font-size:16px}
+.competency-table tbody th small{display:block;font-size:12px;font-weight:400;color:#60788e;margin-top:6px;line-height:1.35}
+.date-control{display:grid;gap:8px;min-width:155px}
+.date-control input{width:100%;font-size:13px;padding:8px}
+.date-state{font-size:12px;font-weight:800;white-space:nowrap}
+.date-state.validated{color:#136b51}.date-state.pending{color:#8a5f26}
+.certification{display:inline-block;padding:8px 10px;border-radius:9px;font-size:12px;font-weight:800;white-space:nowrap}
+.certification.certified{background:#dcf5e8;color:#116549}
+.certification.progress{background:#fff1d7;color:#82530d}
+.certification.notstarted{background:#e9eef5;color:#496078}
+@media(max-width:760px){.competency-table{min-width:690px}.competency-table th,.competency-table td{padding:11px 8px}}
