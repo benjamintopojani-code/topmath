@@ -37,8 +37,6 @@ export async function onRequestPost(context){
 
     const {results: classRows}=await db.prepare(`SELECT id FROM classes WHERE school_year_id=?`).bind(yearId).all();
     const classIds=(classRows||[]).map(r=>r.id);
-    const {results: studentRows}=await db.prepare(`SELECT DISTINCT student_id FROM enrollments WHERE school_year_id=?`).bind(yearId).all();
-    const studentIds=(studentRows||[]).map(r=>r.student_id);
 
     const statements=[];
     statements.push(db.prepare(`DELETE FROM official_evaluations WHERE school_year_id=?`).bind(yearId));
@@ -47,10 +45,10 @@ export async function onRequestPost(context){
       const ph=classIds.map(()=>'?').join(',');
       statements.push(db.prepare(`DELETE FROM class_schedule WHERE class_id IN (${ph})`).bind(...classIds));
     }
-    if(studentIds.length){
-      const ph=studentIds.map(()=>'?').join(',');
-      statements.push(db.prepare(`DELETE FROM evaluation_schedule_overrides WHERE student_id IN (${ph})`).bind(...studentIds));
-    }
+    // IMPORTANT: evaluation_schedule_overrides is keyed by student, not school year.
+    // Students may be enrolled in multiple years. Deleting overrides by student_id
+    // would erase other years' planning. Preserve these records until the schema
+    // supports an explicit school_year_id and a precisely scoped deletion.
     statements.push(db.prepare(`DELETE FROM enrollments WHERE school_year_id=?`).bind(yearId));
     statements.push(db.prepare(`DELETE FROM classes WHERE school_year_id=?`).bind(yearId));
     statements.push(db.prepare(`DELETE FROM school_years WHERE id=?`).bind(yearId));

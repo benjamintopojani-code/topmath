@@ -1,0 +1,42 @@
+/* Top'Math — Mes classes, design Tech Premium */
+*{box-sizing:border-box}html{font-family:Arial,Helvetica,sans-serif}body{margin:0;min-height:100vh;color:#f4f8ff;background:radial-gradient(ellipse at 50% -10%,#244a76,#11243e 46%,#0a172a)}
+header{background:#0b1729ed;border-bottom:1px solid #35577d}header nav{max-width:1110px;margin:auto;padding:15px 19px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand{font-weight:900;font-size:22px;color:#fff;text-decoration:none}.brand span{color:#8bc5ff}.backlink,.return{display:inline-flex;align-items:center;border:1px solid #456990;border-radius:11px;padding:11px 14px;min-height:44px;text-decoration:none;color:#ecf6ff;font-weight:700;background:#15375e}
+main{max-width:1110px;margin:auto;padding:30px 18px 60px}.kicker{font-size:11px;letter-spacing:.16em;font-weight:900;color:#7eb9fa}.trail{display:flex;align-items:center;flex-wrap:wrap;gap:9px;color:#aecce9;font-size:13px;margin:5px 0 19px}.trail a{color:#c8e2ff}h1{font-size:clamp(28px,4.5vw,42px);margin:7px 0 10px;letter-spacing:-.02em}h2{font-size:21px;margin:0 0 18px}.intro{color:#cedff0;line-height:1.6;margin:0 0 23px}
+.notice{padding:13px 15px;background:#1a3655;border:1px solid #406a96;color:#e4efff;border-radius:12px;line-height:1.5;margin-bottom:19px;font-size:14px}
+.classgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px;margin-bottom:24px}.classcard{display:flex;min-height:180px;flex-direction:column;gap:13px;background:linear-gradient(145deg,#1b3b62,#112944);border:1px solid #416895;color:#fff;text-decoration:none;padding:20px;border-radius:17px}.classcard:hover{border-color:#8bc5ff;background:#244970}.classcard strong{font-size:21px}.classcard small{font-size:13px;color:#c8d9eb;line-height:1.4}.classicon{font-size:27px;color:#95c9ff}.arrow{align-self:flex-end;color:#a4d1ff;font-size:24px;margin-top:auto}
+.panel{padding:23px;border-radius:18px;border:1px solid #d9e4f2;background:#fff;color:#1b3657;box-shadow:0 15px 36px #00000021;margin:0 0 19px}.panel p{line-height:1.5}.panel .backlink{background:#285e9d;color:white;margin-top:15px}
+.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin:0 0 20px}.metrics>div{display:flex;flex-direction:column;gap:8px;background:#edf5ff;color:#183b65;border:1px solid #bfd5ee;border-radius:14px;padding:18px}.metrics strong{font-size:26px;line-height:1.2;overflow-wrap:anywhere}.metrics small{font-size:13px;color:#4b6581}
+.studentlist,.list{display:grid;gap:10px}.studentrow{display:flex;align-items:center;gap:12px;min-height:85px;border:1px solid #d4e1f1;border-radius:13px;padding:13px;color:#173859;text-decoration:none;background:#fbfdff}.studentrow:hover{border-color:#3274c4;background:#f1f7ff}.studentname{flex:1;min-width:120px;display:grid;gap:6px}.studentname small{font-size:12px;color:#697e93}.avatar{flex:0 0 43px;height:43px;display:grid;place-items:center;background:#1a5caa;color:white;border-radius:13px;font-weight:900;font-size:21px}.avatar.big{width:61px;height:61px;flex-basis:61px;font-size:28px}.person{display:flex;align-items:center;gap:17px;margin-bottom:20px}.person h1{margin:4px 0}.person p{margin:0;color:#bed5eb}
+.stat{padding:8px 10px;border-radius:9px;font-size:12px;font-weight:800;white-space:nowrap}.cert{background:#dcf5eb;color:#11684f}.current{background:#fff0d8;color:#85540d}.date{font-size:12px;color:#5c7590;min-width:125px}
+.formline{display:flex;gap:13px;align-items:end;flex-wrap:wrap;margin:0 0 7px}.formline label{flex:1;min-width:155px}.formline .wide{flex-basis:100%}label{display:grid;gap:7px;font-size:14px;font-weight:700}input,select,textarea{font:inherit;color:#17395d;min-height:44px;border-radius:10px;border:1px solid #aebfd5;padding:10px;background:#fff;width:100%}textarea{min-height:80px}button{min-height:44px;border:1px solid #2367b4;border-radius:10px;padding:10px 16px;background:#2368bd;color:white;font:700 14px Arial;cursor:pointer}
+.tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:25px 0 15px}.tabs button{background:#19395d;border:1px solid #53769c;color:#d5e5fa;min-height:54px}.tabs button.active{background:#fff;color:#1a4c88;border-color:#fff}.entry{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px;border:1px solid #d4e2f1;border-radius:12px}.entry p{font-size:13px;color:#566b84;margin:7px 0 0}.entry label{min-width:155px}.minor{font-size:13px;color:#687d92}.minimetrics{display:flex;gap:15px;flex-wrap:wrap;margin-bottom:20px}.minimetrics span{background:#eff5fb;border-radius:11px;padding:12px}.progress-head{display:flex;align-items:center;justify-content:space-between;color:#d8e9fc;font-size:14px;margin-bottom:8px}.progressbar{height:13px;border-radius:10px;background:#426083;overflow:hidden;margin-bottom:8px}.progressbar span{display:block;background:#56b999;height:100%;border-radius:10px}.toast{border-radius:10px;padding:14px;background:#dff9ec;color:#125b42;font-weight:700;position:fixed;bottom:18px;right:18px;box-shadow:0 10px 25px #0005}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #f8ba4c;outline-offset:3px}
+@media(max-width:900px){.classgrid{grid-template-columns:repeat(2,minmax(0,1fr))}.studentrow{flex-wrap:wrap}.date{min-width:auto}.tabs{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){main{padding:20px 12px}.classgrid{grid-template-columns:1fr}.metrics{gap:7px}.metrics>div{padding:11px}.metrics strong{font-size:18px}.metrics small{font-size:11px}.panel{padding:15px}.stat{font-size:11px}.date{width:100%}.entry{align-items:stretch;flex-direction:column}.entry label{width:100%}.toast{position:static;margin:15px}}
+
+/* Modification indépendante des compétences dans la fiche élève */
+.competency-entry{align-items:center;gap:20px}
+.competency-description{flex:1;min-width:165px}
+.competency-fields{display:grid;grid-template-columns:minmax(140px,1fr) minmax(140px,1fr);gap:12px;align-items:end;flex:0 1 390px}
+.competency-fields label{font-size:13px;color:#344d6b;min-width:0}
+.competency-fields input,.competency-fields select{width:100%;min-height:46px}
+@media(max-width:720px){.competency-entry{align-items:stretch;flex-direction:column}.competency-fields{width:100%;flex:none}}
+@media(max-width:400px){.competency-fields{grid-template-columns:1fr}}
+
+/* Trois validations datées par compétence */
+.competency-table-wrap{overflow-x:auto;max-width:100%;margin-bottom:16px}
+.competency-table{width:100%;border-collapse:separate;border-spacing:0;min-width:720px;color:#17395d}
+.competency-table th,.competency-table td{text-align:left;vertical-align:middle;padding:14px 10px;border-bottom:1px solid #d6e4f2}
+.competency-table thead th{background:#edf5ff;color:#244a77;font-size:13px}
+.competency-table tbody th{min-width:135px;font-size:16px}
+.competency-table tbody th small{display:block;font-size:12px;font-weight:400;color:#60788e;margin-top:6px;line-height:1.35}
+.date-control{display:grid;gap:8px;min-width:155px}
+.date-control input{width:100%;font-size:13px;padding:8px}
+.date-state{font-size:12px;font-weight:800;white-space:nowrap}
+.date-state.validated{color:#136b51}.date-state.pending{color:#8a5f26}
+.certification{display:inline-block;padding:8px 10px;border-radius:9px;font-size:12px;font-weight:800;white-space:nowrap}
+.certification.certified{background:#dcf5e8;color:#116549}
+.certification.progress{background:#fff1d7;color:#82530d}
+.certification.notstarted{background:#e9eef5;color:#496078}
+@media(max-width:760px){.competency-table{min-width:690px}.competency-table th,.competency-table td{padding:11px 8px}}

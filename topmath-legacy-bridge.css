@@ -1,0 +1,15 @@
+/* Couche de présentation Top'Math Tech Premium autour du moteur historique. */
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font:16px Arial,Helvetica,sans-serif}
+body{background:radial-gradient(ellipse at 50% -8%,#24476d,#122640 47%,#0b1729);color:#f6faff}
+header{background:#0b1729;border-bottom:1px solid #365878}
+header nav{max-width:1170px;margin:auto;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 18px}
+.brand{font-weight:900;font-size:21px;color:#fff;text-decoration:none}.brand span{color:#90c8ff}
+.return{color:#edf7ff;text-decoration:none;display:inline-flex;min-height:44px;align-items:center;border:1px solid #53769a;border-radius:11px;padding:10px 15px;font-weight:700}
+main{max-width:1170px;margin:auto;padding:27px 16px 38px}.eyebrow{letter-spacing:.14em;color:#88bff8;font-size:12px;font-weight:800}
+h1{font-size:clamp(28px,4vw,38px);margin:9px 0}.lead{color:#c4d9ed;font-size:15px;line-height:1.6;margin:0 0 15px;max-width:860px}
+.shell{border:1px solid #48749e;border-radius:17px;background:white;overflow:hidden;box-shadow:0 20px 42px #0004}
+iframe{display:block;width:100%;height:calc(100vh - 255px);min-height:610px;border:0;background:#fff}
+.tools{display:flex;gap:11px;flex-wrap:wrap;margin:16px 0}.action{min-height:44px;display:inline-flex;align-items:center;text-decoration:none;border:1px solid #4b82c6;border-radius:10px;padding:10px 15px;background:#236cbf;color:#fff;font-weight:800;cursor:pointer;font-size:14px}.action.secondary{background:#183b61}
+.note{font-size:13px;line-height:1.5;color:#c4d7ee}.state{font-size:13px;color:#d9eeff;min-height:19px;margin-bottom:12px}
+.return:focus-visible,.action:focus-visible{outline:3px solid #f6bc50;outline-offset:3px}
+@media(max-width:600px){header nav{padding:10px 12px}.brand{font-size:18px}main{padding:18px 10px}.shell{border-radius:12px}iframe{height:calc(100vh - 220px);min-height:580px}}
