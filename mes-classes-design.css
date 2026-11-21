@@ -14,3 +14,12 @@ main{max-width:1110px;margin:auto;padding:30px 18px 60px}.kicker{font-size:11px;
 a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #f8ba4c;outline-offset:3px}
 @media(max-width:900px){.classgrid{grid-template-columns:repeat(2,minmax(0,1fr))}.studentrow{flex-wrap:wrap}.date{min-width:auto}.tabs{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){main{padding:20px 12px}.classgrid{grid-template-columns:1fr}.metrics{gap:7px}.metrics>div{padding:11px}.metrics strong{font-size:18px}.metrics small{font-size:11px}.panel{padding:15px}.stat{font-size:11px}.date{width:100%}.entry{align-items:stretch;flex-direction:column}.entry label{width:100%}.toast{position:static;margin:15px}}
+
+/* Modification indépendante des compétences dans la fiche élève */
+.competency-entry{align-items:center;gap:20px}
+.competency-description{flex:1;min-width:165px}
+.competency-fields{display:grid;grid-template-columns:minmax(140px,1fr) minmax(140px,1fr);gap:12px;align-items:end;flex:0 1 390px}
+.competency-fields label{font-size:13px;color:#344d6b;min-width:0}
+.competency-fields input,.competency-fields select{width:100%;min-height:46px}
+@media(max-width:720px){.competency-entry{align-items:stretch;flex-direction:column}.competency-fields{width:100%;flex:none}}
+@media(max-width:400px){.competency-fields{grid-template-columns:1fr}}
