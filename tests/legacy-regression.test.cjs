@@ -129,3 +129,29 @@ test('Tech Premium pages link to the original teacher engine',()=>{
   }
   assert.match(read('competences-enseignant.html'),/fiche-officielle-competences\.html/);
 });
+
+
+test('official PDF writer generates a four-page PDF structure without real data',async()=>{
+  const html=read('enseignant.html');
+  const start=html.indexOf('function buildDynamicOfficialPdfBlob(');
+  const end=html.indexOf('function previewOverlayElement(',start);
+  assert(start>=0&&end>start);
+  const bytes=s=>new TextEncoder().encode(s);
+  const concat=pieces=>{const out=new Uint8Array(pieces.reduce((n,x)=>n+x.length,0));let at=0;for(const x of pieces){out.set(x,at);at+=x.length}return out};
+  const make=new Function('D1_PEDAGOGICAL_ROSTER','pedagogicalStudents','activeStudents','officialTemplateKey','MASTER_JPEG_BASE64','base64ToBytes','asciiBytes','concatBytes','buildMasterOverlayStream','Blob',html.slice(start,end)+'return buildDynamicOfficialPdfBlob;')(
+    null,()=>({}),()=>({p1:{id:'p1',first:'Test',name:'Eleve',progress:{}}}),
+    ()=>'NORMAL',{NORMAL:{'1':'AA==','2':'AA==','3':'AA==','4':'AA=='}},
+    b64=>new Uint8Array(Buffer.from(b64,'base64')),bytes,concat,
+    (s,page)=>page===1?'BT /F1 12 Tf (TEST) Tj ET ':'',
+    Blob
+  );
+  const pdf=make('p1');
+  assert.equal(pdf.type,'application/pdf');
+  const arr=Buffer.from(await pdf.arrayBuffer());
+  const str=arr.toString('latin1');
+  assert.match(str,/^%PDF-1\.4/);
+  assert.match(str,/\/Type \/Pages \/Count 4/);
+  assert.match(str,/xref 0 16/);
+  assert.match(str,/startxref/);
+  assert.match(str,/%%EOF$/);
+});
