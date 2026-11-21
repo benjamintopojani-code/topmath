@@ -11,8 +11,11 @@ const $=id=>document.getElementById(id),save=()=>localStorage.setItem(KEY,JSON.s
 let cls='',student='',tab='competences',msg='';
 const classStudents=c=>data.students.filter(s=>s.className===c).sort((a,b)=>a.name.localeCompare(b.name,'fr'));
 const classEvals=c=>data.evaluations.filter(e=>e.className===c);
-const counts=s=>{const ev=classEvals(s.className),arr=ev.map(e=>s.results?.[e.id]||'Non évalué');return {cert:arr.filter(x=>x==='Acquis').length,ongoing:arr.filter(x=>x==='En cours').length,total:ev.length}};
-const nextDate=s=>classEvals(s.className).filter(e=>e.date&&e.date>=today()&&!['Acquis'].includes(s.results?.[e.id])).sort((a,b)=>a.date.localeCompare(b.date))[0]?.date||'À planifier';
+// Une compétence est certifiée uniquement lorsque les 3 évaluations sont datées.
+const datesOf=(student,id)=>{const d=student.validationDates?.[id];return Array.from({length:3},(_,i)=>typeof d?.[i]==='string'?d[i]:'')};
+const countValid=(student,id)=>datesOf(student,id).filter(Boolean).length;
+const counts=s=>{const ev=classEvals(s.className),n=ev.map(e=>countValid(s,e.id));return {cert:n.filter(x=>x===3).length,ongoing:n.filter(x=>x>0&&x<3).length,total:ev.length}};
+const nextDate=s=>classEvals(s.className).filter(e=>e.date&&e.date>=today()&&countValid(s,e.id)<3).sort((a,b)=>a.date.localeCompare(b.date))[0]?.date||'À planifier';
 const studentUrl=s=>'fiche-eleve.html?id='+encodeURIComponent(s.id);
 function notice(){return '<div class="notice"><strong>Prototype local :</strong> les élèves, résultats, présences et observations saisis ici restent sur ce navigateur. Aucune synchronisation avec les vrais dossiers.</div>'}
 function trail(items){return '<div class="trail">'+items.join('<span>›</span>')+'</div>'}
@@ -32,8 +35,9 @@ if(!s)return notice()+'<h1>Élève introuvable</h1><a class="backlink" href="mes
 const tabs=[['competences','Compétences'],['presences','Présences'],['comportement','Comportement'],['progres','Progrès / exercices']];
 let h=notice()+trail(['<a href="mes-classes.html">Mes classes</a>','<a href="classe-details.html?classe='+encodeURIComponent(s.className)+'">'+E(s.className)+'</a>',E(s.name)])+'<div class="person"><span class="avatar big">'+E(s.name[0])+'</span><div><div class="kicker">FICHE ÉLÈVE</div><h1>'+E(s.name)+'</h1><p>'+E(s.className)+'</p></div></div>'+dashboard(s)+'<nav class="tabs" aria-label="Dossier élève">'+tabs.map(([id,label])=>'<button type="button" data-tab="'+id+'" class="'+(tab===id?'active':'')+'">'+label+'</button>').join('')+'</nav><section class="panel">';
 if(tab==='competences'){
-let entries=classEvals(s.className);
-h+='<h2>Tableau des compétences</h2><p class="minor">Choisis la date et le statut de chaque compétence séparément. Les autres compétences ne changent pas.</p><div class="list">'+(entries.length?entries.map(e=>'<div class="entry competency-entry"><div class="competency-description"><strong>'+E(e.code)+' · '+E(e.title)+'</strong><p>Évaluation '+(e.open?'ouverte':'fermée')+'</p></div><div class="competency-fields"><label>Date de validation<input type="date" data-result-date="'+E(e.id)+'" value="'+E(s.resultDates?.[e.id]||'')+'"></label><label>Statut<select data-result="'+E(e.id)+'">'+[['Non évalué','Non évaluée'],['En cours','En cours'],['Acquis','Acquise'],['Non acquis','Non acquise']].map(([value,label])=>'<option value="'+value+'"'+(value===(s.results?.[e.id]||'Non évalué')?' selected':'')+'>'+label+'</option>').join('')+'</select></label></div></div>').join(''):'<p>Aucune compétence enregistrée. Ajoutez-en depuis « Évaluations par classe ».</p>')+'</div><a class="backlink" href="evaluations-a-venir.html">Gérer les évaluations →</a>';
+const entries=classEvals(s.className);
+h+='<h2>Tableau des compétences</h2><p class="minor">Une évaluation est validée lorsqu’une date est renseignée. Effacer cette date annule la validation. La compétence est acquise uniquement après 3 évaluations validées.</p><div class="competency-table-wrap"><table class="competency-table"><thead><tr><th scope="col">Compétence</th><th scope="col">Évaluation 1</th><th scope="col">Évaluation 2</th><th scope="col">Évaluation 3</th><th scope="col">Bilan</th></tr></thead><tbody>'+
+(entries.length?entries.map(e=>{const dates=datesOf(s,e.id),n=dates.filter(Boolean).length;return '<tr><th scope="row"><strong>'+E(e.code)+'</strong><small>'+E(e.title)+'</small></th>'+dates.map((d,i)=>'<td><label class="date-control"><span class="date-state '+(d?'validated':'pending')+'">'+(d?'✓ Validée':'À valider')+'</span><input type="date" aria-label="'+E(e.code)+' évaluation '+(i+1)+'" data-evaluation-date="'+E(e.id)+'" data-slot="'+i+'" value="'+E(d)+'"></label></td>').join('')+'<td><span class="certification '+(n===3?'certified':n?'progress':'notstarted')+'">'+(n===3?'Acquise':n+'/3 validées')+'</span></td></tr>'}).join(''):'<tr><td colspan="5">Aucune compétence enregistrée. Ajoutez-en depuis « Évaluations par classe ».</td></tr>')+'</tbody></table></div><a class="backlink" href="evaluations-a-venir.html">Gérer les évaluations →</a>';
 }
 if(tab==='presences'){
 const rec=data.attendance[s.id]||[];
@@ -55,8 +59,15 @@ function wire(){
 $('addClass')?.addEventListener('submit',e=>{e.preventDefault();const name=e.target.elements.name.value.trim();if(!name||data.classes.includes(name))return;data.classes.push(name);save();msg='Classe ajoutée dans le prototype.';render()});
 $('addStudent')?.addEventListener('submit',e=>{e.preventDefault();const name=e.target.elements.name.value.trim();if(!name)return;data.students.push({id:crypto.randomUUID(),name,className:cls,results:{}});save();msg='Élève de test ajouté.';render()});
 document.querySelectorAll('[data-tab]').forEach(el=>el.addEventListener('click',()=>{tab=el.dataset.tab;msg='';render()}));
-document.querySelectorAll('[data-result]').forEach(el=>el.addEventListener('change',()=>{const s=data.students.find(x=>x.id===student);s.results??={};s.results[el.dataset.result]=el.value;save();msg='Résultat local modifié.';render()}));
-document.querySelectorAll('[data-result-date]').forEach(el=>el.addEventListener('change',()=>{const s=data.students.find(x=>x.id===student);if(!s)return;s.resultDates??={};if(el.value)s.resultDates[el.dataset.resultDate]=el.value;else delete s.resultDates[el.dataset.resultDate];save();msg='Date enregistrée pour cette compétence.';render()}));
+document.querySelectorAll('[data-evaluation-date]').forEach(el=>el.addEventListener('change',()=>{
+const studentRecord=data.students.find(x=>x.id===student);if(!studentRecord)return;
+studentRecord.validationDates??={};
+const id=el.dataset.evaluationDate,slot=Number(el.dataset.slot);
+if(!Number.isInteger(slot)||slot<0||slot>2)return;
+const dates=datesOf(studentRecord,id);dates[slot]=el.value;
+if(dates.every(d=>!d))delete studentRecord.validationDates[id];else studentRecord.validationDates[id]=dates;
+save();msg=dates.filter(Boolean).length===3?'Compétence acquise : les 3 évaluations sont datées.':el.value?'Évaluation validée par sa date.':'Date effacée : évaluation non validée.';render();
+}));
 for(const [id,key,process] of [['addAttendance','attendance',f=>({date:f.get('date'),status:f.get('status')})],['addBehavior','notes',f=>({date:f.get('date'),rating:f.get('rating'),note:String(f.get('note')).trim()})],['addExercise','training',f=>({date:f.get('date'),exercise:String(f.get('exercise')).trim(),score:Number(f.get('score'))})]]){
 $(id)?.addEventListener('submit',e=>{e.preventDefault();const f=new FormData(e.target);data[key][student]??=[];data[key][student].push(process(f));save();msg='Enregistré dans la maquette locale.';render()});
 }
