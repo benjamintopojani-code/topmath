@@ -53,3 +53,25 @@ Portée : branche `design/tech-premium-2026`. Aucun test d'écriture sur le D1 r
 - Aucun test sur D1 réel, aucune suppression de données réelles.
 
 **Statut global : vérifications de code et simulations encourageantes, mais réception en production non validée.**
+
+
+## Troisième série — tests de validation des API sur données fictives
+
+Sept cas invalides ont été exécutés directement sur les handlers réels, avec DB factice :
+- [x] Modification de compétence sans identifiant élève → HTTP 400.
+- [x] Date impossible dans une évaluation (2026-02-30) → HTTP 400.
+- [x] Deux dates seulement au lieu des trois positions obligatoires → HTTP 400.
+- [x] Ajout d'élève sans prénom → HTTP 400.
+- [x] Date de naissance impossible (2026-02-30) → HTTP 400.
+- [x] Année scolaire incorrecte (2026/2027) → HTTP 400.
+- [x] Suppression d'année sans identifiant → HTTP 400.
+
+Les tests précédents des cas valides d'ajout / modification d'élève, création / suppression simulées d'année et de 0 à 3 dates demeurent valides.
+
+### Limites de réception
+- Aucune connexion au Cloudflare D1 réel, aucun clic iPad ni lecture PDF via un navigateur connecté à la branche.
+- Le rendu HTML du PDF, et particulièrement les éventuels écarts de dimensions NORMAL/ÉCO, doivent encore être testés visuellement.
+- Les routes critiques (évaluations, élève, année, classe) ne contiennent pas de vérification explicite de l'identité / rôle enseignant. Toute publication ou test d'écriture sur l'environnement réel doit attendre un audit des contrôles d'accès.
+- Le retrait individuel de l'élève, les progrès réels dans les exercices et le blocage serveur de l'accès aux évaluations sont des fonctionnalités à terminer ou prouver.
+
+**Décision : ne pas fusionner la PR ; tests d’intégration Cloudflare sur une base dédiée à prévoir.**
