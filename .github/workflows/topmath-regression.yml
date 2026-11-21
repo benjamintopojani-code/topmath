@@ -1,0 +1,29 @@
+name: TopMath — non-destructive regression tests
+on:
+  push:
+    branches:
+      - design/tech-premium-2026
+  pull_request:
+    paths:
+      - 'enseignant.html'
+      - 'functions/api/**'
+      - 'tests/**'
+      - 'mes-classes.html'
+      - 'competences-enseignant.html'
+      - '*competences*.html'
+      - '.github/workflows/topmath-regression.yml'
+permissions:
+  contents: read
+jobs:
+  legacy-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run regression tests without external services
+        run: node --test tests/legacy-regression.test.cjs
