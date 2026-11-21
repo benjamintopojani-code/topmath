@@ -75,3 +75,28 @@ Les tests précédents des cas valides d'ajout / modification d'élève, créati
 - Le retrait individuel de l'élève, les progrès réels dans les exercices et le blocage serveur de l'accès aux évaluations sont des fonctionnalités à terminer ou prouver.
 
 **Décision : ne pas fusionner la PR ; tests d’intégration Cloudflare sur une base dédiée à prévoir.**
+
+
+## Quatrième série : tests automatisés dans GitHub Actions (21 novembre 2026)
+
+Workflow : `.github/workflows/topmath-regression.yml`
+Tests exécutables : `tests/legacy-regression.test.cjs` et `tests/school-management.test.cjs`
+
+**Résultat confirmé : 11 tests exécutés, 11 réussis** dans GitHub Actions, exécution id `44930031975`, commit `296aef6f1a1daf80fa4e8156e965b2dfc981337c`.
+
+Couverture :
+- Syntaxe JavaScript du moteur historique
+- Règle des trois dates et recalcul du statut
+- Contenu calculé de la couverture et des trois validations du PDF
+- Enregistrement / annulation des évaluations par l'endpoint D1 simulé
+- Rejet des valeurs invalides dans les APIs
+- Protection contre la suppression de planifications d'autres années
+- Présence des raccordements entre nouveaux menus et moteur historique
+- Création / modification d'élève sur base simulée
+- Création / suppression d'année sur base simulée
+- Génération de la structure PDF quatre pages (test avec images fictives, pas de contrôle visuel)
+
+**Ce résultat ne valide pas la production.**
+Les contrôles d'autorisation des routes Cloudflare D1, les opérations de retrait individuel, la synchronisation des résultats réels, l'ouverture des évaluations côté élève, l'inspection PDF NORMAL / ÉCO et la navigation iPad demeurent à traiter / vérifier avec un environnement isolé.
+
+Aucun écrit ni suppression sur la base réelle.
