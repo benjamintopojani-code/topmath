@@ -30,3 +30,27 @@ body>.bar a{color:#163d70}
 iframe{background:#fff}
 @media(max-width:600px){main{padding:14px 12px 28px}.login{padding:18px!important}.login .grid{gap:10px}.topbar{padding:12px 10px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{transition:none!important;animation:none!important}}
+
+/* Accueil — deux entrées principales */
+.home-main{max-width:1040px;padding:40px 20px 24px}
+.home-topbar .topbar-inner{justify-content:space-between}.home-logo{display:grid;place-items:center;width:44px;height:44px;border:1px solid #6ca6ef;border-radius:12px;background:#1d4c82;color:#fff;font-size:29px;font-weight:700}
+.home-topbar .brand{text-align:left;flex:1}.home-topbar .brand small{font-size:10px;margin-top:4px;font-weight:600;color:#bfd6ef}
+.home-topbar-mark{font-size:11px;font-weight:700;letter-spacing:.11em;color:#c4d5ec}
+.home-hero{text-align:center;color:#fff;padding:32px 18px 20px}
+.home-eyebrow,.home-choice-label,.home-section-kicker{font-size:11px;font-weight:800;letter-spacing:.16em;color:#7abaff}.home-eyebrow{margin-bottom:16px}
+.home-hero h1{margin:0;font-size:clamp(32px,5vw,54px);line-height:1.12;color:#fff}.home-hero h1 span{color:#8bc5ff}
+.home-lead{margin:18px auto 30px;max-width:520px;line-height:1.6;color:#d4e2f2;font-size:17px}
+.home-choice-label{color:#aac5e8;margin-bottom:14px}
+.home-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;max-width:760px;margin:0 auto}
+.home-choice{display:flex;align-items:center;gap:15px;min-height:136px;text-align:left;text-decoration:none;border-radius:19px;padding:22px;background:linear-gradient(145deg,#183456,#122844);border:1px solid #355b86;color:white;box-shadow:0 14px 32px #030b1a30}
+.home-choice:hover{background:linear-gradient(145deg,#224671,#173456);border-color:#71acec}
+.home-choice:focus-visible{outline:3px solid #f4b84d;outline-offset:4px}
+.home-choice-icon{display:grid;place-items:center;flex:0 0 52px;height:52px;border-radius:15px;background:#245da2;font-size:29px;color:white}
+.home-choice-teacher .home-choice-icon{background:#16725c}
+.home-choice-body{display:grid;gap:8px;flex:1}.home-choice-body strong{font-size:20px;color:#fff}.home-choice-body small{font-size:13px;color:#c9d9ee;line-height:1.3}
+.home-arrow{font-size:25px;color:#92c3f8}.home-demo-note{margin:21px 0 0;color:#b2c6df;font-size:12px}
+.home-demo{max-width:760px;margin:26px auto 0;background:#f9fbff;border:1px solid #cee0f3;border-radius:18px;padding:23px;box-shadow:0 18px 48px #020f2440}
+.home-demo-header{display:flex;align-items:center;justify-content:space-between;gap:14px}.home-demo h2{font-size:20px;color:#18395e;margin:7px 0 0}.home-demo p{font-size:14px;color:#536881}
+.home-demo-badge{font-size:11px;font-weight:800;background:#e6f1ff;color:#235b9f;padding:8px 10px;border-radius:20px}
+.home-demo .demo-codes{margin-top:14px}.home-demo .demo-code{background:white}.home-footer{text-align:center;color:#9bb3d0;padding:28px 0 6px;font-size:12px}
+@media(max-width:680px){.home-main{padding:18px 14px 24px}.home-choices{grid-template-columns:1fr}.home-choice{min-height:100px;padding:16px}.home-topbar-mark{display:none}.home-hero{padding:24px 0 8px}.home-lead{font-size:15px;margin:16px auto 26px}.home-demo{padding:16px}.home-demo-header{flex-wrap:wrap}}
