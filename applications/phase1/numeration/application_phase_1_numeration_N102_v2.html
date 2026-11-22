@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="fr-BE">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Application Phase 1 – Numération – N102 | Top’Math</title>
+<style>
+:root{--ink:#192944;--navy:#122440;--blue:#2465d9;--bg:#eef3fa;--line:#d5e1f0;--muted:#65748b;--green:#237e51;--bad:#a84242;--shadow:0 14px 44px rgba(26,47,84,.09)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Arial,sans-serif;color:var(--ink)}button,input{font:inherit}button{cursor:pointer;touch-action:manipulation}button:focus-visible,input:focus-visible{outline:3px solid #efa02e;outline-offset:2px}button:disabled{opacity:.4;cursor:not-allowed}.wrap{max-width:1040px;margin:auto;padding:24px 18px 48px}.hero{background:linear-gradient(115deg,#12233f,#1d3d74);border-radius:24px;color:white;padding:22px 26px 25px;box-shadow:var(--shadow)}.topline{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.brand{font-size:18px;font-weight:900;letter-spacing:.025em}.pill{border:1px solid #87a5d3;background:#254773;padding:7px 17px;border-radius:999px;font-weight:800;text-align:center;font-size:13px;display:inline-flex;align-items:center;justify-content:center;min-height:36px}.hero h1{font-size:clamp(25px,4.5vw,36px);line-height:1.15;margin:24px 0 8px}.subtitle{font-size:16px;color:#d8e6ff;margin:0 0 20px}.tabs{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:8px}.tab{height:46px;border:1px solid #5b79aa;background:#28466f;border-radius:11px;color:#fff;font-weight:850}.tab.active{color:#173358;background:white}.tab.complete{border-color:#74dab2}.tab.skipped{border-style:dashed}.progress{display:flex;align-items:center;gap:12px;margin-top:16px;color:#dce8fa;font-size:13px;font-weight:700}.progressbar{height:6px;flex:1;background:#3f5680;border-radius:9px;overflow:hidden}.progressfill{height:100%;background:#75c7ff;transition:width .2s}.panel{background:white;border-radius:24px;margin-top:19px;padding:clamp(18px,4vw,34px);box-shadow:var(--shadow);border:1px solid #e2eaf6}.prompt{font-size:clamp(21px,3.3vw,27px);font-weight:850;line-height:1.3;margin:0 0 20px}.speech{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:23px}.btn{min-height:47px;border:1px solid var(--line);background:#f3f7fd;color:#1a3968;border-radius:12px;padding:10px 17px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;gap:8px}.btn:hover:not(:disabled){filter:brightness(.96)}.primary{background:#2465d9;color:white;border-color:#2465d9}.soft{background:#eaf2ff;border-color:#c8d9f7;color:#1a4a9c}.audio{font-size:18px;min-height:56px}.audio-note{font-size:13px;color:var(--muted)}.work{background:#f8faff;border:1px solid #dce5f3;border-radius:19px;padding:19px 16px;margin-bottom:19px}.answer-head{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:13px;font-weight:800;color:#526783;margin-bottom:11px}.answer{min-height:75px;border:2px solid #bed2ef;background:white;border-radius:14px;display:flex;align-items:center;justify-content:center;gap:1px;padding:6px 14px;font-size:clamp(28px,6vw,42px);font-weight:850;letter-spacing:.05em;font-variant-numeric:tabular-nums}.answer.placeholder{color:#a2b1c6}.answer-digit{display:inline-block}.keypad{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;max-width:340px;margin:17px auto 0}.key{min-height:56px;background:white;border:1px solid #cbd9ea;border-radius:12px;font-size:22px;font-weight:850;color:#173255}.key:active{background:#d6e7ff}.key.clear{font-size:14px;color:#b14343}.key.back{font-size:17px}.helper{margin:5px 0 19px}.helper-toggle{display:flex;justify-content:center}.abacus{margin-top:13px;border:1px solid #d5e3f2;border-radius:15px;overflow:hidden;background:white}.place-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr))}.place{border-right:1px solid #e0e6ef;text-align:center;min-height:83px;padding:12px 3px}.place:last-child{border-right:0}.place-name{font-size:12px;font-weight:850;white-space:nowrap}.place-value{display:block;font-size:27px;font-weight:850;padding-top:5px}.helper-msg{margin:9px 0 0;color:var(--muted);font-size:13px}.notice{padding:12px 15px;border-radius:13px;line-height:1.4;margin:15px 0;background:#eaf2ff;border:1px solid #d1e2fb;color:#1b477f;font-weight:680}.notice.ok{background:#e8f7ef;border-color:#bee8cd;color:#216b45}.notice.warn{background:#fff3e8;border-color:#f3d1a8;color:#7b4d1c}.controls{border-top:1px solid #e0e8f2;padding-top:18px;margin-top:20px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}.controls .btn{padding:9px 5px;font-size:14px}.tiny{color:#64748b;font-size:12px;text-align:center;margin-top:14px}.hidden{display:none!important}.result-hero{text-align:center}.result-score{font-size:56px;font-weight:900;color:#235dbe;line-height:1.1}.summarycards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0}.summarycard{padding:15px 8px;background:#f3f7fd;border-radius:14px;text-align:center}.summarycard strong{font-size:26px;display:block}.summarycard span{font-size:12px;color:#5c6d82}.section-title{font-size:19px;font-weight:850;margin:23px 0 10px}.review{display:grid;gap:9px}.review-item{display:flex;align-items:flex-start;gap:12px;padding:12px;background:#f7f9fd;border:1px solid #e2e9f3;border-radius:12px}.review-id{min-width:31px;height:31px;border-radius:9px;background:#e1eafd;display:grid;place-items:center;font-weight:850}.review-text{font-size:14px;line-height:1.5}.review-text strong{font-size:15px}.rule{font-weight:650;color:#39516c;margin:4px 0 0}.formline{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:15px}.name{height:47px;border:1px solid #c6d6e9;border-radius:12px;padding:0 14px;min-width:170px;flex:1}.saved{margin-top:10px;color:#226947;font-weight:800}.historyrow{padding:9px 12px;border-bottom:1px solid #e7ecf4;font-size:14px}.footer{font-size:12px;color:#5c6c80;margin:15px 2px}.c-u{color:#1766d0}.c-d{color:#c12f35}.c-c{color:#208048}.c-um{color:#161b22}.c-dm{color:#8752a7}.c-cm{color:#ac7628}@media(max-width:630px){.wrap{padding:10px 9px 28px}.hero{padding:17px 13px 20px;border-radius:18px}.hero h1{margin:17px 0 7px}.tabs{gap:4px}.tab{height:40px;border-radius:7px}.panel{padding:18px 11px}.controls{grid-template-columns:repeat(3,1fr)}.controls .btn{font-size:12px}.place-name{font-size:10px}.place{min-height:73px}.place-value{font-size:22px}.summarycards{gap:5px}.summarycard strong{font-size:23px}}@media print{body{background:white}.wrap{padding:0}.hero,.controls,.speech,.keypad,.helper-toggle,.formline,.footer,.noprint{display:none!important}.panel{box-shadow:none;border:0;margin:0;padding:0}.review-item{break-inside:avoid}}
+
+/* Abaque interactif : une colonne = un chiffre, saisi avec un pavé popup. */
+.place.place-edit{padding:0;min-height:92px}.place-button{width:100%;height:100%;min-height:92px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:#fff;border:0;border-radius:0;cursor:pointer}.place-button:hover,.place-button:focus-visible{background:#edf4ff}.place-value.empty{color:#9baac0}.place.inactive{background:#f3f5f9;opacity:.5}.place.inactive .place-button{cursor:default;background:transparent}.place-name{font-size:12px}.abacus-tip{font-size:13px;color:#415b7b;text-align:center;margin:10px 5px 4px;font-weight:650}.answer-slot{display:inline-flex;align-items:center;justify-content:center;min-width:1ch;border-bottom:2px solid #d3dfef;margin:0 1px}.pad-overlay{position:fixed;inset:0;z-index:1000;background:rgba(12,29,53,.53);display:flex;align-items:center;justify-content:center;padding:16px}.pad-dialog{background:white;border-radius:22px;padding:22px;width:min(100%,340px);box-shadow:0 22px 90px rgba(0,0,0,.26)}.pad-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.pad-header h3{font-size:21px;margin:0}.pad-close{border:1px solid #cbd9ea;border-radius:9px;background:#f5f8ff;width:44px;height:44px;font-size:24px}.pad-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.pad-num{min-height:61px;border:1px solid #bfcee3;background:#f4f8ff;border-radius:13px;font-size:26px;font-weight:850;color:#173255}.pad-num:active{background:#d5e5fc}.pad-clear{font-size:14px;color:#a33d3d}.pad-note{margin:0 0 15px;font-size:14px;color:#536a85}@media(max-width:630px){.place-button{min-height:77px}.place.place-edit{min-height:77px}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header class="hero">
+ <div class="topline"><div class="brand">TOP’MATH</div><span class="pill">NUMÉRATION · PHASE 1</span></div>
+ <h1>N102</h1><p class="subtitle">Écrire sous la dictée un nombre de 3 à 6 chiffres</p>
+ <nav class="tabs" id="tabs" aria-label="Exercices"></nav>
+ <div class="progress"><span id="progressText">Exercice 1 / 10</span><div class="progressbar"><div class="progressfill" id="progressFill"></div></div></div>
+</header>
+<section class="panel" id="activity" aria-live="off">
+ <h2 class="prompt" id="instruction">Écoute et écris le nombre.</h2>
+ <div class="speech"><button class="btn primary audio" id="speak" type="button">🔊 Écouter</button><button class="btn soft" id="slow" type="button">🐢 Plus lentement</button><span class="audio-note" id="audioNote"></span></div>
+ <div class="work">
+  <div class="answer-head"><span>Mon nombre</span><span id="digitRange">3 chiffres</span></div>
+  <div class="answer placeholder" id="answer" aria-live="polite">—</div>
+  <div class="keypad" id="keypad" aria-label="Pavé numérique"></div>
+ </div>
+ <div class="helper"><div class="helper-toggle"><button class="btn" id="toggleAbacus" type="button">▦ Afficher l’abaque</button></div><div class="abacus hidden" id="abacus"><p class="abacus-tip">Touche une colonne pour écrire un chiffre.</p><div class="place-grid" id="placeGrid"></div></div></div>
+ <div class="notice hidden" role="status" id="feedback"></div>
+ <div class="controls"><button class="btn" id="prev" type="button">← Précédent</button><button class="btn" id="next" type="button">Suivant →</button><button class="btn" id="skip" type="button">Passer</button><button class="btn" id="hint" type="button">Indice</button><button class="btn primary" id="check" type="button">Vérifier</button></div>
+ <p class="tiny">Les chiffres peuvent aussi être saisis au clavier.</p>
+</section>
+<section class="panel hidden" id="results" aria-live="polite"></section>
+<div class="footer">Une nouvelle série de 10 nombres est créée à chaque ouverture de cette application. Les essais validés restent enregistrés sur ce navigateur.</div>
+</main>
+<div class="pad-overlay hidden" id="placeOverlay" role="presentation">
+ <section class="pad-dialog" role="dialog" aria-modal="true" aria-labelledby="padTitle" aria-describedby="padNote">
+  <div class="pad-header"><h3 id="padTitle">Choisis un chiffre</h3><button type="button" class="pad-close" id="padClose" aria-label="Fermer">×</button></div>
+  <p class="pad-note" id="padNote">Choisis un chiffre de 0 à 9.</p>
+  <div class="pad-grid" id="placePad"></div>
+ </section>
+</div>
+<script>
+(()=>{'use strict';
+const MAX=10;
+const $=id=>document.getElementById(id);
+const places=[['CM','c-cm'],['DM','c-dm'],['UM','c-um'],['C','c-c'],['D','c-d'],['U','c-u']];
+const placeNames=['centaines de mille','dizaines de mille','unités de mille','centaines','dizaines','unités'];
+let activePlace=null,returnFocus=null;
+const wordUnits=['zéro','un','deux','trois','quatre','cinq','six','sept','huit','neuf','dix','onze','douze','treize','quatorze','quinze','seize','dix-sept','dix-huit','dix-neuf'];
+function under100(n){if(n<20)return wordUnits[n];const tens=['','','vingt','trente','quarante','cinquante','soixante','','quatre-vingt',''];let t=Math.floor(n/10),u=n%10;if(t===7)return u===1?'soixante et onze':'soixante-'+under100(10+u);if(t===9)return 'quatre-vingt-'+under100(10+u);if(t===8)return 'quatre-vingt'+(u===0?'s':'-'+wordUnits[u]);if(u===0)return tens[t];return tens[t]+(u===1?' et un':'-'+wordUnits[u]);}
+function under1000(n){const c=Math.floor(n/100),rem=n%100;let s='';if(c===1)s='cent';else if(c>1)s=wordUnits[c]+' cent'+(rem===0?'s':'');if(rem)s+=(s?' ':'')+under100(rem);return s||'zéro';}
+function toFrench(n){if(n<1000)return under1000(n);let th=Math.floor(n/1000),lo=n%1000;let prefix=th===1?'mille':under1000(th)+' mille';return prefix+(lo?' '+under1000(lo):'');}
+function rand(min,max){return Math.floor(Math.random()*(max-min+1))+min;}
+function generate(){const groups=[3,3,4,4,4,5,5,5,6,6],seen=new Set();return groups.map((digits,i)=>{let number,tries=0;do{const min=10**(digits-1),max=10**digits-1;number=rand(min,max);if(i>1 && i%2===0){const power=10**rand(1,Math.min(3,digits-2));number=Math.floor(number/(power*10))*(power*10)+number%power;if(number<min)number+=min;}tries++;}while(seen.has(number)&&tries<1000);seen.add(number);return {number,digits,answer:'',tries:0,help:0,checked:false,correct:false,skipped:false,showAbacus:false,abacusEntries:null,abacusEditing:false,feedback:'',feedbackType:'',mistakes:[],heard:0};});}
+let exercises=generate(),current=0,finished=false,validated=false;
+const LEARN_KEYS=['topmath_n102_history_v1'];
+function getHistory(){try{const a=JSON.parse(localStorage.getItem(LEARN_KEYS[0])||'[]');return Array.isArray(a)?a:[]}catch{return []}}
+function storeHistory(a){try{localStorage.setItem(LEARN_KEYS[0],JSON.stringify(a));return true}catch{return false}}
+function format(n){return String(n).replace(/\B(?=(\d{3})+(?!\d))/g,' ')}
+function explainError(e){const typed=e.answer,goal=String(e.number);if(!typed)return 'Aucune réponse écrite.';if(typed.length!==goal.length)return 'Vérifie le nombre de chiffres.';const diff=[...goal].map((x,i)=>x===typed[i]?null:i).filter(i=>i!==null);if(diff.length===1){const i=diff[0],p=places[6-goal.length+i];return 'Revois la colonne '+p[0]+'.';}if(typed.replace(/0/g,'')===goal.replace(/0/g,''))return 'Attention à la place des zéros.';return 'Réécoute et vérifie chaque chiffre.'}
+function classify(e){if(!e.answer)return 'sans_reponse';let typed=e.answer,goal=String(e.number);if(typed.length!==goal.length)return 'longueur';if(typed.replace(/0/g,'')===goal.replace(/0/g,''))return 'zeros';return 'chiffres'}
+function renderTabs(){ $('tabs').innerHTML='';exercises.forEach((e,i)=>{const b=document.createElement('button');b.className='tab'+(i===current?' active':'')+(e.correct?' complete':'')+(e.skipped?' skipped':'');b.type='button';b.textContent=i+1;b.title='Exercice '+(i+1);b.setAttribute('aria-label','Exercice '+(i+1));b.setAttribute('aria-current',i===current?'step':'false');b.onclick=()=>{current=i;render()};$('tabs').appendChild(b);});}
+function digitColor(position,length){return places[6-length+position][1]}
+function renderAnswer(e){
+ const el=$('answer');el.innerHTML='';el.className='answer'+(!e.answer?' placeholder':'');
+ if(e.abacusEditing){
+  const digits=e.abacusEntries.slice(6-e.digits);
+  digits.forEach((v,i)=>{
+   if(i && (digits.length-i)%3===0){const sep=document.createElement('span');sep.textContent=' ';el.appendChild(sep)}
+   const slot=document.createElement('span');slot.className='answer-slot '+digitColor(i,e.digits);slot.textContent=v===null?'·':v;el.appendChild(slot);
+  });return;
+ }
+ if(!e.answer){el.textContent='—';return}
+ for(let i=0;i<e.answer.length;i++){
+  if(i && (e.answer.length-i)%3===0){const sep=document.createElement('span');sep.textContent=' ';el.appendChild(sep)}
+  const d=document.createElement('span');d.textContent=e.answer[i];d.className='answer-digit '+digitColor(i,e.answer.length);el.appendChild(d)
+ }
+}
+function entriesFor(e){
+ if(e.abacusEntries)return e.abacusEntries;
+ const digits=Array(6).fill(null),value=e.answer;
+ for(let i=0;i<value.length;i++)digits[6-value.length+i]=value[i];
+ e.abacusEntries=digits;return digits;
+}
+function renderAbacus(e){
+ $('abacus').classList.toggle('hidden',!e.showAbacus);
+ $('toggleAbacus').textContent=e.showAbacus?'▦ Masquer l’abaque':'▦ Afficher l’abaque';
+ const grid=$('placeGrid');grid.replaceChildren();
+ const digits=e.abacusEditing?entriesFor(e):(()=>{const a=Array(6).fill(null);for(let i=0;i<e.answer.length;i++)a[6-e.answer.length+i]=e.answer[i];return a})();
+ places.forEach(([name,color],i)=>{
+  const cell=document.createElement('div'),enabled=i>=6-e.digits;
+  cell.className='place place-edit'+(!enabled?' inactive':'');
+  const b=document.createElement('button');b.type='button';b.className='place-button';b.disabled=!enabled||e.correct;
+  b.setAttribute('aria-label',placeNames[i]+'. '+(digits[i]===null?'Case vide':'Chiffre '+digits[i])+'. Choisir un chiffre');
+  const lab=document.createElement('span');lab.className='place-name '+color;lab.textContent=name;
+  const value=document.createElement('span');value.className='place-value '+color+(digits[i]===null?' empty':'');value.textContent=digits[i]===null?'·':digits[i];
+  b.append(lab,value);if(enabled)b.onclick=()=>openPlacePad(i,b);
+  cell.appendChild(b);grid.appendChild(cell);
+ });
+}
+function openPlacePad(i,focusEl){
+ if(finished||exercises[current].correct)return;
+ activePlace=i;returnFocus=focusEl;
+ $('padTitle').textContent=placeNames[i].charAt(0).toUpperCase()+placeNames[i].slice(1);
+ $('padNote').textContent='Choisis un chiffre de 0 à 9.';
+ $('placeOverlay').classList.remove('hidden');
+ $('placePad').querySelector('button')?.focus();
+}
+function closePlacePad(){
+ $('placeOverlay').classList.add('hidden');activePlace=null;
+ if(returnFocus?.isConnected)returnFocus.focus();else $('toggleAbacus').focus();
+ returnFocus=null;
+}
+function setPlaceDigit(value){
+ if(activePlace===null)return;
+ const e=exercises[current],entries=entriesFor(e);
+ entries[activePlace]=value;
+ e.abacusEditing=true;
+ const relevant=entries.slice(6-e.digits);
+ e.answer=relevant.every(v=>v!==null)?relevant.join(''):'';
+ e.checked=false;e.feedback='';
+ closePlacePad();render();
+ const cell=$('placeGrid').children[activePlace]?.querySelector('button');if(cell)cell.focus();
+}
+function render(){if(finished){renderResults();return}$('activity').classList.remove('hidden');$('results').classList.add('hidden');const e=exercises[current];renderTabs();$('progressText').textContent='Exercice '+(current+1)+' / 10';$('progressFill').style.width=(100*(current+1)/10)+'%';$('instruction').textContent='Écoute et écris le nombre.';$('digitRange').textContent=e.digits+' chiffres';renderAnswer(e);renderAbacus(e);$('audioNote').textContent='';$('prev').disabled=current===0;$('next').textContent=current===MAX-1?'Voir mon bilan →':'Suivant →';$('check').disabled=e.correct;$('feedback').className='notice'+(e.feedback?' '+e.feedbackType:' hidden');$('feedback').textContent=e.feedback;$('keypad').querySelectorAll('button').forEach(b=>b.disabled=e.correct);}
+function editNumber(key){const e=exercises[current];if(e.correct)return;e.abacusEditing=false;e.abacusEntries=null;if(key==='clear')e.answer='';else if(key==='back')e.answer=e.answer.slice(0,-1);else if(e.answer.length<6 && (/^[0-9]$/).test(key)){if(e.answer===''&&key==='0')return;e.answer+=key;}e.checked=false;e.feedback='';render();}
+function describeHint(e){const level=++e.help;if(level===1)return 'Écoute encore une fois. Repère les milliers et les centaines.';if(level===2)return 'Utilise l’abaque pour placer les chiffres dans les colonnes.';if(level===3){const s=String(e.number),parts=s.length>3?s.slice(0,-3)+' | '+s.slice(-3):s;return 'Écoute les groupes : '+parts.replace('|',' puis ')+' (groupes de chiffres).'}return 'Indice : le nombre comporte '+e.digits+' chiffres. Vérifie aussi les zéros.';}
+function showFeedback(msg,type){let e=exercises[current];e.feedback=msg;e.feedbackType=type;render();}
+function check(){let e=exercises[current];if(e.correct)return;if(!e.answer){showFeedback(e.abacusEditing?'Complète les cases de l’abaque.':'Écris un nombre avant de vérifier.','warn');return}e.tries++;e.checked=true;if(Number(e.answer)===e.number){e.correct=true;e.skipped=false;showFeedback('Bravo, c’est le bon nombre !','ok')}else{e.mistakes.push(classify(e));showFeedback(explainError(e)+' Essaie encore.','warn')}}
+function skip(){let e=exercises[current];if(!e.correct)e.skipped=true;if(current<MAX-1){current++;render()}else end()}
+function next(){if(current<MAX-1){current++;render()}else end()}
+function prev(){if(current>0){current--;render()}}
+function end(){finished=true;window.speechSynthesis?.cancel();renderResults();scrollTo({top:0,behavior:'smooth'})}
+function speak(slow){let e=exercises[current];e.heard++;if(!('speechSynthesis' in window)){ $('audioNote').textContent='Voix indisponible dans ce navigateur.';return}speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(toFrench(e.number));u.lang='fr-BE';u.rate=slow?.72:.91;u.pitch=1;const vs=speechSynthesis.getVoices(),v=vs.find(v=>v.lang.toLowerCase()==='fr-be')||vs.find(v=>v.lang.toLowerCase().startsWith('fr'));if(v)u.voice=v;u.onerror=()=>{$('audioNote').textContent='Lecture audio indisponible. Vérifie le son de ton appareil.'};speechSynthesis.speak(u)}
+function diagnose(){const mistakes=exercises.flatMap(e=>e.mistakes),counts={};mistakes.forEach(k=>counts[k]=(counts[k]||0)+1);let output=[];if(counts.zeros)output.push('Zéros : vérifie les colonnes vides.');if(counts.longueur)output.push('Position : compte les chiffres avant de valider.');if(counts.chiffres)output.push('Écoute : vérifie les chiffres dans chaque colonne.');if(exercises.some(e=>e.skipped&&!e.correct))output.push('Exercices passés : essaie de les reprendre avec l’abaque.');if(!output.length)output.push('Continue à écouter attentivement et à vérifier ton écriture.');return output.slice(0,3)}
+function score(){return exercises.filter(e=>e.correct).length}
+function renderResults(){ $('activity').classList.add('hidden');$('results').classList.remove('hidden');$('tabs').innerHTML='';$('progressText').textContent='Bilan final';$('progressFill').style.width='100%';const good=score(),errors=exercises.reduce((sum,e)=>sum+e.mistakes.length,0),skipped=exercises.filter(e=>!e.correct).length,notes=diagnose();let block='<div class="result-hero"><div class="pill" style="background:#e8f1ff;color:#274e8d;border-color:#cedff5">N102 · BILAN</div><h2>Mon résultat</h2><div class="result-score">'+good+' / 10</div><p>Écriture des nombres sous la dictée</p></div>';
+block+='<div class="summarycards"><div class="summarycard"><strong>'+good+'</strong><span>Réussis</span></div><div class="summarycard"><strong>'+errors+'</strong><span>Essais incorrects</span></div><div class="summarycard"><strong>'+skipped+'</strong><span>Non réussis</span></div></div>';
+block+='<h3 class="section-title">Mes points à travailler</h3><div class="review">'+notes.map((n,i)=>'<div class="review-item"><div class="review-id">'+(i+1)+'</div><div class="review-text">'+n+'</div></div>').join('')+'</div>';
+block+='<h3 class="section-title">Mes 10 exercices</h3><div class="review">'+exercises.map((e,i)=>'<div class="review-item"><div class="review-id">'+(i+1)+'</div><div class="review-text"><strong>'+(e.correct?'✓ Réussi':e.skipped?'↷ Passé':'À retravailler')+'</strong> · Dictée : <strong>'+format(e.number)+'</strong><div class="rule">Ma réponse : '+(e.answer?format(e.answer):'—')+' · Vérifications incorrectes : '+e.mistakes.length+(e.help?' · Aides : '+e.help:'')+'</div></div></div>').join('')+'</div>';
+block+='<h3 class="section-title">Enregistrer mon résultat</h3><p>Entre ton prénom ou ton code. Seul le bilan validé est enregistré.</p><div class="formline noprint"><input class="name" id="studentCode" maxlength="40" autocomplete="off" placeholder="Prénom ou code élève" aria-label="Prénom ou code élève"><button class="btn primary" id="saveAttempt" type="button">✓ Valider mon essai</button><button class="btn" id="newSeries" type="button">↻ Nouvelle série</button><button class="btn" id="printReport" type="button">Imprimer le bilan</button></div><div id="saveStatus" class="saved" aria-live="polite"></div><div id="historyBlock"></div>';
+$('results').innerHTML=block;$('saveAttempt').disabled=validated;$('saveAttempt').onclick=saveAttempt;$('newSeries').onclick=()=>{if(confirm('Créer 10 nouveaux exercices ? Le parcours actuel sera effacé.')){speechSynthesis?.cancel();exercises=generate();current=0;finished=false;validated=false;render();window.scrollTo(0,0)}};$('printReport').onclick=()=>window.print();renderHistory();}
+function saveAttempt(){if(validated)return;const code=$('studentCode').value.trim();if(!code){$('saveStatus').textContent='Indique ton prénom ou ton code avant de valider.';return}const hist=getHistory(),attempt=hist.filter(h=>h.code===code).length+1;const record={code,attempt,date:new Date().toISOString(),score:score(),errors:exercises.reduce((x,e)=>x+e.mistakes.length,0),skipped:exercises.filter(e=>!e.correct).length,notes:diagnose()};if(!storeHistory([...hist,record])){$('saveStatus').textContent='Sauvegarde indisponible dans ce navigateur.';return}validated=true;$('saveAttempt').disabled=true;$('studentCode').disabled=true;$('saveStatus').textContent='Essai '+attempt+' enregistré sur cet appareil.';renderHistory();}
+function renderHistory(){const hist=getHistory();let show=$('historyBlock');if(!show)return;const code=$('studentCode')?.value.trim()||'';const selected=code?hist.filter(h=>h.code===code):[];show.innerHTML=selected.length?'<h3 class="section-title">Mes essais enregistrés</h3>'+selected.map(h=>'<div class="historyrow"><strong>Essai '+h.attempt+'</strong> — '+h.score+'/10 · '+new Date(h.date).toLocaleDateString('fr-BE')+'</div>').join(''):'<p class="tiny">Les résultats validés sont conservés localement. La connexion Cloud viendra plus tard.</p>'}
+$('keypad').innerHTML='';['1','2','3','4','5','6','7','8','9','Effacer','0','⌫'].forEach(k=>{const b=document.createElement('button');b.type='button';b.textContent=k;b.className='key'+(k==='Effacer'?' clear':k==='⌫'?' back':'');b.setAttribute('aria-label',k==='⌫'?'Supprimer le dernier chiffre':k);b.onclick=()=>editNumber(k==='Effacer'?'clear':k==='⌫'?'back':k);$('keypad').appendChild(b)});
+// Pavé numérique de l’abaque (une saisie par colonne, puis fermeture automatique).
+['1','2','3','4','5','6','7','8','9','Effacer','0'].forEach(k=>{
+ const b=document.createElement('button');b.type='button';b.className='pad-num'+(k==='Effacer'?' pad-clear':'');b.textContent=k;
+ b.onclick=()=>setPlaceDigit(k==='Effacer'?null:k);$('placePad').appendChild(b);
+});
+$('padClose').onclick=closePlacePad;
+$('placeOverlay').addEventListener('click',event=>{if(event.target===$('placeOverlay'))closePlacePad()});
+$('prev').onclick=prev;$('next').onclick=next;$('skip').onclick=skip;$('check').onclick=check;$('hint').onclick=()=>{const e=exercises[current];const message=describeHint(e);if(e.help>=2)e.showAbacus=true;showFeedback(message,'');};$('speak').onclick=()=>speak(false);$('slow').onclick=()=>speak(true);$('toggleAbacus').onclick=()=>{const e=exercises[current];e.showAbacus=!e.showAbacus;render()};
+document.addEventListener('keydown',event=>{if(activePlace!==null){if(event.key==='Escape'){event.preventDefault();closePlacePad()}else if(/^[0-9]$/.test(event.key)){event.preventDefault();setPlaceDigit(event.key)}else if(event.key==='Backspace'||event.key==='Delete'){event.preventDefault();setPlaceDigit(null)}return}if(finished||event.altKey||event.ctrlKey||event.metaKey||document.activeElement?.tagName==='INPUT')return;if(/^[0-9]$/.test(event.key)){editNumber(event.key)}else if(event.key==='Backspace'){event.preventDefault();editNumber('back')}else if(event.key==='Enter'){event.preventDefault();check()}});
+// Aucune reprise de session: chaque chargement génère les dix nouveaux nombres. Seuls les bilans validés persistent.
+render();
+})();
+</script>
+</body></html>
