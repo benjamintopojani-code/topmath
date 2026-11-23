@@ -20,6 +20,39 @@ const req = (path, options = {}) => new Request('https://topmath.example' + path
 const ctx = (request, next = async () => new Response('ok'), envOverride = env) => ({
   request, env: envOverride, data: {}, next
 });
+// Simule la table D1 de limitation et conserve le comportement des autres requêtes.
+function rateLimitDb(studentRows = []) {
+  const attempts = new Map();
+  return {
+    attempts,
+    prepare(sql) {
+      if (sql.startsWith('CREATE TABLE')) return { run: async () => ({ success: true }) };
+      if (sql.startsWith('SELECT window_start, failures')) return {
+        bind(scope, identifier) {
+          return { first: async () => attempts.get(scope + ':' + identifier) || null };
+        }
+      };
+      if (sql.startsWith('INSERT INTO auth_failed_attempts')) return {
+        bind(scope, identifier, now, cutoff) {
+          return { run: async () => {
+            const key = scope + ':' + identifier;
+            const previous = attempts.get(key);
+            attempts.set(key, !previous || previous.window_start <= cutoff ?
+              { window_start: now, failures: 1 } :
+              { window_start: previous.window_start, failures: previous.failures + 1 });
+          } };
+        }
+      };
+      if (sql.startsWith('DELETE FROM auth_failed_attempts')) return {
+        bind(scope, identifier) {
+          return { run: async () => { attempts.delete(scope + ':' + identifier); } };
+        }
+      };
+      return { bind() { return { all: async () => ({ results: studentRows }) }; } };
+    }
+  };
+}
+
 const makePasswordHash = (password, iterations = 100000) => {
   const salt = randomBytes(16);
   const digest = pbkdf2Sync(password, salt, iterations, 32, 'sha256');
@@ -90,11 +123,7 @@ test('student login creates a signed session and rejects ambiguous access codes'
     id: 'stu-1', first_name: 'Élève', last_name: 'Test',
     class_name: 'Classe A', phase: 'Phase 1', school_year: '2026-2027'
   };
-  const db = {
-    prepare() {
-      return { bind() { return { all: async () => ({ results: [student] }) }; } };
-    }
-  };
+  const db = rateLimitDb([student]);
   const request = new Request('https://topmath.example/api/student-login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -104,11 +133,7 @@ test('student login creates a signed session and rejects ambiguous access codes'
   assert.equal(response.status, 200);
   assert.match(response.headers.get('Set-Cookie'), /HttpOnly/);
 
-  const duplicateDb = {
-    prepare() {
-      return { bind() { return { all: async () => ({ results: [student, student] }) }; } };
-    }
-  };
+  const duplicateDb = rateLimitDb([student, student]);
   const duplicateRequest = new Request('https://topmath.example/api/student-login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -121,7 +146,7 @@ test('student login creates a signed session and rejects ambiguous access codes'
 test('teacher login verifies a ten-character PBKDF2 password before issuing a cookie', async () => {
   const password = 'TopMath-26';
   const hash = makePasswordHash(password);
-  const envWithPassword = { ...env, TOPMATH_TEACHER_PASSWORD_HASH: hash };
+  const envWithPassword = { ...env, DB: rateLimitDb(), TOPMATH_TEACHER_PASSWORD_HASH: hash };
   const makeRequest = value => new Request('https://topmath.example/api/auth/teacher-login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -210,4 +235,49 @@ test('student login rejects short access codes before querying D1', async () => 
   const response = await studentLogin({ request, env: { ...env, DB: db } });
   assert.equal(response.status, 400);
   assert.equal(queried, false);
+});
+
+test('student repeated guesses are rejected after five failures on the same code', async () => {
+  const db = rateLimitDb();
+  const sharedEnv = { ...env, DB: db };
+  const makeRequest = () => new Request('https://topmath.example/api/student-login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': '192.0.2.10' },
+    body: JSON.stringify({ code: 'WRONG123' })
+  });
+  for (let i = 0; i < 5; i++) {
+    assert.equal((await studentLogin({ request: makeRequest(), env: sharedEnv })).status, 401);
+  }
+  const blocked = await studentLogin({ request: makeRequest(), env: sharedEnv });
+  assert.equal(blocked.status, 429);
+  assert.ok(Number(blocked.headers.get('Retry-After')) > 0);
+});
+
+test('teacher login is temporarily limited after eight wrong passwords', async () => {
+  const sharedEnv = { ...env, DB: rateLimitDb(), TOPMATH_TEACHER_PASSWORD_HASH: makePasswordHash('TopMath-26') };
+  const makeRequest = () => new Request('https://topmath.example/api/auth/teacher-login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': '192.0.2.11' },
+    body: JSON.stringify({ password: 'wrong-password' })
+  });
+  for (let i = 0; i < 8; i++) {
+    assert.equal((await teacherLogin({ request: makeRequest(), env: sharedEnv })).status, 401);
+  }
+  assert.equal((await teacherLogin({ request: makeRequest(), env: sharedEnv })).status, 429);
+});
+
+test('successful student login clears the attempted-code lockout counter', async () => {
+  const student = { id: 'stu-1', first_name: 'Test', last_name: 'Student', class_name: 'A', phase: '1', school_year: '2026-2027' };
+  const db = rateLimitDb();
+  const sharedEnv = { ...env, DB: db };
+  const request = () => new Request('https://topmath.example/api/student-login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': '192.0.2.12' },
+    body: JSON.stringify({ code: 'ABCDE123' })
+  });
+  assert.equal((await studentLogin({ request: request(), env: sharedEnv })).status, 401);
+  assert.equal(db.attempts.size, 2);
+  const successfulEnv = { ...sharedEnv, DB: rateLimitDb([student]) };
+  assert.equal((await studentLogin({ request: request(), env: successfulEnv })).status, 200);
+  assert.equal([...successfulEnv.DB.attempts.keys()].some(key => key.startsWith('student_code:')), false);
 });
