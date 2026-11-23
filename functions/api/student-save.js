@@ -1,3 +1,5 @@
+import { generateUniqueCode } from './student-access-codes.js';
+
 function validIsoDate(value) {
   if (!value) return true;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -43,8 +45,9 @@ export async function onRequestPost(context) {
       }
     } else {
       id = crypto.randomUUID();
+      const accessCode = await generateUniqueCode(db);
       await db.batch([
-        db.prepare(`INSERT INTO students (id,last_name,first_name,birth_date,access_code) VALUES (?,?,?,?,NULL)`).bind(id,lastName,firstName,birthDate||null),
+        db.prepare(`INSERT INTO students (id,last_name,first_name,birth_date,access_code) VALUES (?,?,?,?,?)`).bind(id,lastName,firstName,birthDate||null,accessCode),
         db.prepare(`INSERT INTO enrollments (id,student_id,class_id,school_year_id,phase,sector,professional_group,job) VALUES (?,?,?,?,?,?,?,?)`)
           .bind(crypto.randomUUID(), id, classId, schoolYear.id, phase || cls.phase || '', sector || null, professionalGroup || null, job || null)
       ]);
