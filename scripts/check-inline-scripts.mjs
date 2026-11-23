@@ -3,7 +3,7 @@ import { Script } from 'node:vm';
 
 for (const file of ['enseignant.html', 'eleve.html']) {
   const html = await readFile(file, 'utf8');
-  const blocks = [...html.matchAll(/<script\\b(?![^>]*\\bsrc=)[^>]*>([\\s\\S]*?)<\\/script\\s*>/gi)];
+  const blocks = [...html.matchAll(/<script\b(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script\s*>/gi)];
   if (!blocks.length) throw new Error('Aucun script inline trouvé dans ' + file);
   let checked = 0;
   for (let i = 0; i < blocks.length; i++) {
