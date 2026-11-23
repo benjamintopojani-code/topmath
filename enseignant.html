@@ -357,7 +357,7 @@
   <div id="d1StudentsStatus" class="muted" style="margin:8px 0 12px"></div>
   <div id="d1StudentsList" class="list"></div>
 </div></section>
-<section id="access" class="panel"><div class="card"><h2>Gestion des accès</h2><div class="field" style="max-width:360px"><label>Classe</label><select id="accessClass"></select></div><p class="muted">Chaque élève possède un seul code personnel de connexion. Top’Math génère automatiquement un code aléatoire lors de la première utilisation. Seul l’enseignant peut le modifier, le renouveler ou l’annuler.</p><div id="accessList" class="list"></div><div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap"><button id="generateMissing" class="secondary">Générer les codes manquants</button><button id="renewAll" class="secondary">Renouveler tous les codes de la classe</button><button id="clearAllMain" class="danger">Annuler tous les codes de la classe</button></div><p class="muted" style="margin-top:10px">Chaque élève reçoit un code différent. Un code annulé cesse immédiatement de fonctionner. L’élève ne peut pas modifier son code depuis son espace.</p></div></section>
+<section id="access" class="panel"><div class="card"><h2>Gestion des accès</h2><div class="field" style="max-width:360px"><label>Classe</label><select id="accessClass"></select></div><p class="muted">Chaque élève possède un code personnel enregistré dans Cloudflare D1. L’enseignant peut le générer, le modifier, le renouveler ou l’annuler. Les codes sont gérés sur le serveur et non plus uniquement dans le navigateur.</p><div id="accessList" class="list"></div><div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap"><button id="generateMissing" class="secondary">Générer les codes manquants</button><button id="renewAll" class="secondary">Renouveler tous les codes de la classe</button><button id="clearAllMain" class="danger">Annuler tous les codes de la classe</button></div><p class="muted" style="margin-top:10px">Chaque élève reçoit un code différent. Un code annulé cesse immédiatement de fonctionner. L’élève ne peut pas modifier son code depuis son espace.</p></div></section>
 
 
 
@@ -1987,7 +1987,7 @@ function renderAccessLocal(){
 async function renderAccess(){
   if(location.protocol==='file:'){renderAccessLocal();return;}
   const box=document.getElementById('accessList'),cls=selectedD1AccessClass();
-  if(!cls){D1_ACCESS_STUDENTS=[];box.textContent='La liste des classes D1 est en cours de chargement.';return;}
+  if(!cls){D1_ACCESS_STUDENTS=[];box.textContent=D1_PEDAGOGICAL_ERROR?'Impossible de charger les classes : '+D1_PEDAGOGICAL_ERROR:'La liste des classes D1 est en cours de chargement.';return;}
   box.textContent='Chargement des codes depuis Cloudflare D1…';
   try{
     const response=await fetch('/api/student-access-codes?class_id='+encodeURIComponent(cls.id),{cache:'no-store'});

@@ -31,7 +31,7 @@ CONFIGURATION CLOUDFLARE
 COMPORTEMENT
 
 - Sessions signées HMAC-SHA256 dans un cookie `HttpOnly`, `Secure`, `SameSite=Strict`.
-- Durée maximale : 8 heures enseignant, 12 heures élève.
+- Durée maximale : 8 heures enseignant, 12 heures élève. Les codes d’accès élèves sont générés sur 8 caractères alphanumériques.
 - Les API sont protégées par `functions/_middleware.js` : par défaut enseignant uniquement ; `student-profile` est réservé à l'élève connecté.
 - Les écritures API exigent une origine identique et un corps JSON.
 - `/api/test`, `/api/roster` et `/api/pedagogy` ne sont plus accessibles sans session enseignant.

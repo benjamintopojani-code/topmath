@@ -53,3 +53,5 @@ test('teacher access-code API rotates a D1 student code', async () => {
   assert.equal(response.status, 200);
   assert.match(savedCode, /^[A-Z0-9]{8}$/);
 });
+
+test('student login rejects short access codes before querying D1',async()=>{let queried=false;const db={prepare(){queried=true;return{bind(){return{all:async()=>({results:[]})}}}}},request=new Request('https://topmath.example/api/student-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:'1234'})}),response=await studentLogin({request,env:{...env,DB:db}});assert.equal(response.status,400);assert.equal(queried,false);});
