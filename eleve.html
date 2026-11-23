@@ -94,7 +94,7 @@ async function login() {
 }
 document.getElementById('loginBtn').onclick=login;
 document.getElementById('code').onkeydown=e=>{if(e.key==='Enter')login()};
-document.getElementById('logout').onclick=async()=>{try{await fetch('/api/auth/logout',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});}finally{location.reload();}};
+document.getElementById('logout').onclick=async()=>{try{const response=await fetch('/api/auth/logout',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});if(!response.ok)throw new Error('Réponse serveur invalide');location.reload();}catch(error){alert('La déconnexion n’a pas pu être confirmée. Vérifie ta connexion puis réessaie.');}};
 document.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('.student-panel').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('[data-p]').forEach(x=>x.classList.remove('active'));
