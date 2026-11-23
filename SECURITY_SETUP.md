@@ -26,7 +26,7 @@ CONFIGURATION CLOUDFLARE
 - Dans le projet Pages `topmath-git`, configurer ces secrets pour l'environnement Preview d'abord.
 - Ne pas modifier les secrets de Production pendant cette phase.
 - Les variables doivent être disponibles dans les Pages Functions sous `context.env`.
-- Prévoir une règle de limitation de débit WAF sur `POST /api/student-login` et `POST /api/auth/teacher-login`. Adapter le seuil aux connexions simultanées d'une école (plusieurs élèves peuvent partager une même adresse IP). Cette règle doit être validée avant une ouverture réelle aux élèves.
+- Les connexions sont limitées directement côté serveur avec Cloudflare D1 (même sur les sous-domaines Preview `pages.dev`). La table `auth_failed_attempts` est créée automatiquement au premier essai de connexion.\n- Élèves : 5 codes incorrects pour une même combinaison IP/code en 15 minutes, et 120 échecs par IP en 15 minutes pour éviter les essais de nombreux codes. Enseignant : 8 mots de passe incorrects par IP en 15 minutes. Réponse HTTP 429 avec en-tête `Retry-After`.\n- Les identifiants de compteurs sont dérivés par HMAC ; aucune IP ni aucun code élève n'est enregistré en clair dans la table.\n- Les seuils doivent être réévalués pendant un test en classe avec le Wi-Fi partagé. Une règle WAF peut compléter cette protection après configuration éventuelle d'un domaine personnalisé, mais ne doit pas être supposée protéger les adresses `pages.dev`.
 
 COMPORTEMENT
 
@@ -44,4 +44,4 @@ TESTS LOCAUX
 node --test tests/security.test.mjs
 ```
 
-NE PAS FUSIONNER / DÉPLOYER EN PRODUCTION AVANT : secrets Preview configurés, connexion enseignant et élève vérifiées, refus d'accès API sans session et avec rôle incorrect vérifiés, tests sur iPad et ordinateur, et règle WAF de limitation de débit active.
+NE PAS FUSIONNER / DÉPLOYER EN PRODUCTION AVANT : secrets Preview configurés, connexion enseignant et élève vérifiées, refus d'accès API sans session et avec rôle incorrect vérifiés, tests sur iPad et ordinateur, et limitation D1 testée en Preview.
