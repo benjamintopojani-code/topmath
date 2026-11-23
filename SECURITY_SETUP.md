@@ -5,14 +5,14 @@ Cette branche introduit une authentification serveur. Ne pas fusionner en produc
 SECRETS OBLIGATOIRES
 
 1. `TOPMATH_SESSION_SECRET` : secret aléatoire d'au moins 32 caractères. Générer avec `node scripts/generate-session-secret.mjs`.
-2. `TOPMATH_TEACHER_PASSWORD_HASH` : hachage PBKDF2-SHA256 du mot de passe enseignant. Le mot de passe doit contenir au moins 12 caractères.
+2. `TOPMATH_TEACHER_PASSWORD_HASH` : hachage PBKDF2-SHA256 du mot de passe enseignant. Le mot de passe doit contenir au moins 10 caractères. Pour Cloudflare Workers, le hachage utilise 100 000 itérations maximum.
 
 GÉNÉRER LE HACHAGE DU MOT DE PASSE
 
 Dans un terminal Bash local (ne jamais envoyer le mot de passe dans un chat ni le committer) :
 
 ```bash
-read -s -p "Nouveau mot de passe enseignant : " TOPMATH_NEW_TEACHER_PASSWORD
+read -s -p "Mot de passe enseignant (10 caractères minimum) : " TOPMATH_NEW_TEACHER_PASSWORD
 echo
 export TOPMATH_NEW_TEACHER_PASSWORD
 node scripts/hash-teacher-password.mjs
