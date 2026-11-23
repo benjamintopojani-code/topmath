@@ -106,7 +106,7 @@ test('student login creates a signed session and rejects ambiguous access codes'
 
   const duplicateDb = {
     prepare() {
-      return { bind() { return { all: async () => ({ results: [student, student] }) }; };
+      return { bind() { return { all: async () => ({ results: [student, student] }) }; } };
     }
   };
   const duplicateRequest = new Request('https://topmath.example/api/student-login', {
