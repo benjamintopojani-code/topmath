@@ -1,0 +1,28 @@
+name: TopMath security checks
+
+on:
+  push:
+    branches:
+      - 'security/**'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Test authentication and API access controls
+        run: node --test tests/security.test.mjs
+      - name: Check inline browser scripts
+        run: node scripts/check-inline-scripts.mjs
