@@ -9,6 +9,7 @@ import {
 } from '../functions/_lib/auth.js';
 import { onRequestPost as studentLogin } from '../functions/api/student-login.js';
 import { onRequestPost as saveStudent } from '../functions/api/student-save.js';
+import { onRequestPost as manageStudent } from '../functions/api/student-manage.js';
 import { onRequestPost as teacherLogin } from '../functions/api/auth/teacher-login.js';
 import { onRequestGet as studentProfile } from '../functions/api/student-profile.js';
 import { onRequestPost as logout } from '../functions/api/auth/logout.js';
@@ -344,4 +345,68 @@ test('editing an existing student preserves the code, including an intentionally
   const editedAgain=await saveStudent({request:saveStudentRequest({student_id:id}),env:{DB:db}});
   assert.equal(editedAgain.status,200);
   assert.equal(db.records.students[0].code,null);
+});
+
+function studentManageDb({assigned=true,exists=true}={}){
+  const executed=[];
+  const db={
+    executed,
+    prepare(sql){
+      let args=[];
+      const statement={
+        bind(...values){args=values;return statement;},
+        async first(){
+          if(sql.includes('FROM school_years'))return {id:'year-1'};
+          if(sql.includes('FROM students s JOIN enrollments e')){
+            return exists?{id:'stu-1',first_name:'Test',last_name:'Élève',enrollment_id:'enroll-1',class_id:assigned?'class-1':null}:null;
+          }
+          throw Error('Unexpected SQL: '+sql);
+        },
+        async run(){executed.push({sql,args});return {meta:{changes:1}};}
+      };
+      return statement;
+    },
+    async batch(statements){for(const statement of statements)await statement.run();}
+  };
+  return db;
+}
+function manageStudentRequest(action,confirmation=''){
+  return new Request('https://topmath.example/api/student-manage',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action,student_id:'stu-1',confirmation})
+  });
+}
+test('removing student from class preserves enrollments and evaluations while revoking access',async()=>{
+  const db=studentManageDb();
+  const res=await manageStudent({request:manageStudentRequest('remove-from-class'),env:{DB:db}});
+  assert.equal(res.status,200);
+  assert.equal((await res.json()).access_revoked,true);
+  assert.equal(db.executed.length,2);
+  assert.match(db.executed[0].sql,/UPDATE enrollments SET class_id=NULL/);
+  assert.match(db.executed[1].sql,/UPDATE students SET access_code=NULL/);
+  assert.equal(db.executed.some(x=>/DELETE/i.test(x.sql)),false);
+});
+
+test('permanent student deletion requires a second explicit confirmation',async()=>{
+  const db=studentManageDb();
+  const res=await manageStudent({request:manageStudentRequest('delete-permanently'),env:{DB:db}});
+  assert.equal(res.status,400);
+  assert.equal(db.executed.length,0);
+});
+
+test('permanent student deletion removes associated records in dependency order',async()=>{
+  const db=studentManageDb();
+  const res=await manageStudent({request:manageStudentRequest('delete-permanently','SUPPRIMER'),env:{DB:db}});
+  assert.equal(res.status,200);
+  assert.deepEqual(db.executed.map(x=>x.sql.match(/DELETE FROM (\w+)/)[1]),[
+    'official_evaluations','evaluation_schedule_overrides','enrollments','students'
+  ]);
+  assert.ok(db.executed.every(x=>x.args[0]==='stu-1'));
+});
+
+test('student deletion rejects an unknown pupil',async()=>{
+  const db=studentManageDb({exists:false});
+  const res=await manageStudent({request:manageStudentRequest('delete-permanently','SUPPRIMER'),env:{DB:db}});
+  assert.equal(res.status,404);
+  assert.equal(db.executed.length,0);
 });
