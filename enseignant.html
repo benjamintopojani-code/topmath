@@ -711,6 +711,7 @@ async function bootTeacherSecurityServer(){
 }
 document.getElementById('recoveryQuestion').onchange=e=>document.getElementById('customQuestionWrap').style.display=e.target.value==='custom'?'grid':'none';
 document.getElementById('saveTeacherSetup').onclick=()=>{
+  if(location.protocol!=='file:'){document.getElementById('teacherLoginMsg').textContent='La première configuration locale est désactivée en ligne. Utilise la connexion sécurisée du serveur.';showTeacherGate('teacherLogin');return;}
   const password=document.getElementById('teacherSetupPassword').value;
   const confirm=document.getElementById('teacherSetupPasswordConfirm').value;
   let q=document.getElementById('recoveryQuestion').value;
