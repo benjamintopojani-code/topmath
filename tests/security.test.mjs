@@ -22,4 +22,34 @@ test('logout expires the session cookie',async()=>{const response=await logout({
 
 import {onRequestPost as manageAccessCodes} from '../functions/api/student-access-codes.js';
 
-test('teacher access-code API rotates a D1 student code',async()=>{let savedCode=null;const db={prepare(sql){return{first:async()=>({id:'year-1',label:'2026-2027'}),bind(...args){return{first:async()=>sql.includes('classes')?{id:'class-1',name:'Classe A'}:sql.includes('access_code')?null:{id:'stu-1'},run:async()=>{savedCode=args[0];return{meta:{changes:1}}}}}}};const request=new Request('https://topmath.example/api/student-access-codes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'rotate',class_id:'class-1',student_id:'stu-1'})});const response=await manageAccessCodes({request,env:{...env,DB:db}});assert.equal(response.status,200);assert.match(savedCode,/^[A-Z0-9]{8}$/);});
+test('teacher access-code API rotates a D1 student code', async () => {
+  let savedCode = null;
+  const db = {
+    prepare(sql) {
+      return {
+        first: async () => ({ id: 'year-1', label: '2026-2027' }),
+        bind(...args) {
+          return {
+            first: async () => {
+              if (sql.includes('classes')) return { id: 'class-1', name: 'Classe A' };
+              if (sql.includes('access_code')) return null;
+              return { id: 'stu-1' };
+            },
+            run: async () => {
+              savedCode = args[0];
+              return { meta: { changes: 1 } };
+            }
+          };
+        }
+      };
+    }
+  };
+  const request = new Request('https://topmath.example/api/student-access-codes', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'rotate', class_id: 'class-1', student_id: 'stu-1' })
+  });
+  const response = await manageAccessCodes({ request, env: { ...env, DB: db } });
+  assert.equal(response.status, 200);
+  assert.match(savedCode, /^[A-Z0-9]{8}$/);
+});
