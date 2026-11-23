@@ -893,39 +893,54 @@ function renderD1StudentsManager(){
     </div>
   </div>`).join(''):'<p class="muted">Aucun élève correspondant.</p>';
   document.querySelectorAll('[data-d1-student-edit]').forEach(b=>b.onclick=()=>openD1StudentEditor(b.dataset.d1StudentEdit));
-  document.querySelectorAll('[data-d1-student-menu]').forEach(b=>b.onclick=async()=>{
-    const studentId=b.dataset.d1StudentMenu;
-    const row=(D1_PEDAGOGICAL_ROSTER.students||[]).find(r=>r.student_id===studentId);
+  document.querySelectorAll('[data-d1-student-menu]').forEach(b=>b.onclick=()=>{
+    const old=document.querySelector('.d1-student-action-popup');
+    if(old){const same=old.parentElement===b.parentElement;old.remove();if(same)return;}
+    const popup=document.createElement('div');
+    popup.className='d1-student-action-popup';
+    Object.assign(popup.style,{position:'absolute',right:'0',top:'100%',zIndex:'100',minWidth:'215px',background:'#fff',border:'1px solid #ccd4e0',borderRadius:'9px',padding:'5px',boxShadow:'0 6px 18px #0002'});
+    const row=(D1_PEDAGOGICAL_ROSTER.students||[]).find(r=>r.student_id===b.dataset.d1StudentMenu);
     if(!row)return;
-    const name=[row.first_name,row.last_name].filter(Boolean).join(' ');
-    const answer=prompt('Actions pour '+name+' :\\n1 — Retirer de sa classe (conserve son historique)\\n2 — Supprimer définitivement (efface ses données)\\n\\nSaisis 1 ou 2. Annuler pour revenir.');
-    if(answer!=='1'&&answer!=='2')return;
-    const removing=answer==='1';
-    if(removing&&!row.class_id){alert('Cet élève est déjà sans classe.');return;}
-    const message=removing
-      ?'Retirer '+name+' de sa classe ?\\nSon historique est conservé, mais son code est annulé.'
-      :'Supprimer définitivement '+name+' ?\\nTOUTES ses inscriptions, évaluations et données seront effacées, y compris les années précédentes. Action irréversible.';
-    if(!confirm(message))return;
-    let confirmation;
-    if(!removing){
-      confirmation=prompt('Confirmation finale pour '+name+' : tape exactement SUPPRIMER');
-      if(confirmation!=='SUPPRIMER')return;
-    }
-    b.disabled=true;
-    try{
-      const response=await fetch('/api/student-manage',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:removing?'remove-from-class':'delete-permanently',student_id:studentId,confirmation})});
-      const data=await response.json().catch(()=>({}));
-      if(!response.ok||!data.ok)throw new Error(data.error||('HTTP '+response.status));
-      await loadD1RosterForClasses();
-      renderD1StudentsManager();
-      renderAllSchoolViews();
-      alert(removing?'Élève retiré de la classe. Son code a été désactivé.':'Élève définitivement supprimé.');
-    }catch(error){
-      alert('Impossible de terminer cette opération : '+String(error?.message||error));
-      b.disabled=false;
-    }
+    const addChoice=(label,action,color)=>{
+      const option=document.createElement('button');
+      option.type='button';option.textContent=label;
+      Object.assign(option.style,{display:'block',width:'100%',textAlign:'left',padding:'10px',background:'transparent',border:'0',color,cursor:'pointer'});
+      option.onclick=()=>{popup.remove();manageD1StudentAction(row,action,b);};
+      popup.append(option);
+    };
+    if(row.class_id)addChoice('Retirer de la classe','remove-from-class','#39435a');
+    addChoice('Supprimer définitivement','delete-permanently','#b42318');
+    b.parentElement.style.position='relative';
+    b.parentElement.append(popup);
   });
 }
+async function manageD1StudentAction(row,action,button){
+  const name=[row.first_name,row.last_name].filter(Boolean).join(' ');
+  const removing=action==='remove-from-class';
+  const message=removing
+    ?'Retirer '+name+' de sa classe ?\\nSon historique est conservé, mais son code est annulé.'
+    :'Supprimer définitivement '+name+' ?\\nTOUTES ses inscriptions, évaluations et données seront effacées, y compris les années précédentes. Action irréversible.';
+  if(!confirm(message))return;
+  let confirmation;
+  if(!removing){
+    confirmation=prompt('Confirmation finale pour '+name+' : tape exactement SUPPRIMER');
+    if(confirmation!=='SUPPRIMER')return;
+  }
+  button.disabled=true;
+  try{
+    const response=await fetch('/api/student-manage',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,student_id:row.student_id,confirmation})});
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok||!data.ok)throw new Error(data.error||('HTTP '+response.status));
+    await loadD1RosterForClasses();
+    renderD1StudentsManager();
+    renderAllSchoolViews();
+    alert(removing?'Élève retiré de la classe. Son code a été désactivé.':'Élève définitivement supprimé.');
+  }catch(error){
+    alert('Impossible de terminer cette opération : '+String(error?.message||error));
+    button.disabled=false;
+  }
+}
+
 function openD1StudentEditor(studentId=''){
   if(!D1_PEDAGOGICAL_ROSTER)return;
   fillD1StudentClassSelect(document.getElementById('d1StudentClass'),false);
