@@ -116,6 +116,8 @@ function render(){
   renderEval();
 }
 restoreStudentSession();
+window.addEventListener('pagehide',()=>{if(location.protocol==='file:')return;currentId=null;currentStudentD1=null;document.getElementById('space').style.display='none';document.getElementById('logout').style.display='none';document.getElementById('login').style.display='block';document.getElementById('code').value='';document.getElementById('hello').textContent='';document.getElementById('class').textContent='';document.getElementById('phase').textContent='';document.getElementById('evalBox').replaceChildren();document.getElementById('progress').replaceChildren();document.getElementById('results').replaceChildren();document.getElementById('agenda').replaceChildren();});
+window.addEventListener('pageshow',event=>{if(event.persisted)restoreStudentSession();});
 function renderEval(){
   const e=JSON.parse(localStorage.getItem('topmath_open_eval')||'null'),box=document.getElementById('evalBox'),s=currentStudent();
   if(e&&e.opened&&(e.target===currentId||(e.target==='ALL'&&e.className===s.class)))box.innerHTML=`<div class="row"><div><strong>${e.comp}</strong><div class="muted">Évaluation ouverte par l’enseignant.</div></div><button class="success">Commencer</button></div>`;
