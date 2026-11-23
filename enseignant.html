@@ -810,7 +810,7 @@ function showTab(id){
   if(id==='tracking')renderTracking();
   if(id==='students')renderD1StudentsManager();
   if(id==='years')renderYears();
-  if(id==='security')loadSecurityPanel();
+  if(id==='security'){const note=document.getElementById('securityServerNote');if(note)note.scrollIntoView({block:'nearest'});}
   window.scrollTo(0,0);
 }
 
@@ -1150,7 +1150,9 @@ async function loadD1RosterForClasses(){
     D1_PEDAGOGICAL_ROSTER=data;
     D1_PEDAGOGICAL_ERROR='';
     syncSchoolManagementFromD1();
-    fillClassSelect(tc); if(tc.options.length){updateTrackStudents();}
+    [tc,oc,ac].forEach(sel=>{if(sel)fillClassSelect(sel)});
+    renderAccess();
+    if(tc.options.length){updateTrackStudents();}
     if(document.getElementById('classes')?.classList.contains('active')){
       if(selectedPedagogicalStudent)renderPedagogicalStudent(document.querySelector('#studentDashboardTabs button.active')?.dataset.studentTab||'overview');
       else if(selectedPedagogicalClass)renderPedagogicalClass();
@@ -1962,9 +1964,7 @@ function state(){return JSON.parse(storageGet(CODE_STORAGE)||'{}')}
 function randCode(used=new Set()){let v='';do{v=String(Math.floor(1000+Math.random()*9000))}while(used.has(v));return v}
 function ensureInitialCodes(){
   const school=getSchoolState();let x=state(),changed=false,used=new Set(Object.values(x).map(v=>v?.main).filter(Boolean));
-  Object.keys(school.profiles).forEach(id=>{
-    if(!Object.prototype.hasOwnProperty.call(x,id)){const c=randCode(used);used.add(c);x[id]={main:c};changed=true}
-  });
+  Object.keys(school.profiles).forEach(id=>{if(!Object.prototype.hasOwnProperty.call(x,id)){const c=randCode(used);used.add(c);x[id]={main:c};changed=true}});
   if(changed)storageSet(CODE_STORAGE,JSON.stringify(x));
   return x;
 }
@@ -1972,48 +1972,115 @@ function saveState(x){storageSet(CODE_STORAGE,JSON.stringify(x));renderAccess()}
 function currentMain(x,id){return x[id]?.main||''}
 function codeUsedByOther(x,id,code){return Object.entries(x).some(([other,v])=>other!==id&&v?.main===code)}
 const ac=document.getElementById('accessClass');
-function renderAccess(){
+let D1_ACCESS_STUDENTS=[];
+function selectedD1AccessClass(){return (D1_PEDAGOGICAL_ROSTER?.classes||[]).find(cls=>cls.name===ac.value)||null;}
+function renderAccessLocal(){
   const saved=ensureInitialCodes(),students=classStudents(ac.value);
   document.getElementById('accessList').innerHTML=Object.entries(students).map(([id,s])=>{
-    const main=currentMain(saved,id),shown=main?`<b style="font-size:1.08em">${main}</b>`:'<b style="color:var(--red)">Aucun code</b>';
-    return `<div class="row"><div><strong>${s.first} ${s.name}</strong><div class="muted">Code personnel : ${shown}</div></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="secondary" data-change="${id}">Modifier</button><button class="secondary" data-renew="${id}">Nouveau code aléatoire</button><button class="danger" data-clear="${id}">Annuler</button></div></div>`;
+    const main=currentMain(saved,id),shown=main?'<b style="font-size:1.08em">'+main+'</b>':'<b style="color:var(--red)">Aucun code</b>';
+    return '<div class="row"><div><strong>'+s.first+' '+s.name+'</strong><div class="muted">Code personnel : '+shown+'</div></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="secondary" data-change="'+id+'">Modifier</button><button class="secondary" data-renew="'+id+'">Nouveau code aléatoire</button><button class="danger" data-clear="'+id+'">Annuler</button></div></div>';
   }).join('')||'<p class="muted">Aucun élève dans cette classe.</p>';
   document.querySelectorAll('[data-change]').forEach(b=>b.onclick=()=>changeMain(b.dataset.change));
   document.querySelectorAll('[data-renew]').forEach(b=>b.onclick=()=>renewOne(b.dataset.renew));
   document.querySelectorAll('[data-clear]').forEach(b=>b.onclick=()=>clearMain(b.dataset.clear));
 }
+async function renderAccess(){
+  if(location.protocol==='file:'){renderAccessLocal();return;}
+  const box=document.getElementById('accessList'),cls=selectedD1AccessClass();
+  if(!cls){D1_ACCESS_STUDENTS=[];box.textContent='La liste des classes D1 est en cours de chargement.';return;}
+  box.textContent='Chargement des codes depuis Cloudflare D1…';
+  try{
+    const response=await fetch('/api/student-access-codes?class_id='+encodeURIComponent(cls.id),{cache:'no-store'});
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok||!data.ok)throw new Error(data.error||'Lecture des codes impossible.');
+    D1_ACCESS_STUDENTS=data.students||[];
+    box.replaceChildren();
+    if(!D1_ACCESS_STUDENTS.length){box.textContent='Aucun élève dans cette classe.';return;}
+    D1_ACCESS_STUDENTS.forEach(student=>{
+      const row=document.createElement('div');row.className='row';
+      const content=document.createElement('div');
+      const name=document.createElement('strong');name.textContent=(student.first_name||'')+' '+(student.last_name||'');
+      const code=document.createElement('div');code.className='muted';code.textContent='Code personnel : '+(student.access_code||'Aucun code');
+      content.append(name,code);
+      const actions=document.createElement('div');actions.style.cssText='display:flex;gap:6px;flex-wrap:wrap';
+      const change=document.createElement('button');change.className='secondary';change.textContent='Modifier';change.onclick=()=>changeMain(student.student_id);
+      const renew=document.createElement('button');renew.className='secondary';renew.textContent='Nouveau code aléatoire';renew.onclick=()=>renewOne(student.student_id);
+      const clear=document.createElement('button');clear.className='danger';clear.textContent='Annuler';clear.onclick=()=>clearMain(student.student_id);
+      actions.append(change,renew,clear);row.append(content,actions);box.append(row);
+    });
+  }catch(error){D1_ACCESS_STUDENTS=[];box.textContent='Erreur : '+String(error?.message||error);}
+}
+async function postD1AccessAction(payload){
+  const response=await fetch('/api/student-access-codes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok||!data.ok)throw new Error(data.error||'Opération impossible.');
+  return data;
+}
 ac.onchange=renderAccess;
-function changeMain(id){
-  const school=getSchoolState(),p=school.profiles[id];let x=ensureInitialCodes(),old=currentMain(x,id),v=prompt('Nouveau code personnel pour '+p.first+' '+p.name+' :',old);
-  if(v===null)return;v=v.trim();
-  if(!/^\d{4}$/.test(v)){alert('Le code doit contenir exactement 4 chiffres.');return}
-  if(codeUsedByOther(x,id,v)){alert('Ce code est déjà utilisé par un autre élève.');return}
-  x[id]=x[id]||{};x[id].main=v;saveState(x);
+async function changeMain(id){
+  if(location.protocol==='file:'){
+    const school=getSchoolState(),p=school.profiles[id];let x=ensureInitialCodes(),old=currentMain(x,id),v=prompt('Nouveau code personnel pour '+p.first+' '+p.name+' :',old);
+    if(v===null)return;v=v.trim();if(!/^\d{4}$/.test(v)){alert('Le code doit contenir exactement 4 chiffres.');return}
+    if(codeUsedByOther(x,id,v)){alert('Ce code est déjà utilisé par un autre élève.');return}
+    x[id]=x[id]||{};x[id].main=v;saveState(x);return;
+  }
+  const cls=selectedD1AccessClass(),student=D1_ACCESS_STUDENTS.find(s=>s.student_id===id);
+  if(!cls||!student)return;
+  const value=prompt('Nouveau code personnel pour '+student.first_name+' '+student.last_name+' (8 lettres ou chiffres) :',student.access_code||'');
+  if(value===null)return;
+  const code=value.trim().toUpperCase();
+  if(!/^[A-Z0-9]{8}$/.test(code)){alert('Le code doit contenir exactement 8 lettres ou chiffres.');return;}
+  try{await postD1AccessAction({action:'set',class_id:cls.id,student_id:id,code});await renderAccess();}
+  catch(error){alert(String(error?.message||error));}
 }
-function renewOne(id){
-  const p=getSchoolState().profiles[id];let x=ensureInitialCodes();
-  if(!confirm('Générer un nouveau code aléatoire pour '+p.first+' '+p.name+' ?'))return;
-  const used=new Set(Object.values(x).map(v=>v?.main).filter(Boolean));x[id]=x[id]||{};x[id].main=randCode(used);saveState(x);
+async function renewOne(id){
+  if(location.protocol==='file:'){
+    const p=getSchoolState().profiles[id];let x=ensureInitialCodes();if(!confirm('Générer un nouveau code aléatoire pour '+p.first+' '+p.name+' ?'))return;
+    const used=new Set(Object.values(x).map(v=>v?.main).filter(Boolean));x[id]=x[id]||{};x[id].main=randCode(used);saveState(x);return;
+  }
+  const cls=selectedD1AccessClass(),student=D1_ACCESS_STUDENTS.find(s=>s.student_id===id);if(!cls||!student)return;
+  if(!confirm('Générer un nouveau code pour '+student.first_name+' '+student.last_name+' ?'))return;
+  try{await postD1AccessAction({action:'rotate',class_id:cls.id,student_id:id});await renderAccess();}
+  catch(error){alert(String(error?.message||error));}
 }
-function clearMain(id){
-  const p=getSchoolState().profiles[id];
-  if(!confirm('Annuler le code de '+p.first+' '+p.name+' ?'))return;
-  let x=ensureInitialCodes();x[id]=x[id]||{};x[id].main='';saveState(x);
+async function clearMain(id){
+  if(location.protocol==='file:'){
+    const p=getSchoolState().profiles[id];if(!confirm('Annuler le code de '+p.first+' '+p.name+' ?'))return;
+    let x=ensureInitialCodes();x[id]=x[id]||{};x[id].main='';saveState(x);return;
+  }
+  const cls=selectedD1AccessClass(),student=D1_ACCESS_STUDENTS.find(s=>s.student_id===id);if(!cls||!student)return;
+  if(!confirm('Annuler le code de '+student.first_name+' '+student.last_name+' ?'))return;
+  try{await postD1AccessAction({action:'clear',class_id:cls.id,student_id:id});await renderAccess();}
+  catch(error){alert(String(error?.message||error));}
 }
-document.getElementById('generateMissing').onclick=()=>{
-  let x=ensureInitialCodes(),used=new Set(Object.values(x).map(v=>v?.main).filter(Boolean)),count=0;
-  Object.keys(classStudents(ac.value)).forEach(id=>{if(!x[id]?.main){const c=randCode(used);used.add(c);x[id]=x[id]||{};x[id].main=c;count++}});
-  saveState(x);alert(count?count+' code(s) généré(s).':'Tous les élèves de cette classe ont déjà un code.');
+document.getElementById('generateMissing').onclick=async()=>{
+  if(location.protocol==='file:'){
+    let x=ensureInitialCodes(),used=new Set(Object.values(x).map(v=>v?.main).filter(Boolean)),count=0;
+    Object.keys(classStudents(ac.value)).forEach(id=>{if(!x[id]?.main){const c=randCode(used);used.add(c);x[id]=x[id]||{};x[id].main=c;count++}});
+    saveState(x);alert(count?count+' code(s) généré(s).':'Tous les élèves de cette classe ont déjà un code.');return;
+  }
+  const cls=selectedD1AccessClass();if(!cls){alert('Sélectionne une classe.');return;}
+  try{const data=await postD1AccessAction({action:'generate-missing',class_id:cls.id});alert(data.changed+' code(s) généré(s).');await renderAccess();}
+  catch(error){alert(String(error?.message||error));}
 };
-document.getElementById('renewAll').onclick=()=>{
+document.getElementById('renewAll').onclick=async()=>{
   if(!confirm('Renouveler les codes de toute cette classe ?'))return;
-  let x=ensureInitialCodes(),classIds=new Set(Object.keys(classStudents(ac.value))),used=new Set(Object.entries(x).filter(([id])=>!classIds.has(id)).map(([id,v])=>v?.main).filter(Boolean));
-  classIds.forEach(id=>{const c=randCode(used);used.add(c);x[id]=x[id]||{};x[id].main=c});
-  saveState(x);
+  if(location.protocol==='file:'){
+    let x=ensureInitialCodes(),classIds=new Set(Object.keys(classStudents(ac.value))),used=new Set(Object.entries(x).filter(([id])=>!classIds.has(id)).map(([id,v])=>v?.main).filter(Boolean));
+    classIds.forEach(id=>{const c=randCode(used);used.add(c);x[id]=x[id]||{};x[id].main=c});saveState(x);return;
+  }
+  const cls=selectedD1AccessClass();if(!cls)return;
+  try{const data=await postD1AccessAction({action:'rotate-class',class_id:cls.id});alert(data.changed+' code(s) renouvelé(s).');await renderAccess();}
+  catch(error){alert(String(error?.message||error));}
 };
-document.getElementById('clearAllMain').onclick=()=>{
+document.getElementById('clearAllMain').onclick=async()=>{
   if(!confirm('Annuler tous les codes de cette classe ?'))return;
-  let x=ensureInitialCodes();Object.keys(classStudents(ac.value)).forEach(id=>{x[id]=x[id]||{};x[id].main=''});saveState(x);
+  if(location.protocol==='file:'){
+    let x=ensureInitialCodes();Object.keys(classStudents(ac.value)).forEach(id=>{x[id]=x[id]||{};x[id].main=''});saveState(x);return;
+  }
+  const cls=selectedD1AccessClass();if(!cls)return;
+  try{const data=await postD1AccessAction({action:'clear-class',class_id:cls.id});alert(data.changed+' code(s) annulé(s).');await renderAccess();}
+  catch(error){alert(String(error?.message||error));}
 };
 
 document.getElementById('openEvalBtn').onclick=()=>{
