@@ -8,6 +8,7 @@ import {
   verifyTeacherPassword
 } from '../functions/_lib/auth.js';
 import { onRequestPost as studentLogin } from '../functions/api/student-login.js';
+import { onRequestPost as saveStudent } from '../functions/api/student-save.js';
 import { onRequestPost as teacherLogin } from '../functions/api/auth/teacher-login.js';
 import { onRequestGet as studentProfile } from '../functions/api/student-profile.js';
 import { onRequestPost as logout } from '../functions/api/auth/logout.js';
@@ -280,4 +281,67 @@ test('successful student login clears the attempted-code lockout counter', async
   const successfulEnv = { ...sharedEnv, DB: rateLimitDb([student]) };
   assert.equal((await studentLogin({ request: request(), env: successfulEnv })).status, 200);
   assert.equal([...successfulEnv.DB.attempts.keys()].some(key => key.startsWith('student_code:')), false);
+});
+
+function studentSaveDb(){
+  const records={students:[],enrollments:[],updates:[]};
+  return {
+    records,
+    prepare(sql){
+      const state={args:[]};
+      const stmt={
+        bind(...args){state.args=args;return stmt;},
+        async first(){
+          if(sql.includes('FROM school_years'))return {id:'year-1'};
+          if(sql.includes('FROM classes'))return {id:'class-1',phase:'Phase 1'};
+          if(sql.includes('FROM students WHERE access_code'))return records.students.some(x=>x.code===state.args[0])?{id:'used'}:null;
+          if(sql.includes('FROM students WHERE id'))return records.students.some(x=>x.id===state.args[0])?{id:state.args[0]}:null;
+          if(sql.includes('FROM enrollments WHERE student_id'))return records.enrollments.find(x=>x.studentId===state.args[0])?{id:'enrollment-1'}:null;
+          throw Error('Unexpected query: '+sql);
+        },
+        async run(){
+          if(sql.startsWith('INSERT INTO students'))records.students.push({id:state.args[0],name:state.args[2],code:state.args[4]});
+          else if(sql.startsWith('INSERT INTO enrollments'))records.enrollments.push({studentId:state.args[1]});
+          else records.updates.push({sql,args:state.args});
+          return {meta:{changes:1}};
+        }
+      };
+      return stmt;
+    },
+    async batch(stmts){for(const stmt of stmts)await stmt.run();}
+  };
+}
+function saveStudentRequest(body){
+  return new Request('https://topmath.example/api/student-save',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({first_name:'Test',last_name:'Élève',class_id:'class-1',...body})
+  });
+}
+
+test('new student receives an eight-character code stored with their D1 record',async()=>{
+  const db=studentSaveDb();
+  const response=await saveStudent({request:saveStudentRequest({}),env:{DB:db}});
+  assert.equal(response.status,200);
+  const result=await response.json();
+  assert.equal(result.ok,true);
+  assert.equal(db.records.students.length,1);
+  assert.match(db.records.students[0].code,/^[A-HJ-NP-Z2-9]{8}$/);
+  assert.equal(db.records.enrollments.length,1);
+  assert.equal(db.records.students[0].id,result.student_id);
+});
+
+test('editing an existing student preserves the code, including an intentionally disabled code',async()=>{
+  const db=studentSaveDb();
+  const first=await saveStudent({request:saveStudentRequest({}),env:{DB:db}});
+  const {student_id:id}=await first.json();
+  const originalCode=db.records.students[0].code;
+  const edited=await saveStudent({request:saveStudentRequest({student_id:id,first_name:'Autre'}),env:{DB:db}});
+  assert.equal(edited.status,200);
+  assert.equal(db.records.students[0].code,originalCode);
+  assert.equal(db.records.updates.some(x=>/access_code/i.test(x.sql)),false);
+  db.records.students[0].code=null;
+  const editedAgain=await saveStudent({request:saveStudentRequest({student_id:id}),env:{DB:db}});
+  assert.equal(editedAgain.status,200);
+  assert.equal(db.records.students[0].code,null);
 });
