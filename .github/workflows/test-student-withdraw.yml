@@ -5,11 +5,13 @@ on:
       - amelioration-gestion-eleves-24-11-2026
   pull_request:
     paths:
+      - 'functions/_middleware.js'
       - 'functions/api/_access-auth.js'
       - 'functions/api/student-withdraw.js'
       - 'functions/api/student-withdraw-list.js'
       - 'gestion-eleves-retrait.html'
       - 'tests/student-withdraw.test.mjs'
+      - 'tests/teacher-withdraw-link.test.mjs'
       - '.github/workflows/test-student-withdraw.yml'
   workflow_dispatch:
 permissions:
@@ -22,10 +24,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Vérifier la syntaxe des modules serveur
+      - name: Vérifier la syntaxe des modules serveur et du middleware
         run: |
+          node --check functions/_middleware.js
           node --check functions/api/_access-auth.js
           node --check functions/api/student-withdraw.js
           node --check functions/api/student-withdraw-list.js
       - name: Tester les signatures et le retrait sécurisé
         run: node tests/student-withdraw.test.mjs
+      - name: Tester le lien enseignant sans régression
+        run: node tests/teacher-withdraw-link.test.mjs
