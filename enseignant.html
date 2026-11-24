@@ -923,8 +923,34 @@ async function manageD1StudentAction(row,action,button){
   if(!confirm(message))return;
   let confirmation;
   if(!removing){
-    confirmation=prompt('Confirmation finale pour '+name+' : tape exactement SUPPRIMER');
-    if(confirmation!=='SUPPRIMER')return;
+    const finalChoice=await new Promise(resolve=>{
+      const overlay=document.createElement('div');
+      Object.assign(overlay.style,{position:'fixed',inset:'0',zIndex:'100000',background:'rgba(14,25,45,.60)',display:'flex',alignItems:'center',justifyContent:'center',padding:'20px'});
+      const dialog=document.createElement('div');
+      dialog.setAttribute('role','alertdialog');
+      dialog.setAttribute('aria-modal','true');
+      dialog.setAttribute('aria-labelledby','studentDeleteFinalTitle');
+      Object.assign(dialog.style,{maxWidth:'460px',width:'100%',background:'#fff',borderRadius:'15px',padding:'24px',boxShadow:'0 20px 60px #0004'});
+      const title=document.createElement('h3');
+      title.id='studentDeleteFinalTitle';title.textContent='Dernière confirmation';
+      title.style.margin='0 0 12px';
+      const description=document.createElement('p');
+      description.textContent='Voulez-vous vraiment supprimer définitivement '+name+' et toutes ses données ? Cette action est irréversible.';
+      const actions=document.createElement('div');
+      Object.assign(actions.style,{display:'flex',gap:'10px',justifyContent:'flex-end',flexWrap:'wrap',marginTop:'22px'});
+      const cancel=document.createElement('button');cancel.type='button';cancel.className='secondary';cancel.textContent='Annuler';
+      const accept=document.createElement('button');accept.type='button';accept.className='danger';accept.textContent='✓ Confirmer la suppression';
+      let completed=false;
+      const done=value=>{if(completed)return;completed=true;document.removeEventListener('keydown',onKey);overlay.remove();resolve(value);};
+      const onKey=e=>{if(e.key==='Escape'){e.preventDefault();done(false);}else if(e.key==='Tab'){const target=document.activeElement===cancel?accept:cancel;e.preventDefault();target.focus();}};
+      cancel.onclick=()=>done(false);accept.onclick=()=>done(true);
+      overlay.onclick=e=>{if(e.target===overlay)done(false);};
+      actions.append(cancel,accept);dialog.append(title,description,actions);overlay.append(dialog);
+      document.body.append(overlay);document.addEventListener('keydown',onKey);
+      cancel.focus();
+    });
+    if(!finalChoice)return;
+    confirmation='DOUBLE_CONFIRMATION_VALIDEE';
   }
   button.disabled=true;
   try{
