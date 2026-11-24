@@ -37,7 +37,7 @@ export async function onRequestGet(context) {
         FROM enrollments e
         JOIN students s ON s.id=e.student_id
         LEFT JOIN classes c ON c.id=e.class_id
-        WHERE e.school_year_id=(SELECT id FROM school_years WHERE is_active = 1 LIMIT 1)
+        WHERE e.archived_at IS NULL AND e.school_year_id=(SELECT id FROM school_years WHERE is_active = 1 LIMIT 1)
         ORDER BY c.name, s.last_name, s.first_name
       `).all(),
       db.prepare(`SELECT id, track, phase, code, label FROM competencies ORDER BY track, phase, code`).all(),

@@ -35,7 +35,7 @@ export async function onRequestGet(context) {
       FROM enrollments e
       JOIN students s ON s.id = e.student_id
       LEFT JOIN classes c ON c.id = e.class_id
-      WHERE e.school_year_id = ?
+      WHERE e.school_year_id = ? AND e.archived_at IS NULL
       ORDER BY c.name, s.last_name, s.first_name
     `).bind(year.id).all();
 

@@ -9,7 +9,7 @@ export async function onRequestPost(context){
     if(!/^[A-Z0-9]{8}$/.test(code))return jsonResponse({ok:false,error:'Le code personnel doit contenir 8 lettres ou chiffres.'},400);
     const limit=await checkLoginLimit(context.env,context.request,'student',code);
     if(limit.blocked)return limitedResponse(jsonResponse,limit.retryAfter);
-    const {results=[]}=await db.prepare('SELECT s.id,s.first_name,s.last_name,c.name AS class_name,e.phase,sy.label AS school_year FROM students s JOIN enrollments e ON e.student_id=s.id JOIN school_years sy ON sy.id=e.school_year_id LEFT JOIN classes c ON c.id=e.class_id WHERE s.access_code=? AND sy.is_active=1 LIMIT 2').bind(code).all();
+    const {results=[]}=await db.prepare('SELECT s.id,s.first_name,s.last_name,c.name AS class_name,e.phase,sy.label AS school_year FROM students s JOIN enrollments e ON e.student_id=s.id JOIN school_years sy ON sy.id=e.school_year_id LEFT JOIN classes c ON c.id=e.class_id WHERE s.access_code=? AND sy.is_active=1 AND e.archived_at IS NULL LIMIT 2').bind(code).all();
     if(results.length!==1){
       await recordLoginFailure(context.env,limit.buckets);
       return jsonResponse({ok:false,error:'Code personnel incorrect.'},401);

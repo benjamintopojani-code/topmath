@@ -348,7 +348,10 @@
 <section id="students" class="panel"><div class="card">
   <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap">
     <div><h2>Gestion des élèves</h2><p class="muted">Données enregistrées dans Cloudflare D1. La filière NORMAL / ÉCO est déterminée par la classe choisie.</p></div>
-    <button id="d1AddStudentBtn" class="success">+ Ajouter un élève</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button id="d1OpenArchives" class="secondary" aria-expanded="false" aria-controls="d1Archives">Élèves archivés</button>
+      <button id="d1AddStudentBtn" class="success">+ Ajouter un élève</button>
+    </div>
   </div>
   <div class="selectbar" style="margin-top:14px">
     <div class="field"><label>Classe</label><select id="d1StudentsClassFilter"><option value="ALL">Toutes les classes</option></select></div>
@@ -356,6 +359,11 @@
   </div>
   <div id="d1StudentsStatus" class="muted" style="margin:8px 0 12px"></div>
   <div id="d1StudentsList" class="list"></div>
+  <div id="d1Archives" hidden>
+    <h3>Élèves archivés</h3>
+    <p id="d1ArchivesStatus" class="muted" role="status"></p>
+    <div id="d1ArchivesList" class="list"></div>
+  </div>
 </div></section>
 <section id="access" class="panel"><div class="card"><h2>Gestion des accès</h2><div class="field" style="max-width:360px"><label>Classe</label><select id="accessClass"></select></div><p class="muted">Chaque élève possède un code personnel enregistré dans Cloudflare D1. L’enseignant peut le générer, le modifier, le renouveler ou l’annuler. Les codes sont gérés sur le serveur et non plus uniquement dans le navigateur.</p><div id="accessList" class="list"></div><div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap"><button id="generateMissing" class="secondary">Générer les codes manquants</button><button id="renewAll" class="secondary">Renouveler tous les codes de la classe</button><button id="clearAllMain" class="danger">Annuler tous les codes de la classe</button></div><p class="muted" style="margin-top:10px">Chaque élève reçoit un code différent. Un code annulé cesse immédiatement de fonctionner. L’élève ne peut pas modifier son code depuis son espace.</p></div></section>
 
@@ -909,7 +917,7 @@ function renderD1StudentsManager(){
       popup.append(option);
     };
     if(row.class_id)addChoice('Retirer de la classe','remove-from-class','#39435a');
-    addChoice('Supprimer définitivement','delete-permanently','#b42318');
+    addChoice('Retirer de l’année et archiver','archive','#b42318');
     b.parentElement.style.position='relative';
     b.parentElement.append(popup);
   });
@@ -935,11 +943,11 @@ async function manageD1StudentAction(row,action,button){
       title.id='studentDeleteFinalTitle';title.textContent='Dernière confirmation';
       title.style.margin='0 0 12px';
       const description=document.createElement('p');
-      description.textContent='Voulez-vous vraiment supprimer définitivement '+name+' et toutes ses données ? Cette action est irréversible.';
+      description.textContent='Confirmer le retrait de '+name+' ? Son dossier sera conservé. Tu pourras le restaurer depuis Gestion des élèves.';
       const actions=document.createElement('div');
       Object.assign(actions.style,{display:'flex',gap:'10px',justifyContent:'flex-end',flexWrap:'wrap',marginTop:'22px'});
       const cancel=document.createElement('button');cancel.type='button';cancel.className='secondary';cancel.textContent='Annuler';
-      const accept=document.createElement('button');accept.type='button';accept.className='danger';accept.textContent='✓ Confirmer la suppression';
+      const accept=document.createElement('button');accept.type='button';accept.className='danger';accept.textContent='Confirmer le retrait';
       let completed=false;
       const done=value=>{if(completed)return;completed=true;document.removeEventListener('keydown',onKey);overlay.remove();resolve(value);};
       const onKey=e=>{if(e.key==='Escape'){e.preventDefault();done(false);}else if(e.key==='Tab'){const target=document.activeElement===cancel?accept:cancel;e.preventDefault();target.focus();}};
@@ -960,10 +968,85 @@ async function manageD1StudentAction(row,action,button){
     await loadD1RosterForClasses();
     renderD1StudentsManager();
     renderAllSchoolViews();
-    alert(removing?'Élève retiré de la classe. Son code a été désactivé.':'Élève définitivement supprimé.');
+    if(!document.getElementById('d1Archives').hidden)await loadD1StudentArchives();
+    alert(removing?'Élève retiré de la classe.':'Élève archivé.');
   }catch(error){
     alert('Impossible de terminer cette opération : '+String(error?.message||error));
     button.disabled=false;
+  }
+}
+
+const d1OpenArchives=document.getElementById('d1OpenArchives');
+d1OpenArchives.onclick=async()=>{
+  const panel=document.getElementById('d1Archives');
+  panel.hidden=!panel.hidden;
+  d1OpenArchives.setAttribute('aria-expanded',String(!panel.hidden));
+  if(!panel.hidden)await loadD1StudentArchives();
+};
+
+async function loadD1StudentArchives(){
+  const status=document.getElementById('d1ArchivesStatus');
+  const list=document.getElementById('d1ArchivesList');
+  status.textContent='Chargement…';
+  list.replaceChildren();
+  try{
+    const response=await fetch('/api/student-manage',{cache:'no-store'});
+    const data=await response.json();
+    if(!response.ok||!data.ok)throw new Error(data.error||'Archives indisponibles.');
+    status.textContent=data.students.length?'':'Aucun élève archivé.';
+    for(const student of data.students){
+      const item=document.createElement('div');
+      item.className='row';
+      const info=document.createElement('div');
+      const name=document.createElement('strong');
+      name.textContent=[student.first_name,student.last_name].join(' ');
+      const detail=document.createElement('div');
+      detail.className='muted';
+      detail.textContent=[student.school_year,student.class_name||'Sans classe',new Date(student.archived_at).toLocaleDateString('fr-BE')].join(' · ');
+      info.append(name,detail);
+      item.append(info);
+      if(Number(student.is_active)===1){
+        const actions=document.createElement('div');
+        const classes=document.createElement('select');
+        classes.setAttribute('aria-label','Classe de restauration pour '+name.textContent);
+        classes.add(new Option('Choisir une classe',''));
+        for(const cls of D1_PEDAGOGICAL_ROSTER?.classes||[])classes.add(new Option(cls.name,cls.id));
+        if([...classes.options].some(option=>option.value===student.class_id))classes.value=student.class_id;
+        const restore=document.createElement('button');
+        restore.className='secondary';
+        restore.textContent='Restaurer';
+        restore.disabled=!classes.value;
+        classes.onchange=()=>{restore.disabled=!classes.value;};
+        restore.onclick=async()=>{
+          if(!confirm('Restaurer '+name.textContent+' dans la classe '+classes.selectedOptions[0].textContent+' ?'))return;
+          restore.disabled=true;
+          classes.disabled=true;
+          try{
+            const response=await fetch('/api/student-manage',{
+              method:'POST',
+              headers:{'Content-Type':'application/json'},
+              body:JSON.stringify({action:'restore',enrollment_id:student.enrollment_id,class_id:classes.value})
+            });
+            const result=await response.json();
+            if(!response.ok||!result.ok)throw new Error(result.error||'Restauration impossible.');
+            await loadD1RosterForClasses();
+            renderD1StudentsManager();
+            renderAllSchoolViews();
+            await loadD1StudentArchives();
+            status.textContent='Inscription restaurée pour '+name.textContent+'.';
+          }catch(error){
+            status.textContent=error.message;
+            restore.disabled=false;
+            classes.disabled=false;
+          }
+        };
+        actions.append(classes,restore);
+        item.append(actions);
+      }
+      list.append(item);
+    }
+  }catch(error){
+    status.textContent=error.message;
   }
 }
 

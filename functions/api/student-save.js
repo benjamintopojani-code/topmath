@@ -33,9 +33,10 @@ export async function onRequestPost(context) {
     if (id) {
       const existing = await db.prepare(`SELECT id FROM students WHERE id=?`).bind(id).first();
       if (!existing) return Response.json({ok:false,error:'Élève introuvable'}, {status:404});
+      const enrollment = await db.prepare(`SELECT id,archived_at FROM enrollments WHERE student_id=? AND school_year_id=? LIMIT 1`).bind(id, schoolYear.id).first();
+      if (enrollment?.archived_at) return Response.json({ok:false,error:'Restaure cet élève depuis Élèves archivés.'}, {status:409});
       await db.prepare(`UPDATE students SET first_name=?, last_name=?, birth_date=? WHERE id=?`)
         .bind(firstName, lastName, birthDate || null, id).run();
-      const enrollment = await db.prepare(`SELECT id FROM enrollments WHERE student_id=? AND school_year_id=? LIMIT 1`).bind(id, schoolYear.id).first();
       if (enrollment) {
         await db.prepare(`UPDATE enrollments SET class_id=?, phase=?, sector=?, professional_group=?, job=? WHERE id=?`)
           .bind(classId, phase || cls.phase || '', sector || null, professionalGroup || null, job || null, enrollment.id).run();

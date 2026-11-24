@@ -1,3 +1,5 @@
+import {DatabaseSync} from 'node:sqlite';
+import {readFileSync} from 'node:fs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { randomBytes, pbkdf2Sync } from 'node:crypto';
@@ -347,66 +349,91 @@ test('editing an existing student preserves the code, including an intentionally
   assert.equal(db.records.students[0].code,null);
 });
 
-function studentManageDb({assigned=true,exists=true}={}){
-  const executed=[];
+function studentManageDb(){
+  const sqlite=new DatabaseSync(':memory:');
+  sqlite.exec(`
+    CREATE TABLE school_years (id TEXT PRIMARY KEY, label TEXT, is_active INTEGER);
+    CREATE TABLE classes (id TEXT PRIMARY KEY, school_year_id TEXT, name TEXT, phase TEXT, track TEXT);
+    CREATE TABLE students (id TEXT PRIMARY KEY, first_name TEXT, last_name TEXT, birth_date TEXT, access_code TEXT UNIQUE);
+    CREATE TABLE enrollments (id TEXT PRIMARY KEY, school_year_id TEXT, student_id TEXT, class_id TEXT, phase TEXT,
+      sector TEXT, professional_group TEXT, job TEXT);
+    CREATE TABLE official_evaluations (student_id TEXT, school_year_id TEXT, result TEXT);
+    INSERT INTO school_years VALUES ('year-1','2026-2027',1);
+    INSERT INTO classes VALUES ('class-1','year-1','Observation B','1','NORMAL'),('class-2','year-1','Observation E','1','NORMAL');
+    INSERT INTO students VALUES ('stu-1','Test','Élève',NULL,'ABCDEFGH');
+    INSERT INTO enrollments (id,school_year_id,student_id,class_id) VALUES ('enroll-1','year-1','stu-1','class-1');
+    INSERT INTO official_evaluations VALUES ('stu-1','year-1','TB');
+  `);
+  sqlite.exec(readFileSync(new URL('../migrations/0001_archive_enrollments.sql',import.meta.url),'utf8'));
   const db={
-    executed,
     prepare(sql){
+      const query=sqlite.prepare(sql);
       let args=[];
-      const statement={
-        bind(...values){args=values;return statement;},
-        async first(){
-          if(sql.includes('FROM school_years'))return {id:'year-1'};
-          if(sql.includes('FROM students s JOIN enrollments e')){
-            return exists?{id:'stu-1',first_name:'Test',last_name:'Élève',enrollment_id:'enroll-1',class_id:assigned?'class-1':null}:null;
-          }
-          throw Error('Unexpected SQL: '+sql);
-        },
-        async run(){executed.push({sql,args});return {meta:{changes:1}};}
+      return {
+        bind(...values){args=values;return this;},
+        first(){return query.get(...args)||null;},
+        all(){return {results:query.all(...args)};},
+        run(){return {meta:query.run(...args)};}
       };
-      return statement;
     },
-    async batch(statements){for(const statement of statements)await statement.run();}
+    batch(statements){
+      sqlite.exec('BEGIN');
+      try{
+        const result=statements.map(statement=>statement.run());
+        sqlite.exec('COMMIT');
+        return result;
+      }catch(error){
+        sqlite.exec('ROLLBACK');
+        throw error;
+      }
+    }
   };
-  return db;
+  return {sqlite,db};
 }
-function manageStudentRequest(action,confirmation=''){
+
+function manageStudentRequest(action,extra={}){
   return new Request('https://topmath.example/api/student-manage',{
     method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({action,student_id:'stu-1',confirmation})
+    body:JSON.stringify({action,student_id:'stu-1',...extra})
   });
 }
-test('removing student from class preserves enrollments and evaluations while revoking access',async()=>{
-  const db=studentManageDb();
+
+test('removing a student from a class keeps the active enrollment and history',async()=>{
+  const {sqlite,db}=studentManageDb();
   const res=await manageStudent({request:manageStudentRequest('remove-from-class'),env:{DB:db}});
   assert.equal(res.status,200);
-  assert.equal((await res.json()).access_revoked,true);
-  assert.equal(db.executed.length,2);
-  assert.match(db.executed[0].sql,/UPDATE enrollments SET class_id=NULL/);
-  assert.match(db.executed[1].sql,/UPDATE students SET access_code=NULL/);
-  assert.equal(db.executed.some(x=>/DELETE/i.test(x.sql)),false);
+  const enrollment=sqlite.prepare('SELECT * FROM enrollments').get();
+  assert.equal(enrollment.class_id,null);
+  assert.equal(enrollment.archived_at,null);
+  assert.equal(sqlite.prepare('SELECT access_code FROM students').get().access_code,null);
+  assert.equal(sqlite.prepare('SELECT result FROM official_evaluations').get().result,'TB');
 });
 
-test('permanent student deletion requires a second explicit confirmation',async()=>{
-  const db=studentManageDb();
-  const res=await manageStudent({request:manageStudentRequest('delete-permanently'),env:{DB:db}});
-  assert.equal(res.status,400);
-  assert.equal(db.executed.length,0);
-});
+test('archive and restore preserve the record and history and replace the revoked code',async()=>{
+  const {sqlite,db}=studentManageDb();
+  const {onRequestGet:listArchives}=await import('../functions/api/student-manage.js');
+  const {onRequestGet:roster}=await import('../functions/api/roster.js');
+  const env={DB:db};
+  const incomplete=await manageStudent({request:manageStudentRequest('archive'),env});
+  assert.equal(incomplete.status,400);
+  const archive=await manageStudent({request:manageStudentRequest('archive',{confirmation:'DOUBLE_CONFIRMATION_VALIDEE'}),env});
+  assert.equal(archive.status,200);
+  assert.equal(sqlite.prepare('SELECT access_code FROM students').get().access_code,null);
+  assert.equal((await (await roster({env})).json()).students.length,0);
+  const archived=(await (await listArchives({env})).json()).students;
+  assert.equal(archived[0].class_id,'class-1');
+  assert.ok(archived[0].archived_at);
+  assert.equal(sqlite.prepare('SELECT result FROM official_evaluations').get().result,'TB');
 
-test('permanent student deletion removes associated records in dependency order',async()=>{
-  const db=studentManageDb();
-  const res=await manageStudent({request:manageStudentRequest('delete-permanently','SUPPRIMER'),env:{DB:db}});
-  assert.equal(res.status,200);
-  assert.deepEqual(db.executed.map(x=>x.sql.match(/DELETE FROM (\w+)/)[1]),[
-    'official_evaluations','evaluation_schedule_overrides','enrollments','students'
-  ]);
-  assert.ok(db.executed.every(x=>x.args[0]==='stu-1'));
-});
-
-test('student deletion rejects an unknown pupil',async()=>{
-  const db=studentManageDb({exists:false});
-  const res=await manageStudent({request:manageStudentRequest('delete-permanently','SUPPRIMER'),env:{DB:db}});
-  assert.equal(res.status,404);
-  assert.equal(db.executed.length,0);
+  const restore=(class_id)=>manageStudent({request:manageStudentRequest('restore',{enrollment_id:'enroll-1',class_id}),env});
+  assert.equal((await restore('missing-class')).status,409);
+  assert.equal((await restore('class-2')).status,200);
+  assert.equal((await restore('class-2')).status,409);
+  assert.equal((await (await listArchives({env})).json()).students.length,0);
+  assert.equal((await (await roster({env})).json()).students[0].class_id,'class-2');
+  assert.equal(sqlite.prepare('SELECT id FROM enrollments').get().id,'enroll-1');
+  const restoredCode=sqlite.prepare('SELECT access_code FROM students').get().access_code;
+  assert.match(restoredCode,/^[A-Z0-9]{8}$/);
+  assert.notEqual(restoredCode,'ABCDEFGH');
+  assert.equal(sqlite.prepare('SELECT result FROM official_evaluations').get().result,'TB');
 });

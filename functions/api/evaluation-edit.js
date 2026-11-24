@@ -28,7 +28,7 @@ export async function onRequestPost(context) {
       FROM enrollments e
       JOIN classes c ON c.id = e.class_id
       JOIN school_years sy ON sy.id = e.school_year_id
-      WHERE e.student_id = ? AND sy.is_active = 1
+      WHERE e.student_id = ? AND sy.is_active = 1 AND e.archived_at IS NULL
       LIMIT 1
     `).bind(studentId).first();
     if (!enrollment) return Response.json({ ok: false, error: 'Élève non inscrit dans l’année active' }, { status: 404 });

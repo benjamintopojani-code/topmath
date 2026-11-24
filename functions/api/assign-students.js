@@ -18,7 +18,7 @@ export async function onRequestPost(context){
     const statements=ids.map(id=>db.prepare(`
       UPDATE enrollments
       SET class_id=?, phase=COALESCE(NULLIF(?,''),phase)
-      WHERE school_year_id=? AND student_id=? AND class_id IS NULL
+      WHERE school_year_id=? AND student_id=? AND class_id IS NULL AND archived_at IS NULL
     `).bind(classId,clean(cls.phase),year.id,id));
     const results=await db.batch(statements);
     let changed=0;
