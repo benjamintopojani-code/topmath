@@ -1,19 +1,19 @@
 name: Vérification gestion des élèves
-
 on:
   push:
     branches:
       - amelioration-gestion-eleves-24-11-2026
   pull_request:
     paths:
+      - 'functions/api/_access-auth.js'
       - 'functions/api/student-withdraw.js'
+      - 'functions/api/student-withdraw-list.js'
+      - 'gestion-eleves-retrait.html'
       - 'tests/student-withdraw.test.mjs'
       - '.github/workflows/test-student-withdraw.yml'
   workflow_dispatch:
-
 permissions:
   contents: read
-
 jobs:
   test-student-withdraw:
     runs-on: ubuntu-latest
@@ -22,7 +22,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Vérifier la syntaxe du serveur
-        run: node --check functions/api/student-withdraw.js
-      - name: Tester les confirmations et la sécurité
+      - name: Vérifier la syntaxe des modules serveur
+        run: |
+          node --check functions/api/_access-auth.js
+          node --check functions/api/student-withdraw.js
+          node --check functions/api/student-withdraw-list.js
+      - name: Tester les signatures et le retrait sécurisé
         run: node tests/student-withdraw.test.mjs
