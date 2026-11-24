@@ -45,6 +45,16 @@ function currentStudent() {
   return null;
 }
 
+function enterStudentSpace(student){
+  currentId=student.id;
+  currentStudentD1={id:student.id,first:student.first_name,name:student.last_name,class:student.class_name||'',phase:student.phase||'',schoolYear:student.school_year||'',progress:{},results:[]};
+  document.getElementById('login').style.display='none';document.getElementById('space').style.display='block';document.getElementById('logout').style.display='inline-flex';render();
+}
+async function restoreStudentSession(){
+  if(location.protocol==='file:')return;
+  try{const a=await fetch('/api/auth/session',{cache:'no-store'});const auth=await a.json().catch(()=>({}));if(!a.ok||!auth.ok||auth.role!=='student')return;const p=await fetch('/api/student-profile',{cache:'no-store'});const profile=await p.json().catch(()=>({}));if(p.ok&&profile.ok)enterStudentSpace(profile.student);}
+  catch(error){console.warn('Restauration de session élève impossible',error);}
+}
 async function login() {
   const input = document.getElementById('code');
   const msg = document.getElementById('loginMsg');
@@ -74,26 +84,7 @@ async function login() {
       return;
     }
 
-  // Informations de l'élève provenant de Cloudflare D1
-currentId = data.student.id;
-
-currentStudentD1 = {
-  id: data.student.id,
-  first: data.student.first_name,
-  name: data.student.last_name,
-  class: data.student.class_name || '',
-  phase: data.student.phase || '',
-  schoolYear: data.student.school_year || '',
-  progress: {},
-  results: []
-};
-
-    // Affichage de l'espace élève
-    document.getElementById('login').style.display = 'none';
-    document.getElementById('space').style.display = 'block';
-    document.getElementById('logout').style.display = 'inline-flex';
-
-    render();
+  enterStudentSpace(data.student);
 
   } catch (error) {
     console.error('Erreur de connexion :', error);
@@ -103,7 +94,7 @@ currentStudentD1 = {
 }
 document.getElementById('loginBtn').onclick=login;
 document.getElementById('code').onkeydown=e=>{if(e.key==='Enter')login()};
-document.getElementById('logout').onclick=()=>location.reload();
+document.getElementById('logout').onclick=async()=>{try{const response=await fetch('/api/auth/logout',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});if(!response.ok)throw new Error('Réponse serveur invalide');location.reload();}catch(error){alert('La déconnexion n’a pas pu être confirmée. Vérifie ta connexion puis réessaie.');}};
 document.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('.student-panel').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('[data-p]').forEach(x=>x.classList.remove('active'));
@@ -124,6 +115,9 @@ function render(){
   document.getElementById('agenda').innerHTML='<div class="list">'+(next||'<p>Aucune évaluation à prévoir.</p>')+'</div>';
   renderEval();
 }
+restoreStudentSession();
+window.addEventListener('pagehide',()=>{if(location.protocol==='file:')return;currentId=null;currentStudentD1=null;document.getElementById('space').style.display='none';document.getElementById('logout').style.display='none';document.getElementById('login').style.display='block';document.getElementById('code').value='';document.getElementById('hello').textContent='';document.getElementById('class').textContent='';document.getElementById('phase').textContent='';document.getElementById('evalBox').replaceChildren();document.getElementById('progress').replaceChildren();document.getElementById('results').replaceChildren();document.getElementById('agenda').replaceChildren();});
+window.addEventListener('pageshow',event=>{if(event.persisted)restoreStudentSession();});
 function renderEval(){
   const e=JSON.parse(localStorage.getItem('topmath_open_eval')||'null'),box=document.getElementById('evalBox'),s=currentStudent();
   if(e&&e.opened&&(e.target===currentId||(e.target==='ALL'&&e.className===s.class)))box.innerHTML=`<div class="row"><div><strong>${e.comp}</strong><div class="muted">Évaluation ouverte par l’enseignant.</div></div><button class="success">Commencer</button></div>`;

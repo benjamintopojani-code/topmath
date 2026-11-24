@@ -1,0 +1,2 @@
+import {readSession,jsonResponse} from '../../_lib/auth.js';
+export async function onRequestGet({request,env}){try{const s=await readSession(request,env);if(!s)return jsonResponse({ok:false,authenticated:false},401);return jsonResponse({ok:true,authenticated:true,role:s.role});}catch(error){if(String(error?.message||error)==='AUTH_CONFIG_MISSING')return jsonResponse({ok:false,error:'Authentification serveur non configurée.'},503);return jsonResponse({ok:false,error:'Impossible de vérifier la session.'},503);}}

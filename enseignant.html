@@ -357,7 +357,7 @@
   <div id="d1StudentsStatus" class="muted" style="margin:8px 0 12px"></div>
   <div id="d1StudentsList" class="list"></div>
 </div></section>
-<section id="access" class="panel"><div class="card"><h2>Gestion des accès</h2><div class="field" style="max-width:360px"><label>Classe</label><select id="accessClass"></select></div><p class="muted">Chaque élève possède un seul code personnel de connexion. Top’Math génère automatiquement un code aléatoire lors de la première utilisation. Seul l’enseignant peut le modifier, le renouveler ou l’annuler.</p><div id="accessList" class="list"></div><div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap"><button id="generateMissing" class="secondary">Générer les codes manquants</button><button id="renewAll" class="secondary">Renouveler tous les codes de la classe</button><button id="clearAllMain" class="danger">Annuler tous les codes de la classe</button></div><p class="muted" style="margin-top:10px">Chaque élève reçoit un code différent. Un code annulé cesse immédiatement de fonctionner. L’élève ne peut pas modifier son code depuis son espace.</p></div></section>
+<section id="access" class="panel"><div class="card"><h2>Gestion des accès</h2><div class="field" style="max-width:360px"><label>Classe</label><select id="accessClass"></select></div><p class="muted">Chaque élève possède un code personnel enregistré dans Cloudflare D1. L’enseignant peut le générer, le modifier, le renouveler ou l’annuler. Les codes sont gérés sur le serveur et non plus uniquement dans le navigateur.</p><div id="accessList" class="list"></div><div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap"><button id="generateMissing" class="secondary">Générer les codes manquants</button><button id="renewAll" class="secondary">Renouveler tous les codes de la classe</button><button id="clearAllMain" class="danger">Annuler tous les codes de la classe</button></div><p class="muted" style="margin-top:10px">Chaque élève reçoit un code différent. Un code annulé cesse immédiatement de fonctionner. L’élève ne peut pas modifier son code depuis son espace.</p></div></section>
 
 
 
@@ -421,17 +421,7 @@
     </div>
   </div>
 </section>
-<section id="security" class="panel"><div class="card"><h2>Sécurité enseignant</h2><p class="muted">Seul l’enseignant peut modifier ces paramètres.</p>
-<div class="grid" style="grid-template-columns:1fr 1fr">
-  <div class="card" style="box-shadow:none"><h3>Changer le mot de passe enseignant</h3>
-    <div class="field"><label>Mot de passe actuel</label><input id="securityCurrentCode" type="password" autocomplete="current-password"></div>
-    <div class="field"><label>Nouveau mot de passe</label><input id="securityNewCode" type="password" autocomplete="new-password"></div>
-    <div class="field"><label>Confirmer le nouveau mot de passe</label><input id="securityNewCodeConfirm" type="password" autocomplete="new-password"></div>
-    <p class="muted small-note">Tous les caractères sont acceptés. Aucune longueur n’est imposée.</p>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button id="securitySaveCode" class="primary">Enregistrer</button></div>
-    <div id="securityCodeMsg" class="muted" style="margin-top:8px"></div></div>
-  <div class="card" style="box-shadow:none"><h3>Question de récupération</h3><div class="field"><label>Question</label><select id="securityQuestion"><option>Quel est le prénom de mon amoureuse ?</option><option>Quel est le nom de mon chien ?</option><option>Quel est le nom de mes chiens ?</option><option>Quel est le prénom de mon papa ?</option><option>Quel est le prénom de ma maman ?</option><option value="custom">Ma propre question</option></select></div><div id="securityCustomWrap" class="field" style="display:none"><label>Ma question</label><input id="securityCustomQuestion" autocomplete="off"></div><div class="field"><label>Nouvelle réponse secrète</label><input id="securityAnswer" autocomplete="off"></div><button id="securitySaveRecovery" class="primary" style="margin-top:10px">Enregistrer la récupération</button><div id="securityRecoveryMsg" class="muted" style="margin-top:8px"></div></div>
-</div></div></section>
+<section id="security" class="panel"><div class="card"><h2>Sécurité enseignant</h2><p class="muted">La connexion est désormais vérifiée côté serveur. Le mot de passe n’est plus enregistré dans le navigateur.</p><div id="securityServerNote" class="card" style="box-shadow:none;background:#f7faff"><strong>Gestion du mot de passe</strong><p class="muted">Le mot de passe enseignant est protégé par un hachage PBKDF2 et géré dans les secrets Cloudflare du projet. Pour le modifier ou le réinitialiser, il faut remplacer le secret TOPMATH_TEACHER_PASSWORD_HASH. La question de récupération locale n’est plus utilisée en ligne.</p><p class="muted">La fermeture de session supprime le cookie de connexion de ce navigateur. La rotation du secret de session invalide toutes les sessions existantes.</p></div></div></section>
 </main>
 </div>
 
@@ -700,15 +690,28 @@ function setTeacherSecurity(v){storageSet(TEACHER_SECURITY_KEY,JSON.stringify(v)
 function randomFour(){return String(Math.floor(1000+Math.random()*9000))}
 function hideGateCards(){['teacherSetup','teacherLogin','teacherRecovery'].forEach(id=>document.getElementById(id).style.display='none')}
 function showTeacherGate(which){document.getElementById('teacherApp').style.display='none';document.getElementById('teacherGate').style.display='flex';hideGateCards();document.getElementById(which).style.display='block'}
-function unlockTeacher(){sessionSet(TEACHER_SESSION_KEY,'1');document.getElementById('teacherGate').style.display='none';document.getElementById('teacherApp').style.display='block';initializeTeacherApp()}
+function unlockTeacher(){if(location.protocol==='file:')sessionSet(TEACHER_SESSION_KEY,'1');document.getElementById('teacherGate').style.display='none';document.getElementById('teacherApp').style.display='block';initializeTeacherApp()}
 function bootTeacherSecurity(){
-  const cfg=getTeacherSecurity();
-  if(!cfg){showTeacherGate('teacherSetup');return}
-  if(sessionGet(TEACHER_SESSION_KEY)==='1'){unlockTeacher();return}
+  if(location.protocol==='file:'){
+    const cfg=getTeacherSecurity();
+    if(!cfg){showTeacherGate('teacherSetup');return}
+    if(sessionGet(TEACHER_SESSION_KEY)==='1'){unlockTeacher();return}
+    showTeacherGate('teacherLogin');return;
+  }
+  bootTeacherSecurityServer();
+}
+async function bootTeacherSecurityServer(){
+  try{
+    const response=await fetch('/api/auth/session',{cache:'no-store'});
+    const data=await response.json().catch(()=>({}));
+    if(response.ok&&data.ok&&data.role==='teacher'){unlockTeacher();return;}
+    if(response.status===503)document.getElementById('teacherLoginMsg').textContent=data.error||'Configuration de sécurité serveur requise.';
+  }catch(error){document.getElementById('teacherLoginMsg').textContent='Connexion au serveur impossible. Vérifie ta connexion.';}
   showTeacherGate('teacherLogin');
 }
 document.getElementById('recoveryQuestion').onchange=e=>document.getElementById('customQuestionWrap').style.display=e.target.value==='custom'?'grid':'none';
 document.getElementById('saveTeacherSetup').onclick=()=>{
+  if(location.protocol!=='file:'){document.getElementById('teacherLoginMsg').textContent='La première configuration locale est désactivée en ligne. Utilise la connexion sécurisée du serveur.';showTeacherGate('teacherLogin');return;}
   const password=document.getElementById('teacherSetupPassword').value;
   const confirm=document.getElementById('teacherSetupPasswordConfirm').value;
   let q=document.getElementById('recoveryQuestion').value;
@@ -721,17 +724,22 @@ document.getElementById('saveTeacherSetup').onclick=()=>{
   setTeacherSecurity({codeHash:teacherHash(password),question:q,answerHash:teacherHash(normalizeSecret(a))});
   unlockTeacher();
 };
-function tryTeacherLogin(){
-  const cfg=getTeacherSecurity(), v=document.getElementById('teacherCodeInput').value;
-  if(cfg&&v.length>0&&teacherHash(v)===cfg.codeHash){document.getElementById('teacherLoginMsg').textContent='';unlockTeacher()}else{document.getElementById('teacherLoginMsg').textContent='Mot de passe incorrect.'}
+async function tryTeacherLogin(){
+  const input=document.getElementById('teacherCodeInput'),message=document.getElementById('teacherLoginMsg'),value=input.value;
+  if(location.protocol==='file:'){const cfg=getTeacherSecurity();if(cfg&&value.length>0&&teacherHash(value)===cfg.codeHash){message.textContent='';unlockTeacher();}else message.textContent='Mot de passe incorrect.';return;}
+  if(!value){message.textContent='Entre ton mot de passe enseignant.';return;}
+  const button=document.getElementById('teacherLoginBtn');button.disabled=true;button.textContent='Vérification…';message.textContent='';
+  try{const response=await fetch('/api/auth/teacher-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:value})});const data=await response.json().catch(()=>({}));if(!response.ok||!data.ok)throw new Error(data.error||'Connexion refusée.');input.value='';unlockTeacher();}
+  catch(error){message.textContent=String(error?.message||error);}
+  finally{button.disabled=false;button.textContent='Se connecter';}
 }
 document.getElementById('teacherLoginBtn').onclick=tryTeacherLogin;
 document.getElementById('teacherCodeInput').addEventListener('keydown',e=>{if(e.key==='Enter')tryTeacherLogin()});
-document.getElementById('forgotTeacherCode').onclick=()=>{const cfg=getTeacherSecurity();document.getElementById('recoveryQuestionText').textContent=cfg?.question||'';document.getElementById('recoveryAnswerCheck').value='';document.getElementById('newTeacherCodeArea').style.display='none';document.getElementById('recoveryMsg').textContent='';showTeacherGate('teacherRecovery')};
+document.getElementById('forgotTeacherCode').onclick=()=>{if(location.protocol==='file:'){const cfg=getTeacherSecurity();document.getElementById('recoveryQuestionText').textContent=cfg?.question||'';document.getElementById('recoveryAnswerCheck').value='';document.getElementById('newTeacherCodeArea').style.display='none';document.getElementById('recoveryMsg').textContent='';showTeacherGate('teacherRecovery');return;}showTeacherGate('teacherRecovery');document.getElementById('recoveryQuestionText').textContent='La récupération du mot de passe se fait depuis les secrets du projet Cloudflare.';document.getElementById('recoveryAnswerCheck').style.display='none';document.getElementById('checkRecoveryAnswer').style.display='none';document.getElementById('newTeacherCodeArea').style.display='none';document.getElementById('recoveryMsg').textContent='Remplace le secret TOPMATH_TEACHER_PASSWORD_HASH après avoir généré un nouveau hachage PBKDF2.'};
 document.getElementById('backTeacherLogin').onclick=()=>showTeacherGate('teacherLogin');
 document.getElementById('checkRecoveryAnswer').onclick=()=>{const cfg=getTeacherSecurity(),a=normalizeSecret(document.getElementById('recoveryAnswerCheck').value);if(cfg&&teacherHash(a)===cfg.answerHash){document.getElementById('recoveryMsg').textContent='Réponse correcte. Choisis maintenant un nouveau mot de passe.';document.getElementById('newTeacherCodeArea').style.display='block';document.getElementById('newTeacherCode').value='';document.getElementById('newTeacherCodeConfirm').value=''}else{document.getElementById('recoveryMsg').textContent='Réponse incorrecte.';document.getElementById('newTeacherCodeArea').style.display='none'}};
 document.getElementById('saveRecoveredCode').onclick=()=>{const v=document.getElementById('newTeacherCode').value,c=document.getElementById('newTeacherCodeConfirm').value,cfg=getTeacherSecurity();if(v.length===0){document.getElementById('recoveryMsg').textContent='Choisis un nouveau mot de passe.';return}if(v!==c){document.getElementById('recoveryMsg').textContent='Les deux mots de passe ne correspondent pas.';return}cfg.codeHash=teacherHash(v);setTeacherSecurity(cfg);document.getElementById('recoveryMsg').textContent='Nouveau mot de passe enregistré.';setTimeout(()=>showTeacherGate('teacherLogin'),500)};
-document.getElementById('lockTeacher').onclick=()=>{sessionRemove(TEACHER_SESSION_KEY);document.getElementById('teacherCodeInput').value='';showTeacherGate('teacherLogin')};
+document.getElementById('lockTeacher').onclick=async()=>{if(location.protocol==='file:'){sessionRemove(TEACHER_SESSION_KEY);}else{try{const response=await fetch('/api/auth/logout',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});if(!response.ok)throw new Error('Réponse serveur invalide');}catch(error){alert('La déconnexion n’a pas pu être confirmée. Vérifie ta connexion puis réessaie.');return;}}document.getElementById('teacherCodeInput').value='';showTeacherGate('teacherLogin')};
 
 
 const SEED_STUDENTS={"6742":{"id":"lucas","name":"Martin","first":"Lucas","class":"Maçonnerie Démo","phase":"Phase 3","birth":"14/03/2010","sector":"Construction","group":"Maçonnerie","job":"Maçon","progress":{"N303":[["05/09/26","19/09/26","03/10/26"],"Validé"],"Q301":[["08/09/26","22/09/26",""],"En cours"],"G301":[["10/09/26","24/09/26","08/10/26"],"Validé"],"S304":[["12/09/26","",""],"En cours"]},"results":[["08/10/26","G301 — Évaluation 3","9/10"],["03/10/26","N303 — Évaluation 3","8/10"],["22/09/26","Q301 — Évaluation 2","8/10"]]},"2097":{"id":"sarah","name":"Bernard","first":"Sarah","class":"Maçonnerie Démo","phase":"Phase 3","birth":"22/11/2009","sector":"Construction","group":"Maçonnerie","job":"Maçon","progress":{"N303":[["07/09/26","21/09/26","05/10/26"],"Validé"],"Q301":[["03/09/26","17/09/26","01/10/26"],"Validé"],"G301":[["10/09/26","24/09/26",""],"En cours"],"S304":[["12/09/26","",""],"En cours"]},"results":[["05/10/26","N303 — Évaluation 3","8/10"],["01/10/26","Q301 — Évaluation 3","9/10"],["24/09/26","G301 — Évaluation 2","9/10"]]},"3584":{"id":"adam","name":"Leroy","first":"Adam","class":"Maçonnerie Démo","phase":"Phase 3","birth":"05/06/2010","sector":"Construction","group":"Maçonnerie","job":"Maçon","progress":{"N303":[["09/09/26","",""],"En cours"],"Q301":[["03/09/26","17/09/26",""],"En cours"],"G301":[["04/09/26","18/09/26","02/10/26"],"Validé"],"S304":[["06/09/26","20/09/26","04/10/26"],"Validé"]},"results":[["04/10/26","S304 — Évaluation 3","9/10"],["02/10/26","G301 — Évaluation 3","10/10"],["17/09/26","Q301 — Évaluation 2","7/10"]]},"m401":{"id":"m401","name":"Dubois","first":"Noah","class":"Maçonnerie Démo","phase":"Phase 3","birth":"","sector":"Construction","group":"Maçonnerie","job":"Maçon","progress":{"N303":[["11/09/26","25/09/26",""],"En cours"],"Q301":[["","",""],"Pas commencé"],"G301":[["13/09/26","",""],"En cours"],"S304":[["","",""],"Pas commencé"]},"results":[["25/09/26","N303 — Évaluation 2","8/10"],["13/09/26","G301 — Évaluation 1","9/10"]]},"m402":{"id":"m402","name":"Petit","first":"Hugo","class":"Maçonnerie Démo","phase":"Phase 3","birth":"","sector":"Construction","group":"Maçonnerie","job":"Maçon","progress":{"N303":[["02/09/26","16/09/26","30/09/26"],"Validé"],"Q301":[["06/09/26","",""],"En cours"],"G301":[["08/09/26","22/09/26","06/10/26"],"Validé"],"S304":[["09/09/26","23/09/26",""],"En cours"]},"results":[["06/10/26","G301 — Évaluation 3","8/10"],["30/09/26","N303 — Évaluation 3","9/10"],["23/09/26","S304 — Évaluation 2","8/10"]]},"e501":{"id":"e501","name":"Renard","first":"Emma","class":"ÉCO Démo","phase":"Phase 2","birth":"","sector":"ÉCO","group":"ÉCO","job":"","progress":{"N201":[["04/09/26","18/09/26","02/10/26"],"Validé"],"N203":[["07/09/26","21/09/26",""],"En cours"],"Q204":[["09/09/26","",""],"En cours"],"G201":[["","",""],"Pas commencé"]},"results":[["02/10/26","N201 — Évaluation 3","9/10"],["21/09/26","N203 — Évaluation 2","8/10"]]},"e502":{"id":"e502","name":"Simon","first":"Louis","class":"ÉCO Démo","phase":"Phase 2","birth":"","sector":"ÉCO","group":"ÉCO","job":"","progress":{"N201":[["05/09/26","",""],"En cours"],"N203":[["","",""],"Pas commencé"],"Q204":[["10/09/26","24/09/26","08/10/26"],"Validé"],"G201":[["12/09/26","26/09/26",""],"En cours"]},"results":[["08/10/26","Q204 — Évaluation 3","10/10"],["26/09/26","G201 — Évaluation 2","8/10"]]},"e503":{"id":"e503","name":"Thomas","first":"Inès","class":"ÉCO Démo","phase":"Phase 2","birth":"","sector":"ÉCO","group":"ÉCO","job":"","progress":{"N201":[["03/09/26","17/09/26","01/10/26"],"Validé"],"N203":[["06/09/26","20/09/26","04/10/26"],"Validé"],"Q204":[["08/09/26","22/09/26",""],"En cours"],"G201":[["","",""],"Pas commencé"]},"results":[["04/10/26","N203 — Évaluation 3","9/10"],["01/10/26","N201 — Évaluation 3","8/10"],["22/09/26","Q204 — Évaluation 2","7/10"]]},"e504":{"id":"e504","name":"Michel","first":"Nathan","class":"ÉCO Démo","phase":"Phase 2","birth":"","sector":"ÉCO","group":"ÉCO","job":"","progress":{"N201":[["","",""],"Pas commencé"],"N203":[["11/09/26","",""],"En cours"],"Q204":[["13/09/26","27/09/26",""],"En cours"],"G201":[["15/09/26","",""],"En cours"]},"results":[["27/09/26","Q204 — Évaluation 2","8/10"],["15/09/26","G201 — Évaluation 1","9/10"]]},"e505":{"id":"e505","name":"Garcia","first":"Lina","class":"ÉCO Démo","phase":"Phase 2","birth":"","sector":"ÉCO","group":"ÉCO","job":"","progress":{"N201":[["02/09/26","16/09/26","30/09/26"],"Validé"],"N203":[["05/09/26","19/09/26","03/10/26"],"Validé"],"Q204":[["07/09/26","21/09/26","05/10/26"],"Validé"],"G201":[["09/09/26","23/09/26",""],"En cours"]},"results":[["05/10/26","Q204 — Évaluation 3","9/10"],["03/10/26","N203 — Évaluation 3","10/10"],["30/09/26","N201 — Évaluation 3","9/10"]]},"c601":{"id":"c601","name":"Lambert","first":"Jules","class":"Construction A Démo","phase":"Phase 1","birth":"","sector":"Construction","group":"Construction","job":"","progress":{"N104":[["04/09/26","18/09/26","02/10/26"],"Validé"],"N105":[["06/09/26","20/09/26",""],"En cours"],"G201":[["","",""],"Pas commencé"],"Q201":[["10/09/26","",""],"En cours"]},"results":[["02/10/26","N104 — Évaluation 3","9/10"],["20/09/26","N105 — Évaluation 2","8/10"]]},"c602":{"id":"c602","name":"Henry","first":"Léa","class":"Construction A Démo","phase":"Phase 1","birth":"","sector":"Construction","group":"Construction","job":"","progress":{"N104":[["05/09/26","",""],"En cours"],"N105":[["08/09/26","22/09/26","06/10/26"],"Validé"],"G201":[["12/09/26","26/09/26",""],"En cours"],"Q201":[["","",""],"Pas commencé"]},"results":[["06/10/26","N105 — Évaluation 3","10/10"],["26/09/26","G201 — Évaluation 2","8/10"]]},"c603":{"id":"c603","name":"Moreau","first":"Tom","class":"Construction A Démo","phase":"Phase 1","birth":"","sector":"Construction","group":"Construction","job":"","progress":{"N104":[["03/09/26","17/09/26","01/10/26"],"Validé"],"N105":[["07/09/26","21/09/26","05/10/26"],"Validé"],"G201":[["09/09/26","",""],"En cours"],"Q201":[["11/09/26","25/09/26",""],"En cours"]},"results":[["05/10/26","N105 — Évaluation 3","9/10"],["01/10/26","N104 — Évaluation 3","9/10"],["25/09/26","Q201 — Évaluation 2","7/10"]]},"c604":{"id":"c604","name":"Leclerc","first":"Zoé","class":"Construction A Démo","phase":"Phase 1","birth":"","sector":"Construction","group":"Construction","job":"","progress":{"N104":[["","",""],"Pas commencé"],"N105":[["","",""],"Pas commencé"],"G201":[["14/09/26","",""],"En cours"],"Q201":[["16/09/26","30/09/26",""],"En cours"]},"results":[["30/09/26","Q201 — Évaluation 2","8/10"],["14/09/26","G201 — Évaluation 1","8/10"]]}};
@@ -802,7 +810,7 @@ function showTab(id){
   if(id==='tracking')renderTracking();
   if(id==='students')renderD1StudentsManager();
   if(id==='years')renderYears();
-  if(id==='security')loadSecurityPanel();
+  if(id==='security'){const note=document.getElementById('securityServerNote');if(note)note.scrollIntoView({block:'nearest'});}
   window.scrollTo(0,0);
 }
 
@@ -879,10 +887,86 @@ function renderD1StudentsManager(){
   status.textContent=`${rows.length} élève${rows.length>1?'s':''} • année ${pedagogicalYearLabel()} • données D1`;
   list.innerHTML=rows.length?rows.map(r=>`<div class="row">
     <div><strong>${r.first_name||''} ${r.last_name||''}</strong><div class="muted">${r.class_name||'Sans classe'} • ${r.track||''} • ${r.phase||'Phase non renseignée'}${r.birth_date?' • né(e) le '+isoToFrLong(r.birth_date):''}</div><div class="muted">${[r.sector,r.professional_group,r.job].filter(Boolean).join(' • ')||'Informations professionnelles à compléter'}</div></div>
-    <button class="secondary" data-d1-student-edit="${r.student_id}">Modifier</button>
+    <div style="display:flex;align-items:center;gap:6px">
+      <button class="secondary" data-d1-student-edit="${r.student_id}">Modifier</button>
+      <button class="secondary" data-d1-student-menu="${r.student_id}" aria-label="Actions pour cet élève" aria-expanded="false" title="Autres actions">⋯</button>
+    </div>
   </div>`).join(''):'<p class="muted">Aucun élève correspondant.</p>';
   document.querySelectorAll('[data-d1-student-edit]').forEach(b=>b.onclick=()=>openD1StudentEditor(b.dataset.d1StudentEdit));
+  document.querySelectorAll('[data-d1-student-menu]').forEach(b=>b.onclick=()=>{
+    const old=document.querySelector('.d1-student-action-popup');
+    if(old){const same=old.parentElement===b.parentElement;old.remove();if(same)return;}
+    const popup=document.createElement('div');
+    popup.className='d1-student-action-popup';
+    Object.assign(popup.style,{position:'absolute',right:'0',top:'100%',zIndex:'100',minWidth:'215px',background:'#fff',border:'1px solid #ccd4e0',borderRadius:'9px',padding:'5px',boxShadow:'0 6px 18px #0002'});
+    const row=(D1_PEDAGOGICAL_ROSTER.students||[]).find(r=>r.student_id===b.dataset.d1StudentMenu);
+    if(!row)return;
+    const addChoice=(label,action,color)=>{
+      const option=document.createElement('button');
+      option.type='button';option.textContent=label;
+      Object.assign(option.style,{display:'block',width:'100%',textAlign:'left',padding:'10px',background:'transparent',border:'0',color,cursor:'pointer'});
+      option.onclick=()=>{popup.remove();manageD1StudentAction(row,action,b);};
+      popup.append(option);
+    };
+    if(row.class_id)addChoice('Retirer de la classe','remove-from-class','#39435a');
+    addChoice('Supprimer définitivement','delete-permanently','#b42318');
+    b.parentElement.style.position='relative';
+    b.parentElement.append(popup);
+  });
 }
+async function manageD1StudentAction(row,action,button){
+  const name=[row.first_name,row.last_name].filter(Boolean).join(' ');
+  const removing=action==='remove-from-class';
+  const message=removing
+    ?'Retirer '+name+' de sa classe ?\\nSon historique est conservé, mais son code est annulé.'
+    :'Supprimer définitivement '+name+' ?\\nTOUTES ses inscriptions, évaluations et données seront effacées, y compris les années précédentes. Action irréversible.';
+  if(!confirm(message))return;
+  let confirmation;
+  if(!removing){
+    const finalChoice=await new Promise(resolve=>{
+      const overlay=document.createElement('div');
+      Object.assign(overlay.style,{position:'fixed',inset:'0',zIndex:'100000',background:'rgba(14,25,45,.60)',display:'flex',alignItems:'center',justifyContent:'center',padding:'20px'});
+      const dialog=document.createElement('div');
+      dialog.setAttribute('role','alertdialog');
+      dialog.setAttribute('aria-modal','true');
+      dialog.setAttribute('aria-labelledby','studentDeleteFinalTitle');
+      Object.assign(dialog.style,{maxWidth:'460px',width:'100%',background:'#fff',borderRadius:'15px',padding:'24px',boxShadow:'0 20px 60px #0004'});
+      const title=document.createElement('h3');
+      title.id='studentDeleteFinalTitle';title.textContent='Dernière confirmation';
+      title.style.margin='0 0 12px';
+      const description=document.createElement('p');
+      description.textContent='Voulez-vous vraiment supprimer définitivement '+name+' et toutes ses données ? Cette action est irréversible.';
+      const actions=document.createElement('div');
+      Object.assign(actions.style,{display:'flex',gap:'10px',justifyContent:'flex-end',flexWrap:'wrap',marginTop:'22px'});
+      const cancel=document.createElement('button');cancel.type='button';cancel.className='secondary';cancel.textContent='Annuler';
+      const accept=document.createElement('button');accept.type='button';accept.className='danger';accept.textContent='✓ Confirmer la suppression';
+      let completed=false;
+      const done=value=>{if(completed)return;completed=true;document.removeEventListener('keydown',onKey);overlay.remove();resolve(value);};
+      const onKey=e=>{if(e.key==='Escape'){e.preventDefault();done(false);}else if(e.key==='Tab'){const target=document.activeElement===cancel?accept:cancel;e.preventDefault();target.focus();}};
+      cancel.onclick=()=>done(false);accept.onclick=()=>done(true);
+      overlay.onclick=e=>{if(e.target===overlay)done(false);};
+      actions.append(cancel,accept);dialog.append(title,description,actions);overlay.append(dialog);
+      document.body.append(overlay);document.addEventListener('keydown',onKey);
+      cancel.focus();
+    });
+    if(!finalChoice)return;
+    confirmation='DOUBLE_CONFIRMATION_VALIDEE';
+  }
+  button.disabled=true;
+  try{
+    const response=await fetch('/api/student-manage',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,student_id:row.student_id,confirmation})});
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok||!data.ok)throw new Error(data.error||('HTTP '+response.status));
+    await loadD1RosterForClasses();
+    renderD1StudentsManager();
+    renderAllSchoolViews();
+    alert(removing?'Élève retiré de la classe. Son code a été désactivé.':'Élève définitivement supprimé.');
+  }catch(error){
+    alert('Impossible de terminer cette opération : '+String(error?.message||error));
+    button.disabled=false;
+  }
+}
+
 function openD1StudentEditor(studentId=''){
   if(!D1_PEDAGOGICAL_ROSTER)return;
   fillD1StudentClassSelect(document.getElementById('d1StudentClass'),false);
@@ -1142,7 +1226,9 @@ async function loadD1RosterForClasses(){
     D1_PEDAGOGICAL_ROSTER=data;
     D1_PEDAGOGICAL_ERROR='';
     syncSchoolManagementFromD1();
-    fillClassSelect(tc); if(tc.options.length){updateTrackStudents();}
+    [tc,oc,ac].forEach(sel=>{if(sel)fillClassSelect(sel)});
+    renderAccess();
+    if(tc.options.length){updateTrackStudents();}
     if(document.getElementById('classes')?.classList.contains('active')){
       if(selectedPedagogicalStudent)renderPedagogicalStudent(document.querySelector('#studentDashboardTabs button.active')?.dataset.studentTab||'overview');
       else if(selectedPedagogicalClass)renderPedagogicalClass();
@@ -1954,9 +2040,7 @@ function state(){return JSON.parse(storageGet(CODE_STORAGE)||'{}')}
 function randCode(used=new Set()){let v='';do{v=String(Math.floor(1000+Math.random()*9000))}while(used.has(v));return v}
 function ensureInitialCodes(){
   const school=getSchoolState();let x=state(),changed=false,used=new Set(Object.values(x).map(v=>v?.main).filter(Boolean));
-  Object.keys(school.profiles).forEach(id=>{
-    if(!Object.prototype.hasOwnProperty.call(x,id)){const c=randCode(used);used.add(c);x[id]={main:c};changed=true}
-  });
+  Object.keys(school.profiles).forEach(id=>{if(!Object.prototype.hasOwnProperty.call(x,id)){const c=randCode(used);used.add(c);x[id]={main:c};changed=true}});
   if(changed)storageSet(CODE_STORAGE,JSON.stringify(x));
   return x;
 }
@@ -1964,48 +2048,115 @@ function saveState(x){storageSet(CODE_STORAGE,JSON.stringify(x));renderAccess()}
 function currentMain(x,id){return x[id]?.main||''}
 function codeUsedByOther(x,id,code){return Object.entries(x).some(([other,v])=>other!==id&&v?.main===code)}
 const ac=document.getElementById('accessClass');
-function renderAccess(){
+let D1_ACCESS_STUDENTS=[];
+function selectedD1AccessClass(){return (D1_PEDAGOGICAL_ROSTER?.classes||[]).find(cls=>cls.name===ac.value)||null;}
+function renderAccessLocal(){
   const saved=ensureInitialCodes(),students=classStudents(ac.value);
   document.getElementById('accessList').innerHTML=Object.entries(students).map(([id,s])=>{
-    const main=currentMain(saved,id),shown=main?`<b style="font-size:1.08em">${main}</b>`:'<b style="color:var(--red)">Aucun code</b>';
-    return `<div class="row"><div><strong>${s.first} ${s.name}</strong><div class="muted">Code personnel : ${shown}</div></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="secondary" data-change="${id}">Modifier</button><button class="secondary" data-renew="${id}">Nouveau code aléatoire</button><button class="danger" data-clear="${id}">Annuler</button></div></div>`;
+    const main=currentMain(saved,id),shown=main?'<b style="font-size:1.08em">'+main+'</b>':'<b style="color:var(--red)">Aucun code</b>';
+    return '<div class="row"><div><strong>'+s.first+' '+s.name+'</strong><div class="muted">Code personnel : '+shown+'</div></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="secondary" data-change="'+id+'">Modifier</button><button class="secondary" data-renew="'+id+'">Nouveau code aléatoire</button><button class="danger" data-clear="'+id+'">Annuler</button></div></div>';
   }).join('')||'<p class="muted">Aucun élève dans cette classe.</p>';
   document.querySelectorAll('[data-change]').forEach(b=>b.onclick=()=>changeMain(b.dataset.change));
   document.querySelectorAll('[data-renew]').forEach(b=>b.onclick=()=>renewOne(b.dataset.renew));
   document.querySelectorAll('[data-clear]').forEach(b=>b.onclick=()=>clearMain(b.dataset.clear));
 }
+async function renderAccess(){
+  if(location.protocol==='file:'){renderAccessLocal();return;}
+  const box=document.getElementById('accessList'),cls=selectedD1AccessClass();
+  if(!cls){D1_ACCESS_STUDENTS=[];box.textContent=D1_PEDAGOGICAL_ERROR?'Impossible de charger les classes : '+D1_PEDAGOGICAL_ERROR:'La liste des classes D1 est en cours de chargement.';return;}
+  box.textContent='Chargement des codes depuis Cloudflare D1…';
+  try{
+    const response=await fetch('/api/student-access-codes?class_id='+encodeURIComponent(cls.id),{cache:'no-store'});
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok||!data.ok)throw new Error(data.error||'Lecture des codes impossible.');
+    D1_ACCESS_STUDENTS=data.students||[];
+    box.replaceChildren();
+    if(!D1_ACCESS_STUDENTS.length){box.textContent='Aucun élève dans cette classe.';return;}
+    D1_ACCESS_STUDENTS.forEach(student=>{
+      const row=document.createElement('div');row.className='row';
+      const content=document.createElement('div');
+      const name=document.createElement('strong');name.textContent=(student.first_name||'')+' '+(student.last_name||'');
+      const code=document.createElement('div');code.className='muted';code.textContent='Code personnel : '+(student.access_code||'Aucun code');
+      content.append(name,code);
+      const actions=document.createElement('div');actions.style.cssText='display:flex;gap:6px;flex-wrap:wrap';
+      const change=document.createElement('button');change.className='secondary';change.textContent='Modifier';change.onclick=()=>changeMain(student.student_id);
+      const renew=document.createElement('button');renew.className='secondary';renew.textContent='Nouveau code aléatoire';renew.onclick=()=>renewOne(student.student_id);
+      const clear=document.createElement('button');clear.className='danger';clear.textContent='Annuler';clear.onclick=()=>clearMain(student.student_id);
+      actions.append(change,renew,clear);row.append(content,actions);box.append(row);
+    });
+  }catch(error){D1_ACCESS_STUDENTS=[];box.textContent='Erreur : '+String(error?.message||error);}
+}
+async function postD1AccessAction(payload){
+  const response=await fetch('/api/student-access-codes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok||!data.ok)throw new Error(data.error||'Opération impossible.');
+  return data;
+}
 ac.onchange=renderAccess;
-function changeMain(id){
-  const school=getSchoolState(),p=school.profiles[id];let x=ensureInitialCodes(),old=currentMain(x,id),v=prompt('Nouveau code personnel pour '+p.first+' '+p.name+' :',old);
-  if(v===null)return;v=v.trim();
-  if(!/^\d{4}$/.test(v)){alert('Le code doit contenir exactement 4 chiffres.');return}
-  if(codeUsedByOther(x,id,v)){alert('Ce code est déjà utilisé par un autre élève.');return}
-  x[id]=x[id]||{};x[id].main=v;saveState(x);
+async function changeMain(id){
+  if(location.protocol==='file:'){
+    const school=getSchoolState(),p=school.profiles[id];let x=ensureInitialCodes(),old=currentMain(x,id),v=prompt('Nouveau code personnel pour '+p.first+' '+p.name+' :',old);
+    if(v===null)return;v=v.trim();if(!/^\d{4}$/.test(v)){alert('Le code doit contenir exactement 4 chiffres.');return}
+    if(codeUsedByOther(x,id,v)){alert('Ce code est déjà utilisé par un autre élève.');return}
+    x[id]=x[id]||{};x[id].main=v;saveState(x);return;
+  }
+  const cls=selectedD1AccessClass(),student=D1_ACCESS_STUDENTS.find(s=>s.student_id===id);
+  if(!cls||!student)return;
+  const value=prompt('Nouveau code personnel pour '+student.first_name+' '+student.last_name+' (8 lettres ou chiffres) :',student.access_code||'');
+  if(value===null)return;
+  const code=value.trim().toUpperCase();
+  if(!/^[A-Z0-9]{8}$/.test(code)){alert('Le code doit contenir exactement 8 lettres ou chiffres.');return;}
+  try{await postD1AccessAction({action:'set',class_id:cls.id,student_id:id,code});await renderAccess();}
+  catch(error){alert(String(error?.message||error));}
 }
-function renewOne(id){
-  const p=getSchoolState().profiles[id];let x=ensureInitialCodes();
-  if(!confirm('Générer un nouveau code aléatoire pour '+p.first+' '+p.name+' ?'))return;
-  const used=new Set(Object.values(x).map(v=>v?.main).filter(Boolean));x[id]=x[id]||{};x[id].main=randCode(used);saveState(x);
+async function renewOne(id){
+  if(location.protocol==='file:'){
+    const p=getSchoolState().profiles[id];let x=ensureInitialCodes();if(!confirm('Générer un nouveau code aléatoire pour '+p.first+' '+p.name+' ?'))return;
+    const used=new Set(Object.values(x).map(v=>v?.main).filter(Boolean));x[id]=x[id]||{};x[id].main=randCode(used);saveState(x);return;
+  }
+  const cls=selectedD1AccessClass(),student=D1_ACCESS_STUDENTS.find(s=>s.student_id===id);if(!cls||!student)return;
+  if(!confirm('Générer un nouveau code pour '+student.first_name+' '+student.last_name+' ?'))return;
+  try{await postD1AccessAction({action:'rotate',class_id:cls.id,student_id:id});await renderAccess();}
+  catch(error){alert(String(error?.message||error));}
 }
-function clearMain(id){
-  const p=getSchoolState().profiles[id];
-  if(!confirm('Annuler le code de '+p.first+' '+p.name+' ?'))return;
-  let x=ensureInitialCodes();x[id]=x[id]||{};x[id].main='';saveState(x);
+async function clearMain(id){
+  if(location.protocol==='file:'){
+    const p=getSchoolState().profiles[id];if(!confirm('Annuler le code de '+p.first+' '+p.name+' ?'))return;
+    let x=ensureInitialCodes();x[id]=x[id]||{};x[id].main='';saveState(x);return;
+  }
+  const cls=selectedD1AccessClass(),student=D1_ACCESS_STUDENTS.find(s=>s.student_id===id);if(!cls||!student)return;
+  if(!confirm('Annuler le code de '+student.first_name+' '+student.last_name+' ?'))return;
+  try{await postD1AccessAction({action:'clear',class_id:cls.id,student_id:id});await renderAccess();}
+  catch(error){alert(String(error?.message||error));}
 }
-document.getElementById('generateMissing').onclick=()=>{
-  let x=ensureInitialCodes(),used=new Set(Object.values(x).map(v=>v?.main).filter(Boolean)),count=0;
-  Object.keys(classStudents(ac.value)).forEach(id=>{if(!x[id]?.main){const c=randCode(used);used.add(c);x[id]=x[id]||{};x[id].main=c;count++}});
-  saveState(x);alert(count?count+' code(s) généré(s).':'Tous les élèves de cette classe ont déjà un code.');
+document.getElementById('generateMissing').onclick=async()=>{
+  if(location.protocol==='file:'){
+    let x=ensureInitialCodes(),used=new Set(Object.values(x).map(v=>v?.main).filter(Boolean)),count=0;
+    Object.keys(classStudents(ac.value)).forEach(id=>{if(!x[id]?.main){const c=randCode(used);used.add(c);x[id]=x[id]||{};x[id].main=c;count++}});
+    saveState(x);alert(count?count+' code(s) généré(s).':'Tous les élèves de cette classe ont déjà un code.');return;
+  }
+  const cls=selectedD1AccessClass();if(!cls){alert('Sélectionne une classe.');return;}
+  try{const data=await postD1AccessAction({action:'generate-missing',class_id:cls.id});alert(data.changed+' code(s) généré(s).');await renderAccess();}
+  catch(error){alert(String(error?.message||error));}
 };
-document.getElementById('renewAll').onclick=()=>{
+document.getElementById('renewAll').onclick=async()=>{
   if(!confirm('Renouveler les codes de toute cette classe ?'))return;
-  let x=ensureInitialCodes(),classIds=new Set(Object.keys(classStudents(ac.value))),used=new Set(Object.entries(x).filter(([id])=>!classIds.has(id)).map(([id,v])=>v?.main).filter(Boolean));
-  classIds.forEach(id=>{const c=randCode(used);used.add(c);x[id]=x[id]||{};x[id].main=c});
-  saveState(x);
+  if(location.protocol==='file:'){
+    let x=ensureInitialCodes(),classIds=new Set(Object.keys(classStudents(ac.value))),used=new Set(Object.entries(x).filter(([id])=>!classIds.has(id)).map(([id,v])=>v?.main).filter(Boolean));
+    classIds.forEach(id=>{const c=randCode(used);used.add(c);x[id]=x[id]||{};x[id].main=c});saveState(x);return;
+  }
+  const cls=selectedD1AccessClass();if(!cls)return;
+  try{const data=await postD1AccessAction({action:'rotate-class',class_id:cls.id});alert(data.changed+' code(s) renouvelé(s).');await renderAccess();}
+  catch(error){alert(String(error?.message||error));}
 };
-document.getElementById('clearAllMain').onclick=()=>{
+document.getElementById('clearAllMain').onclick=async()=>{
   if(!confirm('Annuler tous les codes de cette classe ?'))return;
-  let x=ensureInitialCodes();Object.keys(classStudents(ac.value)).forEach(id=>{x[id]=x[id]||{};x[id].main=''});saveState(x);
+  if(location.protocol==='file:'){
+    let x=ensureInitialCodes();Object.keys(classStudents(ac.value)).forEach(id=>{x[id]=x[id]||{};x[id].main=''});saveState(x);return;
+  }
+  const cls=selectedD1AccessClass();if(!cls)return;
+  try{const data=await postD1AccessAction({action:'clear-class',class_id:cls.id});alert(data.changed+' code(s) annulé(s).');await renderAccess();}
+  catch(error){alert(String(error?.message||error));}
 };
 
 document.getElementById('openEvalBtn').onclick=()=>{
@@ -2965,18 +3116,8 @@ function renderAllSchoolViews(){
   });
 }
 
-function loadSecurityPanel(){
-  const cfg=getTeacherSecurity(); if(!cfg)return;
-  const sel=document.getElementById('securityQuestion'); let found=false;
-  Array.from(sel.options).forEach(o=>{if(o.value===cfg.question||o.text===cfg.question){sel.value=o.value;found=true}});
-  if(!found){sel.value='custom';document.getElementById('securityCustomQuestion').value=cfg.question}
-  document.getElementById('securityCustomWrap').style.display=sel.value==='custom'?'grid':'none';
-}
-document.getElementById('securityQuestion').onchange=e=>document.getElementById('securityCustomWrap').style.display=e.target.value==='custom'?'grid':'none';
-document.getElementById('securitySaveCode').onclick=()=>{const current=document.getElementById('securityCurrentCode').value,v=document.getElementById('securityNewCode').value,c=document.getElementById('securityNewCodeConfirm').value,cfg=getTeacherSecurity();if(!cfg||teacherHash(current)!==cfg.codeHash){document.getElementById('securityCodeMsg').textContent='Le mot de passe actuel est incorrect.';return}if(v.length===0){document.getElementById('securityCodeMsg').textContent='Choisis un nouveau mot de passe.';return}if(v!==c){document.getElementById('securityCodeMsg').textContent='Les deux nouveaux mots de passe ne correspondent pas.';return}cfg.codeHash=teacherHash(v);setTeacherSecurity(cfg);document.getElementById('securityCurrentCode').value='';document.getElementById('securityNewCode').value='';document.getElementById('securityNewCodeConfirm').value='';document.getElementById('securityCodeMsg').textContent='Mot de passe enseignant modifié.'};
-document.getElementById('securitySaveRecovery').onclick=()=>{let q=document.getElementById('securityQuestion').value;if(q==='custom')q=document.getElementById('securityCustomQuestion').value.trim();const a=document.getElementById('securityAnswer').value.trim(),cfg=getTeacherSecurity();if(!q||a.length<2){document.getElementById('securityRecoveryMsg').textContent='Complète la question et la réponse.';return}cfg.question=q;cfg.answerHash=teacherHash(normalizeSecret(a));setTeacherSecurity(cfg);document.getElementById('securityAnswer').value='';document.getElementById('securityRecoveryMsg').textContent='Question de récupération mise à jour.'};
 const securitySettingsBtn=document.querySelector('[data-settings-tab="security"]');
-if(securitySettingsBtn)securitySettingsBtn.addEventListener('click',loadSecurityPanel);
+if(securitySettingsBtn)securitySettingsBtn.addEventListener('click',()=>{const note=document.getElementById('securityServerNote');if(note)note.scrollIntoView({block:'nearest'});});
 // La sécurité enseignant est toujours amorcée avant le chargement lourd de l'application.
 bootTeacherSecurity();
 
