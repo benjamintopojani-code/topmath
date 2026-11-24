@@ -50,7 +50,7 @@ const places=[['CM','c-cm'],['DM','c-dm'],['UM','c-um'],['C','c-c'],['D','c-d'],
 const placeNames=['centaines de mille','dizaines de mille','unités de mille','centaines','dizaines','unités'];
 let activePlace=null,returnFocus=null;
 const wordUnits=['zéro','un','deux','trois','quatre','cinq','six','sept','huit','neuf','dix','onze','douze','treize','quatorze','quinze','seize','dix-sept','dix-huit','dix-neuf'];
-function under100(n){if(n<20)return wordUnits[n];const tens=['','','vingt','trente','quarante','cinquante','soixante','','quatre-vingt',''];let t=Math.floor(n/10),u=n%10;if(t===7)return u===1?'soixante et onze':'soixante-'+under100(10+u);if(t===9)return 'quatre-vingt-'+under100(10+u);if(t===8)return 'quatre-vingt'+(u===0?'s':'-'+wordUnits[u]);if(u===0)return tens[t];return tens[t]+(u===1?' et un':'-'+wordUnits[u]);}
+function under100(n){if(n<20)return wordUnits[n];const tens=['','','vingt','trente','quarante','cinquante','soixante','septante','quatre-vingt','nonante'];let t=Math.floor(n/10),u=n%10;if(t===7||t===9)return tens[t]+(u===0?'':u===1?' et un':'-'+wordUnits[u]);if(t===8)return 'quatre-vingt'+(u===0?'s':u===1?'-un':'-'+wordUnits[u]);if(u===0)return tens[t];return tens[t]+(u===1?' et un':'-'+wordUnits[u]);}
 function under1000(n){const c=Math.floor(n/100),rem=n%100;let s='';if(c===1)s='cent';else if(c>1)s=wordUnits[c]+' cent'+(rem===0?'s':'');if(rem)s+=(s?' ':'')+under100(rem);return s||'zéro';}
 function toFrench(n){if(n<1000)return under1000(n);let th=Math.floor(n/1000),lo=n%1000;let prefix=th===1?'mille':under1000(th)+' mille';return prefix+(lo?' '+under1000(lo):'');}
 function rand(min,max){return Math.floor(Math.random()*(max-min+1))+min;}

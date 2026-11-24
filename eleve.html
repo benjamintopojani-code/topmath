@@ -124,10 +124,67 @@ function render(){
   document.getElementById('agenda').innerHTML='<div class="list">'+(next||'<p>Aucune évaluation à prévoir.</p>')+'</div>';
   renderEval();
 }
-function renderEval(){
-  const e=JSON.parse(localStorage.getItem('topmath_open_eval')||'null'),box=document.getElementById('evalBox'),s=currentStudent();
-  if(e&&e.opened&&(e.target===currentId||(e.target==='ALL'&&e.className===s.class)))box.innerHTML=`<div class="row"><div><strong>${e.comp}</strong><div class="muted">Évaluation ouverte par l’enseignant.</div></div><button class="success">Commencer</button></div>`;
-  else box.innerHTML='<div class="row"><div><strong>Aucune évaluation ouverte</strong><div class="muted">L’enseignant doit ouvrir une évaluation en classe.</div></div></div>';
+
+async function renderEval(){
+  const box = document.getElementById('evalBox');
+
+  if (!currentId) return;
+
+  box.innerHTML = '<div class="row">Chargement des évaluations…</div>';
+
+  try {
+    const response = await fetch(
+      '/api/open-evaluation?student_id=' + encodeURIComponent(currentId),
+      { cache: 'no-store' }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.ok) {
+      throw new Error(data.error || 'Impossible de récupérer les évaluations.');
+    }
+
+    const evaluations = data.evaluations || [];
+
+    box.innerHTML = '';
+
+    if (!evaluations.length) {
+      box.innerHTML =
+        '<div class="row"><div><strong>Aucune évaluation ouverte</strong>' +
+        '<div class="muted">L’enseignant doit ouvrir une évaluation en classe.</div></div></div>';
+      return;
+    }
+
+    evaluations.forEach(e => {
+      const row = document.createElement('div');
+      row.className = 'row';
+
+      const content = document.createElement('div');
+      const title = document.createElement('strong');
+      title.textContent = e.competency_code || 'Évaluation';
+
+      const description = document.createElement('div');
+      description.className = 'muted';
+      description.textContent = 'Évaluation ouverte par l’enseignant.';
+
+      content.append(title, description);
+
+      const status = document.createElement('span');
+      status.className = 'pill status-progress';
+      status.textContent = 'À réaliser';
+
+      row.append(content, status);
+      box.appendChild(row);
+    });
+
+  } catch (error) {
+    box.innerHTML =
+      '<div class="row"><strong>Erreur de connexion : ' +
+      error.message.replace(/[&<>"]/g, c => ({
+        '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;'
+      })[c]) +
+      '</strong></div>';
+  }
 }
 document.getElementById('exportBtn').onclick=()=>{
   const s=currentStudent(),blob=new Blob([JSON.stringify({student:s},null,2)],{type:'application/json'}),u=URL.createObjectURL(blob),a=document.createElement('a');

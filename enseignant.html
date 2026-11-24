@@ -2008,14 +2008,175 @@ document.getElementById('clearAllMain').onclick=()=>{
   let x=ensureInitialCodes();Object.keys(classStudents(ac.value)).forEach(id=>{x[id]=x[id]||{};x[id].main=''});saveState(x);
 };
 
-document.getElementById('openEvalBtn').onclick=()=>{
-  const target=os.value,comp=document.getElementById('openComp').value,className=oc.value;
-  storageSet('topmath_open_eval',JSON.stringify({target,className,comp,opened:true,time:Date.now()}));
-  const stud=activeStudents()[target];
-  document.getElementById('openMsg').textContent='Évaluation ouverte : '+comp+' — '+(target==='ALL'?className:(stud?stud.first+' '+stud.name:''));
-  if(selectedDueClass)renderDueClass();
+
+let D1_OPEN_EVALUATIONS = [];
+
+async function refreshOpenEvaluationsD1() {
+  const year = D1_PEDAGOGICAL_ROSTER?.year;
+  if (!year?.id) throw new Error('Aucune année D1 active.');
+
+  const response = await fetch(
+    '/api/open-evaluation?school_year_id=' + encodeURIComponent(year.id),
+    { cache: 'no-store' }
+  );
+
+  const data = await response.json();
+  if (!response.ok || !data.ok) {
+    throw new Error(data.error || 'Erreur de lecture D1.');
+  }
+
+  D1_OPEN_EVALUATIONS = data.evaluations || [];
+}
+
+function findD1OpenCompetency(comp, cls) {
+  const code = String(comp).match(/^\s*([A-Z]\d{3})/i)?.[1]?.toUpperCase();
+  if (!code) throw new Error('Code de compétence introuvable.');
+
+  const phase = Number(String(cls.phase).match(/\d+/)?.[0] || 0);
+
+  const competency = (D1_PEDAGOGICAL_ROSTER.competencies || []).find(c =>
+    String(c.code).toUpperCase() === code &&
+    String(c.track || 'NORMAL') === String(cls.track || 'NORMAL') &&
+    Number(c.phase) === phase
+  );
+
+  if (!competency) {
+    throw new Error('Compétence ' + code + ' introuvable dans D1.');
+  }
+
+  return competency;
+}
+
+document.getElementById('openEvalBtn').onclick = async () => {
+  const btn = document.getElementById('openEvalBtn');
+  const msg = document.getElementById('openMsg');
+
+  try {
+    if (!D1_PEDAGOGICAL_ROSTER) {
+      throw new Error('Connexion au roster D1 indisponible.');
+    }
+
+    const target = os.value;
+    const className = oc.value;
+    const comp = document.getElementById('openComp').value;
+
+    const cls = (D1_PEDAGOGICAL_ROSTER.classes || [])
+      .find(c => c.name === className);
+
+    if (!cls) throw new Error('Classe introuvable dans D1.');
+
+    const competency = findD1OpenCompetency(comp, cls);
+
+    const students = (D1_PEDAGOGICAL_ROSTER.students || [])
+      .filter(s => s.class_id === cls.id);
+
+    const studentIds = target === 'ALL'
+      ? students.map(s => s.student_id)
+      : students.filter(s => s.student_id === target)
+          .map(s => s.student_id);
+
+    if (!studentIds.length) {
+      throw new Error('Aucun élève correspondant dans D1.');
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Ouverture en cours…';
+    msg.textContent = 'Enregistrement dans Cloudflare D1…';
+
+    const response = await fetch('/api/open-evaluation', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'open',
+        school_year_id: D1_PEDAGOGICAL_ROSTER.year.id,
+        class_id: cls.id,
+        competency_id: competency.id,
+        student_ids: studentIds
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.ok) {
+      throw new Error(data.error || 'Impossible d’ouvrir l’évaluation.');
+    }
+
+    await refreshOpenEvaluationsD1();
+
+    const student = students.find(s => s.student_id === target);
+    msg.textContent = 'Évaluation ' + competency.code +
+      ' ouverte dans D1 pour ' +
+      (target === 'ALL' ? className :
+        (student.first_name + ' ' + student.last_name)) +
+      '.';
+
+    if (selectedDueClass) renderDueClass();
+
+  } catch (error) {
+    msg.textContent = 'Erreur : ' + error.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Ouvrir l’évaluation';
+  }
 };
-document.getElementById('closeEvalBtn').onclick=()=>{storageRemove('topmath_open_eval');document.getElementById('openMsg').textContent='Toutes les évaluations sont fermées.';if(selectedDueClass)renderDueClass()};
+
+document.getElementById('closeEvalBtn').onclick = async () => {
+  const btn = document.getElementById('closeEvalBtn');
+  const msg = document.getElementById('openMsg');
+
+  try {
+    if (!D1_PEDAGOGICAL_ROSTER) {
+      throw new Error('Connexion au roster D1 indisponible.');
+    }
+
+    const target = os.value;
+    const className = oc.value;
+
+    const cls = (D1_PEDAGOGICAL_ROSTER.classes || [])
+      .find(c => c.name === className);
+
+    if (!cls) throw new Error('Classe introuvable dans D1.');
+
+    if (!confirm(
+      target === 'ALL'
+        ? 'Fermer toutes les évaluations ouvertes de cette classe ?'
+        : 'Fermer les évaluations ouvertes pour cet élève ?'
+    )) return;
+
+    btn.disabled = true;
+    btn.textContent = 'Fermeture en cours…';
+
+    const response = await fetch('/api/open-evaluation', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'close',
+        school_year_id: D1_PEDAGOGICAL_ROSTER.year.id,
+        class_id: cls.id,
+        student_id: target === 'ALL' ? null : target
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.ok) {
+      throw new Error(data.error || 'Impossible de fermer les évaluations.');
+    }
+
+    await refreshOpenEvaluationsD1();
+
+    msg.textContent = data.closed +
+      ' évaluation(s) fermée(s) dans Cloudflare D1.';
+
+    if (selectedDueClass) renderDueClass();
+
+  } catch (error) {
+    msg.textContent = 'Erreur : ' + error.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Fermer les évaluations';
+  }
+};
 
 // Gestion des années scolaires — navigation Année > Classe > Élèves
 let importRows=[];
