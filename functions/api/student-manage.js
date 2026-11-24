@@ -25,7 +25,7 @@ export async function onRequestPost({request,env}){
       ]);
       return jsonResponse({ok:true,action,student_id:studentId,access_revoked:true});
     }
-    if(clean(body?.confirmation)!=='SUPPRIMER')return jsonResponse({ok:false,error:'Confirmation définitive requise.'},400);
+    if(clean(body?.confirmation)!=='DOUBLE_CONFIRMATION_VALIDEE')return jsonResponse({ok:false,error:'Confirmation définitive requise.'},400);
 
     // Toutes les années et les évaluations connues sont concernées.
     // D1 batch est transactionnel : un échec de contrainte annule toute la suppression.
