@@ -12,6 +12,7 @@ on:
       - 'gestion-eleves-retrait.html'
       - 'tests/student-withdraw.test.mjs'
       - 'tests/teacher-withdraw-link.test.mjs'
+      - 'tests/withdraw-page.test.mjs'
       - '.github/workflows/test-student-withdraw.yml'
   workflow_dispatch:
 permissions:
@@ -34,3 +35,5 @@ jobs:
         run: node tests/student-withdraw.test.mjs
       - name: Tester le lien enseignant sans régression
         run: node tests/teacher-withdraw-link.test.mjs
+      - name: Tester le formulaire de retrait
+        run: node tests/withdraw-page.test.mjs
