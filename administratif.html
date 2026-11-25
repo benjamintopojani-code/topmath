@@ -343,8 +343,6 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
 #courseTime{margin:0;font-size:.88rem}
 .course-lesson{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 8px;align-items:center}
 .course-lesson label{grid-column:1/-1;margin:0}
-#courseStudents .attendance-table th,#courseStudents .attendance-table td{padding-block:0}
-#courseStudents .attendance-table thead th{padding-block:5px}
 #courseLog .attendance-table-wrap{margin-top:6px}
 
 #courseWeekPanel{box-sizing:border-box;width:100%;padding:12px;border:1px solid #c1d6ed;border-radius:14px}
@@ -398,6 +396,13 @@ body:not(.section-page) #adminNav .tile small{font-size:.95rem}
 #adminMonthDays button[aria-pressed="true"]{outline:2px solid #17467e;outline-offset:-3px;font-weight:800}
 .admin-month-legend{display:flex;align-items:center;gap:6px;margin-bottom:0;font-size:.85rem}
 .admin-month-legend span{width:16px;height:16px;border-radius:50%;background:#e1efff;border:1px solid #5594d1}
+#courseStudents{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3px 10px}
+.course-pupil{height:44px;box-sizing:border-box;display:grid;grid-template-columns:minmax(0,1fr) repeat(3,44px);align-items:center;padding-left:8px;border:1px solid #dce6f2;border-radius:7px;background:#f8fbff}
+.course-pupil-name{font-size:.88rem;font-weight:650;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.05}
+.course-attendance-legend{margin:5px 0;font-size:.8rem;color:#46627e}
+#courseAttendancePages[hidden]{display:none!important}
+#courseAttendancePage{font-size:.88rem}
+@media(max-width:650px){#courseStudents{grid-template-columns:1fr}}
 </style></head><body>
 <header><strong id="topbarTitle">TOP'MATH <span class="topbar-divider">·</span> ADMINISTRATIF</strong><div class="topbar-controls"><button id="topSettingsBtn" type="button" aria-label="Ouvrir les réglages" aria-expanded="false" title="Réglages">⚙️</button><a class="topbar-back" href="enseignant.html" aria-label="Retour à l’espace enseignant" title="Retour à l’espace enseignant">←</a></div></header>
 <main>
@@ -623,7 +628,12 @@ function renderCourseLog(view, scheduleClasses){
     '<h2 id="courseTitle" tabindex="-1"></h2><p id="courseTime" class="muted"></p>'+
     '<div class="course-lesson"><label for="courseLesson">Leçon du jour</label><textarea id="courseLesson" rows="1" required></textarea>'+
     '<button type="button" id="courseAllPresent">Tous présents</button></div>'+
-    '<div class="attendance-table-wrap" id="courseStudents"></div>'+
+    '<p class="course-attendance-legend">✓ Présent · ✕ Absent · S Stage</p>'+
+    '<div id="courseStudents" class="course-attendance-grid"></div>'+
+    '<div id="courseAttendancePages" class="actions" hidden>'+
+    '<button id="courseAttendancePrev" type="button" aria-label="Page précédente de l’appel">←</button>'+
+    '<span id="courseAttendancePage" aria-live="polite"></span>'+
+    '<button id="courseAttendanceNext" type="button" aria-label="Page suivante de l’appel">→</button></div>'+
     '<div class="actions"><button type="submit" class="btn-primary">Valider le cours</button></div></form>'+
     '<p id="courseFeedback" role="status" aria-live="polite"></p>'+
     '<dialog id="registerDialog" aria-labelledby="registerTitle"><h3 id="registerTitle"></h3>'+
@@ -648,6 +658,37 @@ function renderCourseLog(view, scheduleClasses){
     $('courseTime').textContent=[courseDate.split('-').reverse().join('/'),'Période '+coursePeriod,
       courseSlot.start&&courseSlot.end?courseSlot.start+' – '+courseSlot.end:''].filter(Boolean).join(' · ');
   }
+  let firstStudent=0, pageSize=1;
+  const previousPage=$('courseAttendancePrev'),nextPage=$('courseAttendanceNext');
+  function renderAttendance(){
+    const columns=window.matchMedia('(max-width:650px)').matches?1:2;
+    const available=window.innerHeight-rows.getBoundingClientRect().top;
+    const fit=reserve=>Math.max(1,Math.min(9,Math.floor((available-reserve)/47)));
+    const fullSize=fit(115)*columns;
+    pageSize=students.length<=fullSize?fullSize:fit(161)*columns;
+    firstStudent=Math.floor(Math.min(firstStudent,Math.max(0,students.length-1))/pageSize)*pageSize;
+    rows.innerHTML=students.length?students.slice(firstStudent,firstStudent+pageSize).map((person,index)=>{
+      const i=firstStudent+index;
+      return '<div class="course-pupil" role="group" aria-label="'+esc(person.name)+'"><span class="course-pupil-name" title="'+esc(person.name)+'">'+esc(person.name)+'</span>'+
+        selectors.map(([code,label])=>'<label class="course-status"><input type="radio" data-attendance-index="'+i+'" name="course-pupil-'+i+'" value="'+code+'" aria-label="'+esc(label+' : '+person.name)+'"'+(person.status===code?' checked':'')+'><span aria-hidden="true">'+marks[code]+'</span></label>').join('')+'</div>';
+    }).join(''):'<p>Aucun élève dans cette classe pour cette fiche.</p>';
+    $('courseAttendancePages').hidden=students.length<=pageSize;
+    previousPage.disabled=firstStudent===0;
+    nextPage.disabled=firstStudent+pageSize>=students.length;
+    const filled=students.filter(person=>person.status).length;
+    $('courseAttendancePage').textContent=(firstStudent+1)+'–'+Math.min(firstStudent+pageSize,students.length)+' / '+students.length+' · '+filled+' renseignés';
+  }
+  previousPage.onclick=()=>{firstStudent-=pageSize;renderAttendance();};
+  nextPage.onclick=()=>{firstStudent+=pageSize;renderAttendance();};
+  rows.addEventListener('change',event=>{
+    const input=event.target;
+    if(!input.matches('[data-attendance-index]')||!input.checked)return;
+    students[Number(input.dataset.attendanceIndex)].status=input.value;
+    dirty=true;
+    const filled=students.filter(person=>person.status).length;
+    $('courseAttendancePage').textContent=(firstStudent+1)+'–'+Math.min(firstStudent+pageSize,students.length)+' / '+students.length+' · '+filled+' renseignés';
+  });
+  window.addEventListener('resize',()=>{if(!entry.hidden)renderAttendance();});
   function loadEntry(){
     if(!selected)return;
     showDateAndTime();
@@ -662,11 +703,8 @@ function renderCourseLog(view, scheduleClasses){
         ? records.map(person=>({id:person.student_id,name:person.name,status:person.status||''}))
         : roster.filter(person=>(selected.ids||[selected.id]).some(id=>String(person.class_id)===String(id)))
           .map(person=>({id:person.student_id,name:[person.last_name,person.first_name].filter(Boolean).join(' '),status:''}));
-      rows.innerHTML=students.length?'<table class="attendance-table"><thead><tr><th scope="col">Élève</th>'+
-        selectors.map(([,label])=>'<th scope="col">'+label+'</th>').join('')+'</tr></thead><tbody>'+
-        students.map((person,i)=>'<tr><th scope="row">'+esc(person.name)+'</th>'+
-          selectors.map(([code,label])=>'<td><label class="course-status"><input type="radio" name="course-pupil-'+i+'" value="'+code+'" aria-label="'+esc(label+' : '+person.name)+'"'+(person.status===code?' checked':'')+'><span aria-hidden="true">'+marks[code]+'</span></label></td>').join('')+
-          '</tr>').join('')+'</tbody></table>':'<p>Aucun élève dans cette classe pour cette fiche.</p>';
+      firstStudent=0;
+      renderAttendance();
       $('courseAllPresent').disabled=!students.length;
       if(students.some(person=>person.status==='R'))feedback.textContent='Les retards déjà enregistrés sont conservés si tu laisses leur ligne inchangée.';
       dirty=false;
@@ -674,15 +712,18 @@ function renderCourseLog(view, scheduleClasses){
   }
   function discard(){return !dirty||confirm('Quitter cette fiche sans enregistrer les modifications ?');}
   entry.addEventListener('input',()=>{dirty=true;});
-  $('courseAllPresent').onclick=()=>{rows.querySelectorAll('input[value="P"]').forEach(input=>{input.checked=true;});dirty=true;};
+  $('courseAllPresent').onclick=()=>{for(const person of students)person.status='P';dirty=true;renderAttendance();};
   entry.onsubmit=event=>{
     event.preventDefault();
     if(!selected||!courseDate||!coursePeriod||!lesson.value.trim()){feedback.textContent='Renseigne la date, la période et la leçon.';return;}
-    const entries=students.map((person,i)=>{
-      const status=rows.querySelector('input[name="course-pupil-'+i+'"]:checked')?.value||person.status;
-      return {name:person.name,status,...(person.id?{student_id:person.id}:{})};
-    });
-    if(entries.some(person=>!person.status)){feedback.textContent='Choisis un statut pour chaque élève.';return;}
+    const missing=students.findIndex(person=>!person.status);
+    if(missing!==-1){
+      firstStudent=missing;renderAttendance();
+      feedback.textContent='Choisis un statut pour chaque élève.';
+      rows.querySelector('[data-attendance-index="'+missing+'"]')?.focus();
+      return;
+    }
+    const entries=students.map(({name,status,id})=>({name,status,...(id?{student_id:id}:{})}));
     if(isSimulation){feedback.textContent='Simulation terminée. Aucune fiche enregistrée.';dirty=false;return;}
     try{
       const previous=localStorage.getItem(journalKey);
