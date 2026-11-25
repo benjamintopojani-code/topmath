@@ -396,16 +396,16 @@ body:not(.section-page) #adminNav .tile small{font-size:.95rem}
 #adminMonthDays button[aria-pressed="true"]{outline:2px solid #17467e;outline-offset:-3px;font-weight:800}
 .admin-month-legend{display:flex;align-items:center;gap:6px;margin-bottom:0;font-size:.85rem}
 .admin-month-legend span{width:16px;height:16px;border-radius:50%;background:#e1efff;border:1px solid #5594d1}
-#courseStudents{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3px 10px}
-.course-pupil{min-height:34px;box-sizing:border-box;display:grid;grid-template-columns:minmax(0,1fr) repeat(3,34px);align-items:center;padding-left:8px;border:1px solid #dce6f2;border-radius:7px;background:#f8fbff}
+#courseStudents{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px 6px}
+.course-pupil{min-height:34px;box-sizing:border-box;display:grid;grid-template-columns:minmax(0,1fr) repeat(3,30px);align-items:center;padding-left:5px;border:1px solid #dce6f2;border-radius:7px;background:#f8fbff}
 .course-pupil-name{font-size:.88rem;font-weight:650;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.05}
 .course-attendance-legend{margin:5px 0;font-size:.8rem;color:#46627e}
 #courseAttendanceCount{margin:5px 0;font-size:.8rem;color:#46627e}
 #courseAttendanceCount:empty{display:none}
 #courseStudents .course-status{min-width:0;min-height:32px}
 #courseStudents .course-status span{width:26px;height:26px;font-size:1rem;border-radius:6px}
-@media(min-width:960px){#courseStudents.course-attendance-large{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media(max-width:650px){#courseStudents{grid-template-columns:1fr}}
+@media(max-width:700px){#courseStudents{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:480px){#courseStudents{grid-template-columns:1fr}}
 </style></head><body>
 <header><strong id="topbarTitle">TOP'MATH <span class="topbar-divider">·</span> ADMINISTRATIF</strong><div class="topbar-controls"><button id="topSettingsBtn" type="button" aria-label="Ouvrir les réglages" aria-expanded="false" title="Réglages">⚙️</button><a class="topbar-back" href="enseignant.html" aria-label="Retour à l’espace enseignant" title="Retour à l’espace enseignant">←</a></div></header>
 <main>
@@ -665,7 +665,6 @@ function renderCourseLog(view, scheduleClasses){
       : '';
   }
   function renderAttendance(){
-    rows.classList.toggle('course-attendance-large',students.length>=17);
     rows.innerHTML=students.length?students.map((person,i)=>{
       return '<div class="course-pupil" role="group" aria-label="'+esc(person.name)+'"><span class="course-pupil-name" title="'+esc(person.name)+'">'+esc(person.name)+'</span>'+
         selectors.map(([code,label])=>'<label class="course-status"><input type="checkbox" data-attendance-index="'+i+'" name="course-pupil-'+i+'" value="'+code+'" aria-label="'+esc(label+' : '+person.name)+'"'+(person.status===code?' checked':'')+'><span aria-hidden="true">'+marks[code]+'</span></label>').join('')+'</div>';
