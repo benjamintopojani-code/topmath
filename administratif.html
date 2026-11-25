@@ -347,8 +347,7 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
 #courseStudents .attendance-table thead th{padding-block:5px}
 #courseLog .attendance-table-wrap{margin-top:6px}
 
-#courseWeekDialog{box-sizing:border-box;width:min(990px,calc(100% - 20px));max-height:90vh;padding:12px;border:1px solid #c1d6ed;border-radius:14px}
-#courseWeekDialog::backdrop{background:#102c5477}
+#courseWeekPanel{box-sizing:border-box;width:100%;padding:12px;border:1px solid #c1d6ed;border-radius:14px}
 #courseWeekTitle{margin:0;font-size:1.1rem}
 .course-week-controls{align-items:center}
 .course-week-table{width:100%;min-width:410px;border-spacing:3px;text-align:center;table-layout:fixed;font-size:.82rem}
@@ -361,10 +360,12 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
 .course-week-table td small{font-size:.68rem;line-height:1.1}
 .course-week-block{display:grid;place-content:center;min-height:38px;border-radius:7px;color:#5a6471;font-size:.8rem}
 .course-week-table thead .course-week-today{background:#d5e8ff;color:#17467e}
-#courseWeekDialog>.course-heading{background:#122742;color:white;padding:8px 10px;border-radius:9px}
-#courseWeekDialog>.course-heading button{min-height:34px;padding:4px 9px}
-.course-manual summary{cursor:pointer;font-size:.9rem}
+#courseWeekPanel>.course-heading{background:#122742;color:white;padding:8px 10px;border-radius:9px}
+#courseWeekPanel>.course-heading button{min-height:34px;padding:4px 9px}
 #courseWeekMessage:empty{display:none}
+#courseWeekPanel[hidden],#courseRegister[hidden]{display:none!important}
+#courseBack{margin-bottom:8px}
+#courseWeekPanel .attendance-table-wrap{overflow-x:auto}
 </style></head><body>
 <header><strong id="topbarTitle">TOP'MATH <span class="topbar-divider">·</span> ADMINISTRATIF</strong><div class="topbar-controls"><button id="topSettingsBtn" type="button" aria-label="Ouvrir les réglages" aria-expanded="false" title="Réglages">⚙️</button><a class="topbar-back" href="enseignant.html" aria-label="Retour à l’espace enseignant" title="Retour à l’espace enseignant">←</a></div></header>
 <main>
@@ -536,7 +537,7 @@ function setClassSettingsOpen(open){
 function clock(){const now=new Date();$('time').textContent=isSimulation?days[simulatedDay]+' · '+simulatedTime+' (heure fictive)':new Intl.DateTimeFormat('fr-BE',{weekday:'long',hour:'2-digit',minute:'2-digit'}).format(now);const prev=autoSlot?.id;autoSlot=determine();if(prev!==autoSlot?.id)render();else updateHeader();}
 function updateHeader(){const c=current(),slot=activeCourse();if(!$('classSettings').hidden&&$('classSettings').dataset.currentClasse!==c)populateClassSettings();$('adminClassBanner').querySelector('.admin-class-caption').textContent=override?'CLASSE SÉLECTIONNÉE':'CLASSE EN COURS';$('selectedClassActions').hidden=!override;$('adminClassTitle').textContent=c||'Aucun cours en cours';$('adminClassPeriod').textContent=selectedSlot?days[selectedSlot.day]+' · Période '+selectedSlot.period+' · Consultation manuelle':override?'Classe sélectionnée manuellement':autoSlot?'Période '+(autoSlot.period||''):'Aucun cours à cette heure';$('simulationNotice').classList.toggle('hidden',!isSimulation);$('currentClass').textContent=c||'Aucun cours identifié';$('status').textContent=override?'Consultation manuelle':autoSlot?'Cours en cours':'Aucun cours en cours';$('currentSlot').textContent=selectedSlot?days[selectedSlot.day]+' · Période '+selectedSlot.period:override?'Classe sélectionnée manuellement':autoSlot?autoSlot.start+' – '+autoSlot.end+' · '+days[autoSlot.day]:'Horaire non renseigné ou période libre';}
 function external(url,label){const safe=safeUrl(url);return safe?'<a class="btn btn-primary" href="'+esc(safe)+'" target="_blank" rel="noopener noreferrer">'+esc(label)+' ↗</a>':'<p class="notice">Aucun lien configuré pour cette classe.</p>';}
-function renderView(){const c=current(),v=$('view');if(tab==='carnet'){if(!v.querySelector('#courseLog'))renderCourseLog(v,activeCourse(),classes());return;}if(!c){v.innerHTML='<h2>Aucun cours en cours</h2><p class="muted">La classe s’affichera automatiquement pendant une période de cours. En dehors de l’horaire, le tableau des présences reste indisponible.</p><a class="btn" href="administratif.html" target="_top">Retour à Administratif</a>';return;}
+function renderView(){const c=current(),v=$('view');if(tab==='carnet'){if(!v.querySelector('#courseLog'))renderCourseLog(v,classes());return;}if(!c){v.innerHTML='<h2>Aucun cours en cours</h2><p class="muted">La classe s’affichera automatiquement pendant une période de cours. En dehors de l’horaire, le tableau des présences reste indisponible.</p><a class="btn" href="administratif.html" target="_top">Retour à Administratif</a>';return;}
 if(tab==='journal'){window.TopMathJournal.render(c,activeCourse());}
 if(tab==='presences'){if(isSimulation){v.innerHTML='<div class="attendance-course-head"><div class="attendance-course-eyebrow">CLASSE EN COURS · SIMULATION</div><h2>'+esc(c)+'</h2><div class="muted small">Cours de '+esc(activeCourse()?.start||'')+' à '+esc(activeCourse()?.end||'')+'</div></div><div id="simRows"></div><div class="actions"><button type="button" class="btn-primary" id="simSave">Tester l’enregistrement</button></div><p id="simResult" class="muted small"></p>';const fictifs=['Élève A','Élève B','Élève C','Élève D'];$('simRows').innerHTML='<div class="attendance-table-wrap"><table class="attendance-table"><thead><tr><th scope="col">Élèves</th><th scope="col">Présent</th><th scope="col">Absent</th><th scope="col">Stage</th></tr></thead><tbody>'+fictifs.map((n,i)=>'<tr><th scope="row">'+n+'</th>'+[['P','Présent'],['A','Absent'],['S','Stage']].map(([v,l])=>'<td><label class="attendance-cell"><input type="checkbox" data-sim-att="'+i+'" value="'+v+'" aria-label="'+l+' : '+n+'"></label></td>').join('')+'</tr>').join('')+'</tbody></table></div>';$('simRows').addEventListener('change',e=>{const x=e.target.closest('input[data-sim-att]');if(!x||!x.checked)return;$('simRows').querySelectorAll('input[data-sim-att]').forEach(y=>{if(y!==x&&y.dataset.simAtt===x.dataset.simAtt)y.checked=false;});});$('simSave').addEventListener('click',()=>{const chosen=[...document.querySelectorAll('[data-sim-att]:checked')];$('simResult').textContent='Simulation réussie : '+chosen.filter(x=>x.value==='P').length+' présents, '+chosen.filter(x=>x.value==='A').length+' absent(s), '+chosen.filter(x=>x.value==='S').length+' en stage. Aucune donnée conservée.';});}else window.TopMathAttendance.render(c,activeCourse());}
 if(tab==='rapports'){const arr=data.reports.filter(x=>x.classe===c);v.innerHTML='<div class="flex"><h2>Rapports · '+esc(c)+'</h2><span class="pill">'+arr.filter(x=>!x.done).length+' à compléter</span></div>'+(arr.length?arr.map(r=>'<article class="task"><div class="flex"><strong>'+esc(r.student)+'</strong><span class="pill">'+(r.done?'Marqué terminé':'À compléter')+'</span></div><p>'+esc(r.title)+'</p><div class="actions">'+external(r.url,'Ouvrir le document')+'<button type="button" data-toggle="'+esc(r.id)+'">'+(r.done?'Marquer à faire':'Marquer terminé')+'</button><button type="button" data-remove-report="'+esc(r.id)+'">Retirer</button></div></article>').join(''):'<p class="muted">Aucun suivi demandé pour cette classe.</p>')+'<p class="muted small">Le statut « terminé » est un suivi personnel : il ne confirme pas l’envoi du formulaire officiel.</p>';}}
@@ -544,27 +545,22 @@ function render(){if(selectedSlot){selectedSlot=data.slots.find(x=>Number(x.day)
 updateHeader();if($('classSettings')&&!$('classSettings').hidden)syncClassReportForm(current());document.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===tab?'true':'false'));renderView();
 }
 
-function renderCourseLog(view, slot, scheduleClasses){
+function renderCourseLog(view, scheduleClasses){
   const journalKey='topmath-journal-v1', attendanceKey='topmath-presences-v1';
   const today=new Date();
   const dateValue=[today.getFullYear(),String(today.getMonth()+1).padStart(2,'0'),String(today.getDate()).padStart(2,'0')].join('-');
   const marks={P:'✓',A:'✕',S:'S',R:'R'};
   const selectors=[['P','Présent'],['A','Absent'],['S','Stage']];
-  view.innerHTML='<section id="courseLog"><div class="course-heading"><div><h2>Carnet de bord</h2><p id="courseTime" class="muted"></p></div>'+
-    '<button id="courseCalendar" type="button" aria-haspopup="dialog" aria-label="Ouvrir l’horaire" title="Ouvrir l’horaire">📅</button></div>'+
-    '<dialog id="courseWeekDialog" aria-labelledby="courseWeekTitle"><div class="course-heading"><h3 id="courseWeekTitle">Mon horaire</h3>'+
-    '<form method="dialog"><button type="submit">Fermer</button></form></div>'+
+  view.innerHTML='<section id="courseLog">'+
+    '<div id="courseWeekPanel" aria-labelledby="courseWeekTitle"><div class="course-heading"><h2 id="courseWeekTitle">Mon horaire</h2></div>'+
     '<div class="actions course-week-controls"><button id="coursePrevWeek" type="button" aria-label="Semaine précédente">←</button>'+
     '<strong id="courseWeekLabel" aria-live="polite"></strong><button id="courseNextWeek" type="button" aria-label="Semaine suivante">→</button>'+
     '<button id="courseThisWeek" type="button">Cette semaine</button></div>'+
-    '<div id="courseWeekGrid" class="attendance-table-wrap"></div><p id="courseWeekMessage" role="status"></p>'+
-    '<details class="course-manual"><summary>Choisir une date et une période manuellement</summary>'+
-    '<div class="actions"><label for="courseDate">Date</label><input type="date" id="courseDate" required>'+
-    '<label for="coursePeriod">Période</label><select id="coursePeriod"></select></div></details></dialog>'+
-    '<div id="courseClasses" class="actions" role="group" aria-label="Classes"></div>'+
+    '<div id="courseWeekGrid" class="attendance-table-wrap"></div><p id="courseWeekMessage" role="status"></p></div>'+
     '<div class="actions"><button id="courseJournalPdf" type="button">Télécharger le journal de classe en PDF</button>'+
-    '<button id="courseRegister" type="button" disabled>Registre des présences</button></div>'+
-    '<form id="courseEntry" hidden><h3 id="courseTitle"></h3>'+
+    '<button id="courseRegister" type="button" hidden>Registre des présences</button></div>'+
+    '<form id="courseEntry" hidden><button id="courseBack" type="button">← Retour à l’horaire</button>'+
+    '<h2 id="courseTitle" tabindex="-1"></h2><p id="courseTime" class="muted"></p>'+
     '<div class="course-lesson"><label for="courseLesson">Leçon du jour</label><textarea id="courseLesson" rows="1" required></textarea>'+
     '<button type="button" id="courseAllPresent">Tous présents</button></div>'+
     '<div class="attendance-table-wrap" id="courseStudents"></div>'+
@@ -576,8 +572,9 @@ function renderCourseLog(view, slot, scheduleClasses){
     '<button type="button" id="registerPdf">Télécharger les présences en PDF</button>'+
     '<button type="button" id="registerClose">Fermer</button></div>'+
     '<div class="attendance-table-wrap" id="registerTable"></div></dialog></section>';
-  const date=$('courseDate'),period=$('coursePeriod'),entry=$('courseEntry'),lesson=$('courseLesson');
-  const feedback=$('courseFeedback'), rows=$('courseStudents'),buttons=$('courseClasses');
+  const entry=$('courseEntry'),lesson=$('courseLesson');
+  const feedback=$('courseFeedback'), rows=$('courseStudents');
+  let courseDate='',coursePeriod='',courseSlot=null;
   const register=$('registerDialog'), from=$('registerFrom'),to=$('registerTo');
   let selected=null, students=[], roster=[], dirty=false;
   const read=key=>{
@@ -585,31 +582,17 @@ function renderCourseLog(view, slot, scheduleClasses){
     if(!value||typeof value!=='object'||Array.isArray(value))throw Error('Données locales illisibles.');
     return value;
   };
-  const keyFor=()=>JSON.stringify([date.value,period.value,selected.name]);
+  const keyFor=()=>JSON.stringify([courseDate,coursePeriod,selected.name]);
   const normalized=name=>String(name||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/OBSERVATION/g,'OBS').replace(/HORTICULTURE/g,'HORT').replace(/MACONNERIE/g,'MAC').replace(/[^A-Z0-9]/g,'').replace(/^P(?=[123])/,'');
-  date.value=dateValue;
-  for(let i=1;i<=9;i++)period.add(new Option(String(i),String(i)));
-  period.add(new Option('Choisir…',''),0);
-  period.value=String(slot?.period||'');
   function showDateAndTime(){
-    const day=date.value?new Date(date.value+'T12:00:00').getDay():null;
-    const course=data.slots.find(item=>Number(item.day)===day&&String(item.period)===period.value&&
-      normalized(item.classe)===normalized(selected?.name||slot?.classe));
-    $('courseTime').textContent=[
-      date.value.split('-').reverse().join('/'),
-      period.value?'Période '+period.value:'Période à choisir',
-      course?.start&&course.end?course.start+' – '+course.end:''
-    ].filter(Boolean).join(' · ');
+    $('courseTime').textContent=[courseDate.split('-').reverse().join('/'),'Période '+coursePeriod,
+      courseSlot.start&&courseSlot.end?courseSlot.start+' – '+courseSlot.end:''].filter(Boolean).join(' · ');
   }
-  showDateAndTime();
-
   function loadEntry(){
-    showDateAndTime();
     if(!selected)return;
+    showDateAndTime();
     feedback.textContent='';
-    $('courseRegister').disabled=false;
-    entry.hidden=!date.value||!period.value;
-    if(entry.hidden){feedback.textContent='Choisis la date et la période avec le calendrier.';return;}
+    entry.hidden=false;
     $('courseTitle').textContent=selected.label;
     try{
       const key=keyFor(), journal=read(journalKey), saved=read(attendanceKey).sessions?.[key];
@@ -630,16 +613,11 @@ function renderCourseLog(view, slot, scheduleClasses){
     }catch(error){entry.hidden=true;feedback.textContent='Impossible de lire la fiche : '+error.message;}
   }
   function discard(){return !dirty||confirm('Quitter cette fiche sans enregistrer les modifications ?');}
-  let previousDate=date.value,previousPeriod=period.value;
-  for(const control of [date,period])control.addEventListener('change',()=>{
-    if(!discard()){date.value=previousDate;period.value=previousPeriod;return;}
-    previousDate=date.value;previousPeriod=period.value;loadEntry();
-  });
   entry.addEventListener('input',()=>{dirty=true;});
   $('courseAllPresent').onclick=()=>{rows.querySelectorAll('input[value="P"]').forEach(input=>{input.checked=true;});dirty=true;};
   entry.onsubmit=event=>{
     event.preventDefault();
-    if(!selected||!date.value||!period.value||!lesson.value.trim()){feedback.textContent='Renseigne la date, la période et la leçon.';return;}
+    if(!selected||!courseDate||!coursePeriod||!lesson.value.trim()){feedback.textContent='Renseigne la date, la période et la leçon.';return;}
     const entries=students.map((person,i)=>{
       const status=rows.querySelector('input[name="course-pupil-'+i+'"]:checked')?.value||person.status;
       return {name:person.name,status,...(person.id?{student_id:person.id}:{})};
@@ -650,8 +628,8 @@ function renderCourseLog(view, slot, scheduleClasses){
       const previous=localStorage.getItem(journalKey);
       const journal=read(journalKey),attendance=read(attendanceKey),key=keyFor(),updated=new Date().toISOString();
       journal.entries??={};attendance.sessions??={};
-      journal.entries[key]={...journal.entries[key],date:date.value,period:period.value,classe:selected.name,title:lesson.value.trim(),updated};
-      attendance.sessions[key]={date:date.value,period:period.value,classe:selected.name,entries,updated};
+      journal.entries[key]={...journal.entries[key],date:courseDate,period:coursePeriod,classe:selected.name,title:lesson.value.trim(),updated};
+      attendance.sessions[key]={date:courseDate,period:coursePeriod,classe:selected.name,entries,updated};
       const journalData=JSON.stringify(journal),attendanceData=JSON.stringify(attendance);
       localStorage.setItem(journalKey,journalData);
       try{localStorage.setItem(attendanceKey,attendanceData);}
@@ -660,7 +638,7 @@ function renderCourseLog(view, slot, scheduleClasses){
     }catch(error){feedback.textContent='Impossible d’enregistrer le cours : '+error.message;}
   };
   $('courseJournalPdf').onclick=()=>{
-    try{window.TopMathJournalPdf.exportSchoolYear(date.value||dateValue,read(journalKey).entries||{});}
+    try{window.TopMathJournalPdf.exportSchoolYear(courseDate||dateValue,read(journalKey).entries||{});}
     catch(error){feedback.textContent='PDF du journal : '+error.message;}
   };
   function filteredSessions(){
@@ -687,8 +665,8 @@ function renderCourseLog(view, slot, scheduleClasses){
     try{window.TopMathAttendancePdf.download(selected.name,[],filteredSessions());}
     catch(error){$('registerTable').textContent='PDF des présences : '+error.message;}
   };
-  const weekDialog=$('courseWeekDialog'),weekGrid=$('courseWeekGrid');
-  let weekStart, classItems=[];
+  const weekPanel=$('courseWeekPanel'),weekGrid=$('courseWeekGrid');
+  let weekStart, classItems=[], rosterLoading=!isSimulation;
   const isoDay=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
   const moveDay=(day,delta)=>new Date(day.getFullYear(),day.getMonth(),day.getDate()+delta,12);
   const monday=day=>moveDay(day,-((day.getDay()+6)%7));
@@ -704,15 +682,6 @@ function renderCourseLog(view, slot, scheduleClasses){
     if(classes.length===1)return classes[0];
     return {name,label:name,ids:classes.map(item=>item.id)};
   }
-  function chooseClass(item){
-    selected=item;
-    for(const [index,control] of Array.from(buttons.children).entries()){
-      const active=classItems[index]===item;
-      control.classList.toggle('btn-primary',active);
-      control.setAttribute('aria-pressed',String(active));
-    }
-    loadEntry();
-  }
   function renderWeek(){
     const schedule=data.slots.filter(item=>item.classe&&/^[1-9]$/.test(String(item.period))&&Number(item.day)>=0&&Number(item.day)<=6);
     const weekdays=[1,2,3,4,5];
@@ -724,7 +693,7 @@ function renderCourseLog(view, slot, scheduleClasses){
     const classColors={OBSB:'#dceafe',OBSE:'#d4efea','2TB':'#ffefcf','2HORT':'#e2efd9','3MAC':'#ece5fa','3MAC3AB':'#ece5fa',TC:'#ebedf0',DLC:'#ebedf0'};
     const lastDay=moveDay(weekStart,6);
     $('courseWeekLabel').textContent=shortDate(weekStart)+' – '+shortDate(lastDay)+' '+lastDay.getFullYear();
-    $('courseWeekMessage').textContent=schedule.length?'':'Aucun cours dans l’horaire. Tu peux choisir une date et une période manuellement.';
+    $('courseWeekMessage').textContent=schedule.length?'':'Aucun cours dans l’horaire. Ajoute tes cours dans les réglages d’Administratif.';
     const periods=Array.from({length:9},(_,index)=>String(index+1));
     weekGrid.innerHTML=periods.length?'<table class="course-week-table"><thead><tr><th scope="col">Pér.</th>'+
       dates.map(day=>'<th scope="col"'+(isoDay(day)===dateValue?' class="course-week-today"':'')+'>'+labels[day.getDay()]+'<br>'+esc(shortDate(day))+'</th>').join('')+'</tr></thead><tbody>'+
@@ -741,45 +710,44 @@ function renderCourseLog(view, slot, scheduleClasses){
         '</td>').join('')+'</tr>').join('')+'</tbody></table>':'';
     for(const button of weekGrid.querySelectorAll('[data-course-slot]'))button.onclick=()=>{
       const course=schedule[Number(button.dataset.courseSlot)],day=dates[Number(button.dataset.courseDay)];
+      if(rosterLoading){$('courseWeekMessage').textContent='Chargement des classes…';return;}
       const item=findClass(course.classe);
       if(!item){$('courseWeekMessage').textContent='Classe à vérifier dans Top’Math : '+course.classe;return;}
       if(!discard())return;
-      date.value=previousDate=isoDay(day);
-      period.value=previousPeriod=String(course.period);
-      chooseClass(item);
-      weekDialog.close();
+      courseDate=isoDay(day);
+      coursePeriod=String(course.period);
+      courseSlot=course;
+      selected=item;
+      dirty=false;
+      for(const control of weekGrid.querySelectorAll('[data-course-slot]'))control.dataset.selected=String(control===button);
+      weekPanel.hidden=true;
+      loadEntry();
+      $('courseRegister').hidden=entry.hidden;
+      if(entry.hidden)weekPanel.hidden=false;
+      else $('courseTitle').focus();
     };
   }
-  $('courseCalendar').onclick=()=>{
-    weekStart=monday(date.value?new Date(date.value+'T12:00:00'):today);
-    renderWeek();
-    weekDialog.showModal();
+  $('courseBack').onclick=()=>{
+    if(!discard())return;
+    dirty=false;
+    entry.hidden=true;
+    $('courseRegister').hidden=true;
+    feedback.textContent='';
+    weekPanel.hidden=false;
+    const courseButton=Array.from(weekGrid.querySelectorAll('[data-course-slot]')).find(button=>button.dataset.selected==='true');
+    (courseButton||$('courseThisWeek')).focus();
   };
+  weekStart=monday(today);
+  renderWeek();
   $('coursePrevWeek').onclick=()=>{weekStart=moveDay(weekStart,-7);renderWeek();};
   $('courseNextWeek').onclick=()=>{weekStart=moveDay(weekStart,7);renderWeek();};
   $('courseThisWeek').onclick=()=>{weekStart=monday(today);renderWeek();};
 
-  function showClasses(items){
-    classItems=items;
-    buttons.replaceChildren();
-    for(const item of items){
-      const button=document.createElement('button');
-      button.type='button';button.textContent=item.label;button.setAttribute('aria-pressed','false');
-      button.onclick=()=>{
-        if(selected===item||!discard())return;
-        chooseClass(item);
-      };
-      buttons.append(button);
-    }
-    const active=items.findIndex(item=>item.name===slot?.classe||normalized(item.label)===normalized(slot?.classe));
-    if(active>=0)buttons.children[active].click();
-    else feedback.textContent=items.length?'Choisis ta classe.':'Aucune classe disponible.';
-    if(data.slots.length)$('courseCalendar').click();
-  }
   if(isSimulation){
-    const name=slot?.classe||scheduleClasses[0]||'Classe test';
-    roster=['Élève A','Élève B','Élève C'].map((first_name,i)=>({first_name,student_id:String(i),class_id:'demo'}));
-    showClasses([{id:'demo',name,label:name}]);
+    classItems=[...new Set(data.slots.map(item=>item.classe).filter(Boolean))]
+      .map((name,id)=>({id,name,label:name}));
+    roster=classItems.flatMap(item=>['Élève A','Élève B','Élève C']
+      .map((first_name,i)=>({first_name,student_id:item.id+'-'+i,class_id:item.id})));
     return;
   }
   feedback.textContent='Chargement des classes…';
@@ -792,12 +760,14 @@ function renderCourseLog(view, slot, scheduleClasses){
         ...Object.values(read(journalKey).entries||{}).map(course=>course?.classe),
         ...Object.values(read(attendanceKey).sessions||{}).map(course=>course?.classe)
       ]);
-      showClasses(data.classes.map(cls=>{
+      classItems=data.classes.map(cls=>{
         const matches=scheduleClasses.filter(label=>normalized(label)===normalized(cls.name));
         const stored=[...storedLabels].filter(label=>label&&normalized(label)===normalized(cls.name));
         return {id:cls.id,label:cls.name,name:stored.length===1?stored[0]:matches.length===1?matches[0]:cls.name};
-      }));
-    }).catch(error=>{feedback.textContent='Impossible de charger les classes : '+error.message;});
+      });
+      feedback.textContent='';
+      renderWeek();
+    }).catch(error=>{feedback.textContent='Impossible de charger les classes : '+error.message;}).finally(()=>{rosterLoading=false;});
 }
 document.querySelectorAll('[data-section-link]').forEach(a=>{const url=new URL(a.href);if(isSimulation){url.searchParams.set('testDay',String(simulatedDay));url.searchParams.set('testTime',simulatedTime);}a.href=url.pathname.split('/').pop()+url.search;});
 if(pagePanel){document.body.classList.add('section-page');document.title='Top’Math — '+({carnet:'Carnet de bord',journal:'Journal de classe',presences:'Présences',rapports:'Rapports'})[pagePanel];}
