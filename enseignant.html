@@ -349,15 +349,18 @@
   <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap">
     <div><h2>Gestion des élèves</h2><p class="muted">Données enregistrées dans Cloudflare D1. La filière NORMAL / ÉCO est déterminée par la classe choisie.</p></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button type="button" id="d1OpenArchives" class="secondary" aria-expanded="false" aria-controls="d1Archives">Élèves archivés</button>
+      <button type="button" id="d1OpenArchives" class="secondary" aria-haspopup="dialog" aria-controls="d1Archives">Élèves archivés</button>
       <button id="d1AddStudentBtn" class="success">+ Ajouter un élève</button>
     </div>
   </div>
-  <div id="d1Archives" hidden style="margin-top:14px;padding:12px;border:1px solid #ccd4e0;border-radius:10px">
-    <h3>Élèves archivés</h3>
+  <dialog id="d1Archives" aria-labelledby="d1ArchivesTitle" style="box-sizing:border-box;width:calc(100% - 24px);max-width:760px;max-height:85vh;padding:20px;border:1px solid #ccd4e0;border-radius:12px">
+    <div style="display:flex;gap:12px;align-items:center;justify-content:space-between">
+      <h3 id="d1ArchivesTitle" style="margin:0">Élèves archivés</h3>
+      <form method="dialog"><button type="submit" class="secondary" autofocus>Fermer</button></form>
+    </div>
     <p id="d1ArchivesStatus" class="muted" role="status"></p>
     <div id="d1ArchivesList" class="list"></div>
-  </div>
+  </dialog>
   <div class="selectbar" style="margin-top:14px">
     <div class="field"><label>Classe</label><select id="d1StudentsClassFilter"><option value="ALL">Toutes les classes</option></select></div>
     <div class="field"><label>Rechercher</label><input id="d1StudentsSearch" placeholder="Nom ou prénom"></div>
@@ -968,7 +971,7 @@ async function manageD1StudentAction(row,action,button){
     await loadD1RosterForClasses();
     renderD1StudentsManager();
     renderAllSchoolViews();
-    if(!document.getElementById('d1Archives').hidden)await loadD1StudentArchives();
+    if(document.getElementById('d1Archives').open)await loadD1StudentArchives();
     alert(removing?'Élève retiré de la classe.':'Élève archivé.');
   }catch(error){
     alert('Impossible de terminer cette opération : '+String(error?.message||error));
@@ -976,12 +979,9 @@ async function manageD1StudentAction(row,action,button){
   }
 }
 
-const d1OpenArchives=document.getElementById('d1OpenArchives');
-d1OpenArchives.onclick=async()=>{
-  const panel=document.getElementById('d1Archives');
-  panel.hidden=!panel.hidden;
-  d1OpenArchives.setAttribute('aria-expanded',String(!panel.hidden));
-  if(!panel.hidden)await loadD1StudentArchives();
+document.getElementById('d1OpenArchives').onclick=async()=>{
+  document.getElementById('d1Archives').showModal();
+  await loadD1StudentArchives();
 };
 
 async function loadD1StudentArchives(){
