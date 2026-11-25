@@ -340,8 +340,11 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
 #courseLog .course-status input[value="S"]:checked+span{background:#195ba5}#courseLog .course-status input:focus-visible+span{outline:3px solid #4488d1;outline-offset:2px}#registerDialog{box-sizing:border-box;width:min(950px,calc(100% - 24px));max-height:85vh;border:1px solid #c1d6ed;border-radius:14px}#registerDialog::backdrop{background:#102c5477}#courseLog .actions{flex-wrap:wrap;margin-block:6px}#courseLog form[hidden]{display:none}
 .course-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
 .course-heading h2,#courseTitle{margin:0 0 3px}
-#courseTime{margin:0;font-size:.88rem}
-.course-lesson{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 8px;align-items:center}
+#courseTime{margin:0;font-size:.8rem}
+#courseDay{margin:0;color:#173d72;font-size:clamp(1.25rem,3.3vw,1.85rem);font-weight:800;line-height:1.1}
+#courseDay::first-letter{text-transform:uppercase}
+#coursePeriodBadge{display:grid;place-items:center;min-width:44px;min-height:42px;padding:0 7px;border-radius:8px;background:#e5f0ff;color:#173d72;font-weight:850;font-size:1.65rem;line-height:1}
+.course-lesson{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 8px;align-items:center}
 .course-lesson label{grid-column:1/-1;margin:0}
 #courseLog .attendance-table-wrap{margin-top:6px}
 
@@ -633,8 +636,8 @@ function renderCourseLog(view, scheduleClasses){
 
     '</div>'+
     '<form id="courseEntry" hidden>'+
-    '<div class="course-sheet-heading"><p id="courseTime" class="muted"></p><h2 id="courseTitle" tabindex="-1"></h2></div>'+
-    '<div class="course-lesson"><label for="courseLesson">Leçon du jour</label><textarea id="courseLesson" rows="1" required></textarea>'+
+    '<div class="course-sheet-heading"><div><p id="courseDay"></p><p id="courseTime" class="muted"></p></div><h2 id="courseTitle" tabindex="-1"></h2></div>'+
+    '<div class="course-lesson"><label for="courseLesson">Leçon du jour</label><span id="coursePeriodBadge"></span><textarea id="courseLesson" rows="1" required></textarea>'+
     '<button id="courseJournalPdf" type="button" aria-label="Télécharger le journal de classe en PDF" title="Télécharger le journal de classe en PDF">'+
     '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M4 17v3h16v-3"/></svg></button></div>'+
     '<p class="course-attendance-legend">✓ Présent · ✕ Absent · S Stage</p>'+
@@ -663,8 +666,11 @@ function renderCourseLog(view, scheduleClasses){
   const keyFor=()=>JSON.stringify([courseDate,coursePeriod,selected.name]);
   const normalized=name=>String(name||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/OBSERVATION/g,'OBS').replace(/HORTICULTURE/g,'HORT').replace(/MACONNERIE/g,'MAC').replace(/[^A-Z0-9]/g,'').replace(/^P(?=[123])/,'');
   function showDateAndTime(){
-    $('courseTime').textContent=[courseDate.split('-').reverse().join('/'),'Période '+coursePeriod,
-      courseSlot.start&&courseSlot.end?courseSlot.start+' – '+courseSlot.end:''].filter(Boolean).join(' · ');
+    const day=new Date(courseDate+'T12:00:00Z');
+    $('courseDay').textContent=new Intl.DateTimeFormat('fr-BE',{weekday:'long',day:'numeric',month:'long',timeZone:'UTC'}).format(day);
+    $('courseTime').textContent=courseSlot.start&&courseSlot.end?courseSlot.start+' – '+courseSlot.end:'';
+    $('coursePeriodBadge').textContent=coursePeriod;
+    $('coursePeriodBadge').setAttribute('aria-label','Période '+coursePeriod);
   }
   function updateAttendanceCount(){
     $('courseAttendanceCount').textContent=students.length
