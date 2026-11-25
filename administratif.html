@@ -406,6 +406,11 @@ body:not(.section-page) #adminNav .tile small{font-size:.95rem}
 #courseStudents .course-status span{width:26px;height:26px;font-size:1rem;border-radius:6px}
 @media(max-width:700px){#courseStudents{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:480px){#courseStudents{grid-template-columns:1fr}}
+.course-sheet-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px}
+#courseTitle{font-size:clamp(1.35rem,3.4vw,2rem);line-height:1.08;color:#173d72;text-align:right;margin:0;overflow-wrap:anywhere}
+.course-sheet-footer{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:4px}
+#courseFeedback{margin:0}
+#courseJournalPdf{display:grid;place-items:center;flex:0 0 40px;min-height:40px;padding:4px;margin-left:auto}
 </style></head><body>
 <header><strong id="topbarTitle">TOP'MATH <span class="topbar-divider">·</span> ADMINISTRATIF</strong><div class="topbar-controls"><button id="topSettingsBtn" type="button" aria-label="Ouvrir les réglages" aria-expanded="false" title="Réglages">⚙️</button><a class="topbar-back" href="enseignant.html" aria-label="Retour à l’espace enseignant" title="Retour à l’espace enseignant">←</a></div></header>
 <main>
@@ -626,17 +631,19 @@ function renderCourseLog(view, scheduleClasses){
     '<button id="courseThisWeek" type="button">Cette semaine</button></div>'+
     '<div id="courseWeekGrid" class="attendance-table-wrap"></div><p id="courseWeekMessage" role="status"></p></div>'+
     '<div class="actions course-top-actions"><button id="courseBack" type="button" aria-label="Retour à l’horaire" title="Retour à l’horaire" hidden>←</button>'+
-    '<button id="courseJournalPdf" type="button">Télécharger le journal de classe en PDF</button>'+
+
     '<button id="courseRegister" type="button" hidden>Registre des présences</button></div>'+
     '<form id="courseEntry" hidden>'+
-    '<h2 id="courseTitle" tabindex="-1"></h2><p id="courseTime" class="muted"></p>'+
+    '<div class="course-sheet-heading"><p id="courseTime" class="muted"></p><h2 id="courseTitle" tabindex="-1"></h2></div>'+
     '<div class="course-lesson"><label for="courseLesson">Leçon du jour</label><textarea id="courseLesson" rows="1" required></textarea>'+
     '<button type="button" id="courseAllPresent">Tous présents</button></div>'+
     '<p class="course-attendance-legend">✓ Présent · ✕ Absent · S Stage</p>'+
     '<div id="courseStudents" class="course-attendance-grid"></div>'+
     '<p id="courseAttendanceCount" aria-live="polite"></p>'+
     '<div class="actions"><button type="submit" class="btn-primary">Valider le cours</button></div></form>'+
-    '<p id="courseFeedback" role="status" aria-live="polite"></p>'+
+    '<div class="course-sheet-footer"><p id="courseFeedback" role="status" aria-live="polite"></p>'+
+    '<button id="courseJournalPdf" type="button" aria-label="Télécharger le journal de classe en PDF" title="Télécharger le journal de classe en PDF">'+
+    '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M4 17v3h16v-3"/></svg></button></div>'+
     '<dialog id="registerDialog" aria-labelledby="registerTitle"><h3 id="registerTitle"></h3>'+
     '<div class="actions"><label>Du <input type="date" id="registerFrom"></label>'+
     '<label>Au <input type="date" id="registerTo"></label>'+
