@@ -27,8 +27,11 @@ function generate(classe,names,allSessions){
  const sessions=allSessions.filter(s=>s&&s.classe===classe&&Array.isArray(s.entries))
   .sort((a,b)=>String(a.date).localeCompare(String(b.date))||Number(a.period)-Number(b.period));
  if(!sessions.length)throw Error('Aucun appel enregistré pour cette classe.');
- const students=[...new Set([...names,...sessions.flatMap(s=>s.entries.map(e=>e.name))])].filter(Boolean)
-  .sort((a,b)=>a.localeCompare(b,'fr',{sensitivity:'base'}));
+ const personKey=entry=>entry.attendance_key||(entry.student_id!=null?'id:'+entry.student_id:'name:'+entry.name);
+ const people=new Map();
+ for(const session of sessions)for(const entry of session.entries)if(entry.name)people.set(personKey(entry),entry.name);
+ for(const name of names)if(name&&![...people.values()].includes(name))people.set('name:'+name,name);
+ const students=[...people].sort((a,b)=>a[1].localeCompare(b[1],'fr',{sensitivity:'base'}));
  if(!students.length)throw Error('Aucun élève trouvé dans les appels enregistrés.');
  const W=842,H=595,margin=27,firstCol=180,perPage=10,cellWidth=(W-2*margin-firstCol)/perPage;
  const startY=104,headerH=37,rowH=16,rowsPerPage=Math.floor((H-startY-headerH-48)/rowH);
@@ -47,22 +50,24 @@ function generate(classe,names,allSessions){
   const studentsPage=students.slice(ypage*rowsPerPage,(ypage+1)*rowsPerPage);
   let stream='0.55 w\n0 0 0 RG\n';
   stream+=T(margin,39,'TOP\'MATH  /  HISTORIQUE DES PRESENCES',14,true);
-  stream+=T(margin,58,'Classe : '+truncate(classe,65),11,true);
+  stream+=T(margin,58,(sessions.some(s=>s.originalClass)?'Eleve : ':'Classe : ')+truncate(classe,65),11,true);
   stream+=T(margin,76,students.length+' eleves  -  '+sessions.length+' cours enregistres  -  '+new Date().toLocaleDateString('fr-BE'),8);
   stream+=F(margin,startY,W-2*margin,headerH,0.89,0.94,1);
   stream+=T(margin+8,startY+23,'ELEVES',9,true);
   for(let j=0;j<sessionsPage.length;j++){
    const x=margin+firstCol+j*cellWidth;
    stream+=T(x+5,startY+15,dateLabel(sessionsPage[j]),8,true);
-   stream+=T(x+5,startY+30,'Periode '+String(sessionsPage[j].period||'?'),7);
+   const course=sessionsPage[j];
+   stream+=T(x+5,startY+(course.originalClass?25:30),'Periode '+String(course.period||'?'),7);
+   if(course.originalClass)stream+=T(x+5,startY+34,truncate(course.originalClass,13),6.3);
   }
   for(let i=0;i<studentsPage.length;i++){
-   const y=startY+headerH+i*rowH,name=studentsPage[i];
+   const y=startY+headerH+i*rowH,[key,name]=studentsPage[i];
    if(i%2===0)stream+=F(margin,y,W-2*margin,rowH,0.965,0.98,1);
    stream+=T(margin+7,y+11.5,truncate(name,29),8.1,i%2===0);
    for(let j=0;j<sessionsPage.length;j++){
-    const status=sessionsPage[j].entries.find(e=>e.name===name)?.status||'';
-    const sym=({P:'P',A:'A',S:'S',R:'R'})[status]||'';
+    const status=sessionsPage[j].entries.find(e=>personKey(e)===key)?.status||'';
+    const sym=({P:'V',A:'X',S:'S',R:'R'})[status]||'';
     if(sym)stream+=T(margin+firstCol+j*cellWidth+cellWidth/2-3,y+11.5,sym,8.5,true);
    }
   }
@@ -74,7 +79,7 @@ function generate(classe,names,allSessions){
   for(let i=0;i<=studentsPage.length;i++)stream+=L(margin,startY+headerH+i*rowH,margin+firstCol+sessionsPage.length*cellWidth,startY+headerH+i*rowH);
   stream+=L(margin,startY,margin+firstCol+sessionsPage.length*cellWidth,startY);
   stream+='0 0 0 RG\n';
-  stream+=T(margin,H-30,'P : Present     A : Absent     S : Stage     R : Retard     Case vide : non renseigne',8);
+  stream+=T(margin,H-30,'V : Present     X : Absent     S : Stage     R : Retard     Case vide : non renseigne',8);
   stream+=T(W-112,H-30,'Page '+pageNo+'/'+totalPages,8);
   const pageId=objects.length+1,streamId=pageId+1;pageIds.push(pageId);
   objects.push('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 '+W+' '+H+'] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents '+streamId+' 0 R >>');

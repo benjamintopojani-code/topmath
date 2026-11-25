@@ -623,13 +623,15 @@ function renderCourseLog(view, scheduleClasses){
   const today=new Date();
   const dateValue=[today.getFullYear(),String(today.getMonth()+1).padStart(2,'0'),String(today.getDate()).padStart(2,'0')].join('-');
   const marks={P:'✓',A:'✕',S:'S',R:'R'};
+  const registerMarks={P:'V',A:'X',S:'S',R:'R'};
   const selectors=[['P','Présent'],['A','Absent'],['S','Stage']];
   view.innerHTML='<section id="courseLog">'+
     '<div id="courseWeekPanel" aria-labelledby="courseWeekTitle"><div class="course-heading"><h2 id="courseWeekTitle">Mon horaire</h2></div>'+
     '<div class="actions course-week-controls"><button id="coursePrevWeek" type="button" aria-label="Semaine précédente">←</button>'+
     '<strong id="courseWeekLabel" aria-live="polite"></strong><button id="courseNextWeek" type="button" aria-label="Semaine suivante">→</button>'+
     '<button id="courseThisWeek" type="button">Cette semaine</button></div>'+
-    '<div id="courseWeekGrid" class="attendance-table-wrap"></div><p id="courseWeekMessage" role="status"></p></div>'+
+    '<div id="courseWeekGrid" class="attendance-table-wrap"></div><p id="courseWeekMessage" role="status"></p>'+
+    '<button id="courseOpenHistory" type="button">Historique par élève</button></div>'+
     '<div class="actions course-top-actions"><button id="courseBack" type="button" aria-label="Retour à l’horaire" title="Retour à l’horaire" hidden>←</button>'+
 
     '</div>'+
@@ -645,7 +647,8 @@ function renderCourseLog(view, scheduleClasses){
     '<button id="courseAttendancePdf" type="button">Télécharger les présences en PDF</button></div></form>'+
     '<p id="courseFeedback" role="status" aria-live="polite"></p>'+
     '<dialog id="registerDialog" aria-labelledby="registerTitle"><h3 id="registerTitle"></h3>'+
-    '<div class="actions"><label>Du <input type="date" id="registerFrom"></label>'+
+    '<div class="actions"><label for="registerStudent">Élève</label><select id="registerStudent"></select>'+
+    '<label>Du <input type="date" id="registerFrom"></label>'+
     '<label>Au <input type="date" id="registerTo"></label>'+
     '<button type="button" id="registerPdf">Télécharger les présences en PDF</button>'+
     '<button type="button" id="registerClose">Fermer</button></div>'+
@@ -721,14 +724,14 @@ function renderCourseLog(view, scheduleClasses){
       rows.querySelector('[data-attendance-index="'+missing+'"]')?.focus();
       return;
     }
-    const entries=students.map(({name,status,id})=>({name,status,...(id?{student_id:id}:{})}));
+    const entries=students.map(({name,status,id})=>({name,status,...(id!=null?{student_id:id}:{})}));
     if(isSimulation){feedback.textContent='Simulation terminée. Aucune fiche enregistrée.';dirty=false;return;}
     try{
       const previous=localStorage.getItem(journalKey);
       const journal=read(journalKey),attendance=read(attendanceKey),key=keyFor(),updated=new Date().toISOString();
       journal.entries??={};attendance.sessions??={};
       journal.entries[key]={...journal.entries[key],date:courseDate,period:coursePeriod,classe:selected.name,title:lesson.value.trim(),updated};
-      attendance.sessions[key]={date:courseDate,period:coursePeriod,classe:selected.name,entries,updated};
+      attendance.sessions[key]={date:courseDate,period:coursePeriod,classe:selected.name,class_ids:selected.ids||[selected.id],entries,updated};
       const journalData=JSON.stringify(journal),attendanceData=JSON.stringify(attendance);
       localStorage.setItem(journalKey,journalData);
       try{localStorage.setItem(attendanceKey,attendanceData);}
@@ -740,34 +743,90 @@ function renderCourseLog(view, scheduleClasses){
     try{window.TopMathJournalPdf.exportSchoolYear(courseDate||dateValue,read(journalKey).entries||{});}
     catch(error){feedback.textContent='PDF du journal : '+error.message;}
   };
-  function filteredSessions(applyDates=true){
-    return Object.values(read(attendanceKey).sessions||{}).filter(session=>session?.classe===selected.name&&Array.isArray(session.entries)&&
-      (!applyDates||((!from.value||session.date>=from.value)&&(!to.value||session.date<=to.value))))
+  const studentFilter=$('registerStudent');
+  let individualHistory=false;
+  const personKey=person=>person.student_id!=null?'id:'+person.student_id:'name:'+person.name;
+  function savedSessions(){
+    return Object.values(read(attendanceKey).sessions||{}).filter(session=>session&&Array.isArray(session.entries))
       .sort((a,b)=>a.date.localeCompare(b.date)||Number(a.period)-Number(b.period));
+  }
+  function matchesSelectedClass(session){
+    const ids=selected.ids||[selected.id];
+    return session.classe===selected.name||normalized(session.classe)===normalized(selected.name)||
+      (session.class_ids?.length===ids.length&&ids.every(id=>session.class_ids.map(String).includes(String(id))));
+  }
+  function attendancePeople(sessions){
+    const people=new Map(),aliases=new Map();
+    for(const session of sessions)for(const person of session.entries){
+      if(person.student_id==null||!person.name)continue;
+      const key=personKey(person);
+      people.set(key,person.name);
+      if(!aliases.has(person.name))aliases.set(person.name,new Set());
+      aliases.get(person.name).add(key);
+    }
+    const keyForEntry=person=>{
+      const possible=aliases.get(person.name);
+      return person.student_id==null&&possible?.size===1?[...possible][0]:personKey(person);
+    };
+    for(const session of sessions)for(const person of session.entries){
+      const key=keyForEntry(person);
+      if(person.name&&!people.has(key))people.set(key,person.name);
+    }
+    return {people,keyForEntry};
+  }
+  function registerData(){
+    const all=savedSessions(),individual=studentFilter.value;
+    const {people,keyForEntry}=attendancePeople(all);
+    const sessions=all.filter(session=>
+      (!from.value||session.date>=from.value)&&(!to.value||session.date<=to.value)&&
+      (individual?session.entries.some(person=>keyForEntry(person)===individual):!individualHistory&&selected&&matchesSelectedClass(session)));
+    return {sessions,people,keyForEntry,individual};
   }
   function renderRegister(){
     const table=$('registerTable');
     try{
-      const sessions=filteredSessions();
-      const names=[...new Set(sessions.flatMap(session=>session.entries.map(person=>person.name)))].sort((a,b)=>a.localeCompare(b,'fr'));
-      table.innerHTML=sessions.length?'<table class="attendance-table"><thead><tr><th scope="col">Élève</th>'+
-        sessions.map(session=>'<th scope="col">'+esc(session.date.split('-').reverse().join('/')+' · P'+session.period)+'</th>').join('')+
-        '</tr></thead><tbody>'+names.map(name=>'<tr><th scope="row">'+esc(name)+'</th>'+sessions.map(session=>'<td>'+
-          (marks[session.entries.find(person=>person.name===name)?.status]||'—')+'</td>').join('')+'</tr>').join('')+
-        '</tbody></table>':'<p>Aucune présence enregistrée pour cette période.</p>';
+      const {sessions,people,keyForEntry,individual}=registerData();
+      const keys=[...new Set(sessions.flatMap(session=>session.entries.map(keyForEntry)))]
+        .filter(key=>people.has(key)&&(!individual||key===individual)).sort((a,b)=>people.get(a).localeCompare(people.get(b),'fr'));
+      table.innerHTML=sessions.length&&keys.length?'<table class="attendance-table"><thead><tr><th scope="col">Élève</th>'+
+        sessions.map(session=>'<th scope="col">'+esc(session.date.split('-').reverse().join('/')+' · P'+session.period+(individual?' · '+session.classe:''))+'</th>').join('')+
+        '</tr></thead><tbody>'+keys.map(key=>'<tr><th scope="row">'+esc(people.get(key))+'</th>'+sessions.map(session=>'<td>'+
+          (registerMarks[session.entries.find(person=>keyForEntry(person)===key)?.status]||'—')+'</td>').join('')+'</tr>').join('')+
+        '</tbody></table>':'<p>Aucune présence enregistrée pour cette sélection.</p>';
+      $('registerTitle').textContent='Registre des présences'+(individual?' · '+people.get(individual):individualHistory?' · Par élève':' · '+selected.label);
     }catch(error){table.textContent='Registre indisponible : '+error.message;}
   }
-  for(const input of [from,to])input.onchange=renderRegister;
-  $('courseRegister').onclick=()=>{$('registerTitle').textContent='Registre des présences · '+selected.label;renderRegister();register.showModal();};
+  function openRegister(byStudent){
+    individualHistory=byStudent;
+    studentFilter.replaceChildren(new Option(byStudent?'Choisir un élève':'Toute la classe',''));
+    try{
+      const {people}=attendancePeople(savedSessions());
+      for(const [key,name] of [...people].sort((a,b)=>a[1].localeCompare(b[1],'fr')))studentFilter.add(new Option(name,key));
+    }catch{}
+    renderRegister();
+    register.showModal();
+  }
+  for(const input of [from,to,studentFilter])input.onchange=renderRegister;
+  $('courseRegister').onclick=()=>openRegister(false);
+  $('courseOpenHistory').onclick=()=>openRegister(true);
   $('registerClose').onclick=()=>register.close();
-  function downloadAttendance(applyDates,message){
-    try{window.TopMathAttendancePdf.download(selected.name,[],filteredSessions(applyDates));}
-    catch(error){message.textContent='PDF des présences : '+error.message;}
+  function downloadAttendance(fromRegister,message){
+    try{
+      const result=fromRegister?registerData():{sessions:savedSessions().filter(matchesSelectedClass)};
+      const label=result.individual?result.people.get(result.individual):selected?.label;
+      if(!label||(fromRegister&&individualHistory&&!result.individual))throw Error('Choisis un élève.');
+      const identity=result.keyForEntry?result:attendancePeople(savedSessions());
+      const sessions=result.sessions.map(session=>({...session,classe:label,
+        originalClass:result.individual?session.classe:'',
+        entries:session.entries.filter(person=>!result.individual||identity.keyForEntry(person)===result.individual)
+          .map(person=>({...person,attendance_key:identity.keyForEntry(person),name:identity.people.get(identity.keyForEntry(person))||person.name}))}));
+      window.TopMathAttendancePdf.download(label,[],sessions);
+    }catch(error){message.textContent='PDF des présences : '+error.message;}
   }
   $('registerPdf').onclick=()=>downloadAttendance(true,$('registerTable'));
   $('courseAttendancePdf').onclick=()=>downloadAttendance(false,feedback);
   const weekPanel=$('courseWeekPanel'),weekGrid=$('courseWeekGrid');
-  let weekStart, classItems=[], rosterLoading=!isSimulation;
+  let weekStart, classItems=[], rosterLoading=false, rosterError='';
   const isoDay=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
   const moveDay=(day,delta)=>new Date(day.getFullYear(),day.getMonth(),day.getDate()+delta,12);
   const monday=day=>moveDay(day,-((day.getDay()+6)%7));
@@ -809,9 +868,11 @@ function renderCourseLog(view, scheduleClasses){
               : '<button type="button" data-course-slot="'+index+'" data-course-day="'+i+'" style="background:'+color+'">'+label+'</button>';
           }).join('')+
         '</td>').join('')+'</tr>').join('')+'</tbody></table>':'';
-    for(const button of weekGrid.querySelectorAll('[data-course-slot]'))button.onclick=()=>{
+    for(const button of weekGrid.querySelectorAll('[data-course-slot]'))button.onclick=async()=>{
       const course=schedule[Number(button.dataset.courseSlot)],day=dates[Number(button.dataset.courseDay)];
       if(rosterLoading){$('courseWeekMessage').textContent='Chargement des classes…';return;}
+      if(!isSimulation)await refreshRoster();
+      if(rosterError){$('courseWeekMessage').textContent=rosterError;return;}
       const item=findClass(course.classe);
       if(!item){$('courseWeekMessage').textContent='Classe à vérifier dans Top’Math : '+course.classe;return;}
       if(!discard())return;
@@ -850,8 +911,9 @@ function renderCourseLog(view, scheduleClasses){
       .map((first_name,i)=>({first_name,student_id:item.id+'-'+i,class_id:item.id})));
     return;
   }
-  feedback.textContent='Chargement des classes…';
-  fetch('/api/roster',{credentials:'same-origin',cache:'no-store'})
+  function refreshRoster(){
+   rosterLoading=true;
+   return fetch('/api/roster',{credentials:'same-origin',cache:'no-store'})
     .then(async response=>{
       const data=await response.json();
       if(!response.ok||!data.ok)throw Error(data.error||'Liste indisponible.');
@@ -865,9 +927,10 @@ function renderCourseLog(view, scheduleClasses){
         const stored=[...storedLabels].filter(label=>label&&normalized(label)===normalized(cls.name));
         return {id:cls.id,label:cls.name,name:stored.length===1?stored[0]:matches.length===1?matches[0]:cls.name};
       });
-      feedback.textContent='';
-      renderWeek();
-    }).catch(error=>{feedback.textContent='Impossible de charger les classes : '+error.message;}).finally(()=>{rosterLoading=false;});
+      rosterError='';
+    }).catch(error=>{rosterError='Impossible de charger les classes : '+error.message;}).finally(()=>{rosterLoading=false;});
+  }
+  refreshRoster().then(()=>{if(rosterError)feedback.textContent=rosterError;});
 }
 document.querySelectorAll('[data-section-link]').forEach(a=>{const url=new URL(a.href);if(isSimulation){url.searchParams.set('testDay',String(simulatedDay));url.searchParams.set('testTime',simulatedTime);}a.href=url.pathname.split('/').pop()+url.search;});
 if(pagePanel){document.body.classList.add('section-page');document.title='Top’Math — '+({carnet:'Carnet de bord',journal:'Journal de classe',presences:'Présences',rapports:'Rapports'})[pagePanel];}
