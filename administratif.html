@@ -341,18 +341,23 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
 .course-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
 .course-heading h2,#courseTitle{margin:0 0 3px}
 #courseTime{margin:0;font-size:.88rem}
-.course-calendar{position:relative}
-.course-calendar summary{cursor:pointer;display:grid;place-items:center;min-width:44px;min-height:44px;border:1px solid #b4c9e1;border-radius:9px;list-style:none}
-.course-calendar summary::-webkit-details-marker{display:none}
-.course-calendar-fields{position:absolute;right:0;top:calc(100% + 4px);width:195px;z-index:3;background:#fff;border:1px solid #ccd9e9;border-radius:10px;padding:8px;box-shadow:0 5px 16px #193c7026}
-.course-calendar:not([open]) .course-calendar-fields{display:none}
-.course-calendar-fields input,.course-calendar-fields select{width:100%;margin:2px 0 5px}
 .course-lesson{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 8px;align-items:center}
 .course-lesson label{grid-column:1/-1;margin:0}
 #courseStudents .attendance-table th,#courseStudents .attendance-table td{padding-block:0}
 #courseStudents .attendance-table thead th{padding-block:5px}
 #courseLog .attendance-table-wrap{margin-top:6px}
 
+#courseWeekDialog{box-sizing:border-box;width:min(990px,calc(100% - 20px));max-height:90vh;padding:12px;border:1px solid #c1d6ed;border-radius:14px}
+#courseWeekDialog::backdrop{background:#102c5477}
+#courseWeekTitle{margin:0;font-size:1.1rem}
+.course-week-controls{align-items:center}
+.course-week-table{width:100%;min-width:410px;border-spacing:3px;text-align:center;table-layout:fixed;font-size:.82rem}
+.course-week-table th:first-child{width:36px}
+.course-week-table td{background:#f4f7fb;border-radius:5px;padding:1px;vertical-align:top}
+.course-week-table td button{width:100%;margin:0;min-height:38px;padding:3px;color:#172b47;border:1px solid #172b4724;overflow-wrap:anywhere;font-size:.8rem}
+.course-week-today{background:#e9f2ff;color:#17467e;border-radius:5px}
+.course-manual summary{cursor:pointer;font-size:.9rem}
+#courseWeekMessage:empty{display:none}
 </style></head><body>
 <header><strong id="topbarTitle">TOP'MATH <span class="topbar-divider">·</span> ADMINISTRATIF</strong><div class="topbar-controls"><button id="topSettingsBtn" type="button" aria-label="Ouvrir les réglages" aria-expanded="false" title="Réglages">⚙️</button><a class="topbar-back" href="enseignant.html" aria-label="Retour à l’espace enseignant" title="Retour à l’espace enseignant">←</a></div></header>
 <main>
@@ -539,9 +544,16 @@ function renderCourseLog(view, slot, scheduleClasses){
   const marks={P:'✓',A:'✕',S:'S',R:'R'};
   const selectors=[['P','Présent'],['A','Absent'],['S','Stage']];
   view.innerHTML='<section id="courseLog"><div class="course-heading"><div><h2>Carnet de bord</h2><p id="courseTime" class="muted"></p></div>'+
-    '<details class="course-calendar"><summary aria-label="Modifier la date ou la période" title="Modifier la date ou la période">📅</summary>'+
-    '<div class="course-calendar-fields"><label for="courseDate">Date</label><input type="date" id="courseDate" required>'+
-    '<label for="coursePeriod">Période</label><select id="coursePeriod"></select></div></details></div>'+
+    '<button id="courseCalendar" type="button" aria-haspopup="dialog" aria-label="Ouvrir l’horaire" title="Ouvrir l’horaire">📅</button></div>'+
+    '<dialog id="courseWeekDialog" aria-labelledby="courseWeekTitle"><div class="course-heading"><h3 id="courseWeekTitle">Horaire de la semaine</h3>'+
+    '<form method="dialog"><button type="submit">Fermer</button></form></div>'+
+    '<div class="actions course-week-controls"><button id="coursePrevWeek" type="button" aria-label="Semaine précédente">←</button>'+
+    '<strong id="courseWeekLabel" aria-live="polite"></strong><button id="courseNextWeek" type="button" aria-label="Semaine suivante">→</button>'+
+    '<button id="courseThisWeek" type="button">Cette semaine</button></div>'+
+    '<div id="courseWeekGrid" class="attendance-table-wrap"></div><p id="courseWeekMessage" role="status"></p>'+
+    '<details class="course-manual"><summary>Choisir une date et une période manuellement</summary>'+
+    '<div class="actions"><label for="courseDate">Date</label><input type="date" id="courseDate" required>'+
+    '<label for="coursePeriod">Période</label><select id="coursePeriod"></select></div></details></dialog>'+
     '<div id="courseClasses" class="actions" role="group" aria-label="Classes"></div>'+
     '<div class="actions"><button id="courseJournalPdf" type="button">Télécharger le journal de classe en PDF</button>'+
     '<button id="courseRegister" type="button" disabled>Registre des présences</button></div>'+
@@ -668,16 +680,72 @@ function renderCourseLog(view, slot, scheduleClasses){
     try{window.TopMathAttendancePdf.download(selected.name,[],filteredSessions());}
     catch(error){$('registerTable').textContent='PDF des présences : '+error.message;}
   };
+  const weekDialog=$('courseWeekDialog'),weekGrid=$('courseWeekGrid');
+  let weekStart, classItems=[];
+  const isoDay=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
+  const moveDay=(day,delta)=>new Date(day.getFullYear(),day.getMonth(),day.getDate()+delta,12);
+  const monday=day=>moveDay(day,-((day.getDay()+6)%7));
+  const shortDate=day=>day.toLocaleDateString('fr-BE',{day:'numeric',month:'short'});
+  const colors=['#dceafe','#dfefe1','#fae6cc','#f4dfee','#e8e3fb','#d4eff1','#ffedb4','#e5e9f0','#f9dfda','#e9edca'];
+  function findClass(name){
+    return classItems.find(item=>item.name===name)||classItems.find(item=>normalized(item.label)===normalized(name));
+  }
+  function chooseClass(item){
+    selected=item;
+    for(const [index,control] of Array.from(buttons.children).entries()){
+      const active=classItems[index]===item;
+      control.classList.toggle('btn-primary',active);
+      control.setAttribute('aria-pressed',String(active));
+    }
+    loadEntry();
+  }
+  function renderWeek(){
+    const schedule=data.slots.filter(item=>item.classe&&/^[1-9]$/.test(String(item.period))&&Number(item.day)>=0&&Number(item.day)<=6);
+    const weekdays=[1,2,3,4,5];
+    if(schedule.some(item=>Number(item.day)===6||Number(item.day)===0))weekdays.push(6);
+    if(schedule.some(item=>Number(item.day)===0))weekdays.push(0);
+    const dates=weekdays.map((_,i)=>moveDay(weekStart,i));
+    const names=[...new Set(schedule.map(item=>item.classe))].sort((a,b)=>a.localeCompare(b,'fr'));
+    const labels=['Dim.','Lun.','Mar.','Mer.','Jeu.','Ven.','Sam.'];
+    const lastDay=moveDay(weekStart,6);
+    $('courseWeekLabel').textContent=shortDate(weekStart)+' – '+shortDate(lastDay)+' '+lastDay.getFullYear();
+    $('courseWeekMessage').textContent=schedule.length?'':'Aucun cours dans l’horaire. Tu peux choisir une date et une période manuellement.';
+    const periods=[...new Set(schedule.map(item=>String(item.period)))].sort((a,b)=>Number(a)-Number(b));
+    weekGrid.innerHTML=periods.length?'<table class="course-week-table"><thead><tr><th scope="col">Pér.</th>'+
+      dates.map(day=>'<th scope="col"'+(isoDay(day)===dateValue?' class="course-week-today"':'')+'>'+labels[day.getDay()]+'<br>'+esc(shortDate(day))+'</th>').join('')+'</tr></thead><tbody>'+
+      periods.map(p=>'<tr><th scope="row">'+p+'</th>'+dates.map((day,i)=>'<td>'+
+        schedule.map((item,index)=>({item,index})).filter(({item})=>Number(item.day)===day.getDay()&&String(item.period)===p)
+          .map(({item,index})=>'<button type="button" data-course-slot="'+index+'" data-course-day="'+i+'" style="background:'+colors[names.indexOf(item.classe)%colors.length]+'">'+esc(item.classe)+'</button>').join('')+
+        '</td>').join('')+'</tr>').join('')+'</tbody></table>':'';
+    for(const button of weekGrid.querySelectorAll('[data-course-slot]'))button.onclick=()=>{
+      const course=schedule[Number(button.dataset.courseSlot)],day=dates[Number(button.dataset.courseDay)];
+      const item=findClass(course.classe);
+      if(!item){$('courseWeekMessage').textContent='Cette classe de l’horaire ne correspond à aucune classe active dans Top’Math : '+course.classe;return;}
+      if(!discard())return;
+      date.value=previousDate=isoDay(day);
+      period.value=previousPeriod=String(course.period);
+      chooseClass(item);
+      weekDialog.close();
+    };
+  }
+  $('courseCalendar').onclick=()=>{
+    weekStart=monday(date.value?new Date(date.value+'T12:00:00'):today);
+    renderWeek();
+    weekDialog.showModal();
+  };
+  $('coursePrevWeek').onclick=()=>{weekStart=moveDay(weekStart,-7);renderWeek();};
+  $('courseNextWeek').onclick=()=>{weekStart=moveDay(weekStart,7);renderWeek();};
+  $('courseThisWeek').onclick=()=>{weekStart=monday(today);renderWeek();};
+
   function showClasses(items){
+    classItems=items;
     buttons.replaceChildren();
     for(const item of items){
       const button=document.createElement('button');
       button.type='button';button.textContent=item.label;button.setAttribute('aria-pressed','false');
       button.onclick=()=>{
         if(selected===item||!discard())return;
-        selected=item;
-        for(const control of buttons.children){control.classList.toggle('btn-primary',control===button);control.setAttribute('aria-pressed',String(control===button));}
-        loadEntry();
+        chooseClass(item);
       };
       buttons.append(button);
     }
