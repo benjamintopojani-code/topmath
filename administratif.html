@@ -355,7 +355,14 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
 .course-week-table th:first-child{width:36px}
 .course-week-table td{background:#f4f7fb;border-radius:5px;padding:1px;vertical-align:top}
 .course-week-table td button{width:100%;margin:0;min-height:38px;padding:3px;color:#172b47;border:1px solid #172b4724;overflow-wrap:anywhere;font-size:.8rem}
-.course-week-today{background:#e9f2ff;color:#17467e;border-radius:5px}
+.course-week-table thead th,.course-week-table tbody th{background:#e8eef6;color:#213a54;border-radius:6px;padding:4px}
+.course-week-table thead th{font-size:clamp(.59rem,1.55vw,.78rem)}
+.course-week-table td button{display:grid;place-content:center;gap:2px;border:0;border-radius:7px}
+.course-week-table td small{font-size:.68rem;line-height:1.1}
+.course-week-block{display:grid;place-content:center;min-height:38px;border-radius:7px;color:#5a6471;font-size:.8rem}
+.course-week-table thead .course-week-today{background:#d5e8ff;color:#17467e}
+#courseWeekDialog>.course-heading{background:#122742;color:white;padding:8px 10px;border-radius:9px}
+#courseWeekDialog>.course-heading button{min-height:34px;padding:4px 9px}
 .course-manual summary{cursor:pointer;font-size:.9rem}
 #courseWeekMessage:empty{display:none}
 </style></head><body>
@@ -545,7 +552,7 @@ function renderCourseLog(view, slot, scheduleClasses){
   const selectors=[['P','Présent'],['A','Absent'],['S','Stage']];
   view.innerHTML='<section id="courseLog"><div class="course-heading"><div><h2>Carnet de bord</h2><p id="courseTime" class="muted"></p></div>'+
     '<button id="courseCalendar" type="button" aria-haspopup="dialog" aria-label="Ouvrir l’horaire" title="Ouvrir l’horaire">📅</button></div>'+
-    '<dialog id="courseWeekDialog" aria-labelledby="courseWeekTitle"><div class="course-heading"><h3 id="courseWeekTitle">Horaire de la semaine</h3>'+
+    '<dialog id="courseWeekDialog" aria-labelledby="courseWeekTitle"><div class="course-heading"><h3 id="courseWeekTitle">Mon horaire</h3>'+
     '<form method="dialog"><button type="submit">Fermer</button></form></div>'+
     '<div class="actions course-week-controls"><button id="coursePrevWeek" type="button" aria-label="Semaine précédente">←</button>'+
     '<strong id="courseWeekLabel" aria-live="polite"></strong><button id="courseNextWeek" type="button" aria-label="Semaine suivante">→</button>'+
@@ -610,7 +617,7 @@ function renderCourseLog(view, slot, scheduleClasses){
       lesson.value=journal.entries?.[key]?.title||journal.entries?.[key]?.text||'';
       students=saved
         ? records.map(person=>({id:person.student_id,name:person.name,status:person.status||''}))
-        : roster.filter(person=>String(person.class_id)===String(selected.id))
+        : roster.filter(person=>(selected.ids||[selected.id]).some(id=>String(person.class_id)===String(id)))
           .map(person=>({id:person.student_id,name:[person.last_name,person.first_name].filter(Boolean).join(' '),status:''}));
       rows.innerHTML=students.length?'<table class="attendance-table"><thead><tr><th scope="col">Élève</th>'+
         selectors.map(([,label])=>'<th scope="col">'+label+'</th>').join('')+'</tr></thead><tbody>'+
@@ -688,7 +695,14 @@ function renderCourseLog(view, slot, scheduleClasses){
   const shortDate=day=>day.toLocaleDateString('fr-BE',{day:'numeric',month:'short'});
   const colors=['#dceafe','#dfefe1','#fae6cc','#f4dfee','#e8e3fb','#d4eff1','#ffedb4','#e5e9f0','#f9dfda','#e9edca'];
   function findClass(name){
-    return classItems.find(item=>item.name===name)||classItems.find(item=>normalized(item.label)===normalized(name));
+    const direct=classItems.find(item=>item.name===name)||classItems.find(item=>normalized(item.label)===normalized(name));
+    if(direct)return direct;
+    const parts=String(name).split(/\s*[+/]\s*/);
+    if(parts.length<2)return null;
+    const classes=parts.map(part=>classItems.find(item=>normalized(item.label)===normalized(part))).filter(Boolean);
+    if(!classes.length)return null;
+    if(classes.length===1)return classes[0];
+    return {name,label:name,ids:classes.map(item=>item.id)};
   }
   function chooseClass(item){
     selected=item;
@@ -706,21 +720,29 @@ function renderCourseLog(view, slot, scheduleClasses){
     if(schedule.some(item=>Number(item.day)===0))weekdays.push(0);
     const dates=weekdays.map((_,i)=>moveDay(weekStart,i));
     const names=[...new Set(schedule.map(item=>item.classe))].sort((a,b)=>a.localeCompare(b,'fr'));
-    const labels=['Dim.','Lun.','Mar.','Mer.','Jeu.','Ven.','Sam.'];
+    const labels=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+    const classColors={OBSB:'#dceafe',OBSE:'#d4efea','2TB':'#ffefcf','2HORT':'#e2efd9','3MAC':'#ece5fa','3MAC3AB':'#ece5fa',TC:'#ebedf0',DLC:'#ebedf0'};
     const lastDay=moveDay(weekStart,6);
     $('courseWeekLabel').textContent=shortDate(weekStart)+' – '+shortDate(lastDay)+' '+lastDay.getFullYear();
     $('courseWeekMessage').textContent=schedule.length?'':'Aucun cours dans l’horaire. Tu peux choisir une date et une période manuellement.';
-    const periods=[...new Set(schedule.map(item=>String(item.period)))].sort((a,b)=>Number(a)-Number(b));
+    const periods=Array.from({length:9},(_,index)=>String(index+1));
     weekGrid.innerHTML=periods.length?'<table class="course-week-table"><thead><tr><th scope="col">Pér.</th>'+
       dates.map(day=>'<th scope="col"'+(isoDay(day)===dateValue?' class="course-week-today"':'')+'>'+labels[day.getDay()]+'<br>'+esc(shortDate(day))+'</th>').join('')+'</tr></thead><tbody>'+
       periods.map(p=>'<tr><th scope="row">'+p+'</th>'+dates.map((day,i)=>'<td>'+
         schedule.map((item,index)=>({item,index})).filter(({item})=>Number(item.day)===day.getDay()&&String(item.period)===p)
-          .map(({item,index})=>'<button type="button" data-course-slot="'+index+'" data-course-day="'+i+'" style="background:'+colors[names.indexOf(item.classe)%colors.length]+'">'+esc(item.classe)+'</button>').join('')+
+          .map(({item,index})=>{
+            const code=normalized(item.classe), color=classColors[code]||colors[names.indexOf(item.classe)%colors.length];
+            const room=item.room||item.salle;
+            const label='<strong>'+esc(item.classe)+'</strong>'+(room?'<small>'+esc(room)+'</small>':'');
+            return code==='TC'||code==='DLC'
+              ? '<span class="course-week-block" style="background:'+color+'">'+label+'</span>'
+              : '<button type="button" data-course-slot="'+index+'" data-course-day="'+i+'" style="background:'+color+'">'+label+'</button>';
+          }).join('')+
         '</td>').join('')+'</tr>').join('')+'</tbody></table>':'';
     for(const button of weekGrid.querySelectorAll('[data-course-slot]'))button.onclick=()=>{
       const course=schedule[Number(button.dataset.courseSlot)],day=dates[Number(button.dataset.courseDay)];
       const item=findClass(course.classe);
-      if(!item){$('courseWeekMessage').textContent='Cette classe de l’horaire ne correspond à aucune classe active dans Top’Math : '+course.classe;return;}
+      if(!item){$('courseWeekMessage').textContent='Classe à vérifier dans Top’Math : '+course.classe;return;}
       if(!discard())return;
       date.value=previousDate=isoDay(day);
       period.value=previousPeriod=String(course.period);
@@ -752,6 +774,7 @@ function renderCourseLog(view, slot, scheduleClasses){
     const active=items.findIndex(item=>item.name===slot?.classe||normalized(item.label)===normalized(slot?.classe));
     if(active>=0)buttons.children[active].click();
     else feedback.textContent=items.length?'Choisis ta classe.':'Aucune classe disponible.';
+    if(data.slots.length)$('courseCalendar').click();
   }
   if(isSimulation){
     const name=slot?.classe||scheduleClasses[0]||'Classe test';
