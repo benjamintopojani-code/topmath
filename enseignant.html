@@ -349,9 +349,14 @@
   <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap">
     <div><h2>Gestion des élèves</h2><p class="muted">Données enregistrées dans Cloudflare D1. La filière NORMAL / ÉCO est déterminée par la classe choisie.</p></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button id="d1OpenArchives" class="secondary" aria-expanded="false" aria-controls="d1Archives">Élèves archivés</button>
+      <button type="button" id="d1OpenArchives" class="secondary" aria-expanded="false" aria-controls="d1Archives">Élèves archivés</button>
       <button id="d1AddStudentBtn" class="success">+ Ajouter un élève</button>
     </div>
+  </div>
+  <div id="d1Archives" hidden style="margin-top:14px;padding:12px;border:1px solid #ccd4e0;border-radius:10px">
+    <h3>Élèves archivés</h3>
+    <p id="d1ArchivesStatus" class="muted" role="status"></p>
+    <div id="d1ArchivesList" class="list"></div>
   </div>
   <div class="selectbar" style="margin-top:14px">
     <div class="field"><label>Classe</label><select id="d1StudentsClassFilter"><option value="ALL">Toutes les classes</option></select></div>
@@ -359,11 +364,6 @@
   </div>
   <div id="d1StudentsStatus" class="muted" style="margin:8px 0 12px"></div>
   <div id="d1StudentsList" class="list"></div>
-  <div id="d1Archives" hidden>
-    <h3>Élèves archivés</h3>
-    <p id="d1ArchivesStatus" class="muted" role="status"></p>
-    <div id="d1ArchivesList" class="list"></div>
-  </div>
 </div></section>
 <section id="access" class="panel"><div class="card"><h2>Gestion des accès</h2><div class="field" style="max-width:360px"><label>Classe</label><select id="accessClass"></select></div><p class="muted">Chaque élève possède un code personnel enregistré dans Cloudflare D1. L’enseignant peut le générer, le modifier, le renouveler ou l’annuler. Les codes sont gérés sur le serveur et non plus uniquement dans le navigateur.</p><div id="accessList" class="list"></div><div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap"><button id="generateMissing" class="secondary">Générer les codes manquants</button><button id="renewAll" class="secondary">Renouveler tous les codes de la classe</button><button id="clearAllMain" class="danger">Annuler tous les codes de la classe</button></div><p class="muted" style="margin-top:10px">Chaque élève reçoit un code différent. Un code annulé cesse immédiatement de fonctionner. L’élève ne peut pas modifier son code depuis son espace.</p></div></section>
 
