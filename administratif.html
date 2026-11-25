@@ -334,6 +334,7 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
 #adminNav .admin-journal-export:hover{background:#dceeff;border-color:#7eaddf}
 #adminNav .admin-journal-export svg{width:21px;height:21px}
 @media(max-width:650px){#adminNav .admin-journal-tile>.tile{min-height:105px}}
+#courseLog textarea{width:100%;min-height:68px}#courseLog .course-status{display:inline-grid;place-items:center;min-width:44px;min-height:44px;cursor:pointer}#courseLog .course-status input{position:absolute;opacity:0;width:1px;height:1px}#courseLog .course-status span{display:grid;place-items:center;width:40px;height:40px;border:1px solid #b4c9e1;border-radius:9px;font-size:1.28rem;font-weight:800;color:#46627e}#courseLog .course-status input:checked+span{background:#195ba5;color:white;border-color:#195ba5}#courseLog .course-status input:focus-visible+span{outline:3px solid #4488d1;outline-offset:2px}#registerDialog{box-sizing:border-box;width:min(950px,calc(100% - 24px));max-height:85vh;border:1px solid #c1d6ed;border-radius:14px}#registerDialog::backdrop{background:#102c5477}#courseLog .actions{flex-wrap:wrap;margin-block:12px}#courseLog form[hidden]{display:none}
 </style></head><body>
 <header><strong id="topbarTitle">TOP'MATH <span class="topbar-divider">·</span> ADMINISTRATIF</strong><div class="topbar-controls"><button id="topSettingsBtn" type="button" aria-label="Ouvrir les réglages" aria-expanded="false" title="Réglages">⚙️</button><a class="topbar-back" href="enseignant.html" aria-label="Retour à l’espace enseignant" title="Retour à l’espace enseignant">←</a></div></header>
 <main>
@@ -395,8 +396,7 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
 </div>
 </section>
 <div class="grid" id="adminNav" aria-label="Rubriques administratives">
- <div class="admin-journal-tile"><a class="tile" data-section-link="journal" href="journal.html">📖<strong>Journal de classe</strong><small>Ouvrir la page du journal</small></a><button type="button" class="admin-journal-export" id="adminJournalExport" aria-label="Créer le PDF du journal de classe" title="Exporter le journal en PDF"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m-4-4 4 4 4-4M4 17v3h16v-3"/></svg></button></div>
- <a class="tile" data-section-link="presences" href="presences.html">👥<strong>Présences</strong><small>Ouvrir la feuille d'appel</small></a>
+ <a class="tile" href="administratif.html?panel=carnet">📖<strong>Carnet de bord</strong><small>Leçon du jour et présences</small></a>
  <a class="tile" data-section-link="rapports" href="rapports.html">📋<strong>Rapports</strong><small>Ouvrir les suivis</small></a>
 </div>
 <section id="view" class="card" style="margin-top:16px" aria-live="polite"></section>
@@ -448,7 +448,7 @@ if(!data.periodTimesByGroup||!data.periodTimesByGroup.first||!data.periodTimesBy
 data.periodTimes=data.periodTimesByGroup.first;
 applyPeriodTimings();
 const searchParams=new URLSearchParams(location.search);
-const pagePanel=['journal','presences','rapports'].includes(searchParams.get('panel'))?searchParams.get('panel'):null;
+const pagePanel=['carnet','journal','presences','rapports'].includes(searchParams.get('panel'))?searchParams.get('panel'):null;
 const simulatedTime=searchParams.get('testTime');
 const simulatedDay=Number(searchParams.get('testDay'));
 const isSimulation=/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(simulatedTime||'')&&simulatedDay>=1&&simulatedDay<=5;
@@ -506,27 +506,178 @@ function setClassSettingsOpen(open){
 function clock(){const now=new Date();$('time').textContent=isSimulation?days[simulatedDay]+' · '+simulatedTime+' (heure fictive)':new Intl.DateTimeFormat('fr-BE',{weekday:'long',hour:'2-digit',minute:'2-digit'}).format(now);const prev=autoSlot?.id;autoSlot=determine();if(prev!==autoSlot?.id)render();else updateHeader();}
 function updateHeader(){const c=current(),slot=activeCourse();if(!$('classSettings').hidden&&$('classSettings').dataset.currentClasse!==c)populateClassSettings();$('adminClassBanner').querySelector('.admin-class-caption').textContent=override?'CLASSE SÉLECTIONNÉE':'CLASSE EN COURS';$('selectedClassActions').hidden=!override;$('adminClassTitle').textContent=c||'Aucun cours en cours';$('adminClassPeriod').textContent=selectedSlot?days[selectedSlot.day]+' · Période '+selectedSlot.period+' · Consultation manuelle':override?'Classe sélectionnée manuellement':autoSlot?'Période '+(autoSlot.period||''):'Aucun cours à cette heure';$('simulationNotice').classList.toggle('hidden',!isSimulation);$('currentClass').textContent=c||'Aucun cours identifié';$('status').textContent=override?'Consultation manuelle':autoSlot?'Cours en cours':'Aucun cours en cours';$('currentSlot').textContent=selectedSlot?days[selectedSlot.day]+' · Période '+selectedSlot.period:override?'Classe sélectionnée manuellement':autoSlot?autoSlot.start+' – '+autoSlot.end+' · '+days[autoSlot.day]:'Horaire non renseigné ou période libre';}
 function external(url,label){const safe=safeUrl(url);return safe?'<a class="btn btn-primary" href="'+esc(safe)+'" target="_blank" rel="noopener noreferrer">'+esc(label)+' ↗</a>':'<p class="notice">Aucun lien configuré pour cette classe.</p>';}
-function renderView(){const c=current(),v=$('view');if(!c){v.innerHTML='<h2>Aucun cours en cours</h2><p class="muted">La classe s’affichera automatiquement pendant une période de cours. En dehors de l’horaire, le tableau des présences reste indisponible.</p><a class="btn" href="administratif.html" target="_top">Retour à Administratif</a>';return;}
+function renderView(){const c=current(),v=$('view');if(tab==='carnet'){if(!v.querySelector('#courseLog'))renderCourseLog(v,activeCourse(),classes());return;}if(!c){v.innerHTML='<h2>Aucun cours en cours</h2><p class="muted">La classe s’affichera automatiquement pendant une période de cours. En dehors de l’horaire, le tableau des présences reste indisponible.</p><a class="btn" href="administratif.html" target="_top">Retour à Administratif</a>';return;}
 if(tab==='journal'){window.TopMathJournal.render(c,activeCourse());}
 if(tab==='presences'){if(isSimulation){v.innerHTML='<div class="attendance-course-head"><div class="attendance-course-eyebrow">CLASSE EN COURS · SIMULATION</div><h2>'+esc(c)+'</h2><div class="muted small">Cours de '+esc(activeCourse()?.start||'')+' à '+esc(activeCourse()?.end||'')+'</div></div><div id="simRows"></div><div class="actions"><button type="button" class="btn-primary" id="simSave">Tester l’enregistrement</button></div><p id="simResult" class="muted small"></p>';const fictifs=['Élève A','Élève B','Élève C','Élève D'];$('simRows').innerHTML='<div class="attendance-table-wrap"><table class="attendance-table"><thead><tr><th scope="col">Élèves</th><th scope="col">Présent</th><th scope="col">Absent</th><th scope="col">Stage</th></tr></thead><tbody>'+fictifs.map((n,i)=>'<tr><th scope="row">'+n+'</th>'+[['P','Présent'],['A','Absent'],['S','Stage']].map(([v,l])=>'<td><label class="attendance-cell"><input type="checkbox" data-sim-att="'+i+'" value="'+v+'" aria-label="'+l+' : '+n+'"></label></td>').join('')+'</tr>').join('')+'</tbody></table></div>';$('simRows').addEventListener('change',e=>{const x=e.target.closest('input[data-sim-att]');if(!x||!x.checked)return;$('simRows').querySelectorAll('input[data-sim-att]').forEach(y=>{if(y!==x&&y.dataset.simAtt===x.dataset.simAtt)y.checked=false;});});$('simSave').addEventListener('click',()=>{const chosen=[...document.querySelectorAll('[data-sim-att]:checked')];$('simResult').textContent='Simulation réussie : '+chosen.filter(x=>x.value==='P').length+' présents, '+chosen.filter(x=>x.value==='A').length+' absent(s), '+chosen.filter(x=>x.value==='S').length+' en stage. Aucune donnée conservée.';});}else window.TopMathAttendance.render(c,activeCourse());}
 if(tab==='rapports'){const arr=data.reports.filter(x=>x.classe===c);v.innerHTML='<div class="flex"><h2>Rapports · '+esc(c)+'</h2><span class="pill">'+arr.filter(x=>!x.done).length+' à compléter</span></div>'+(arr.length?arr.map(r=>'<article class="task"><div class="flex"><strong>'+esc(r.student)+'</strong><span class="pill">'+(r.done?'Marqué terminé':'À compléter')+'</span></div><p>'+esc(r.title)+'</p><div class="actions">'+external(r.url,'Ouvrir le document')+'<button type="button" data-toggle="'+esc(r.id)+'">'+(r.done?'Marquer à faire':'Marquer terminé')+'</button><button type="button" data-remove-report="'+esc(r.id)+'">Retirer</button></div></article>').join(''):'<p class="muted">Aucun suivi demandé pour cette classe.</p>')+'<p class="muted small">Le statut « terminé » est un suivi personnel : il ne confirme pas l’envoi du formulaire officiel.</p>';}}
 function render(){if(selectedSlot){selectedSlot=data.slots.find(x=>Number(x.day)===Number(selectedSlot.day)&&Number(x.period)===Number(selectedSlot.period))||null;if(selectedSlot)override=selectedSlot.classe;else{override='';try{sessionStorage.removeItem(SELECTION_KEY);}catch{}}}autoSlot=determine();const old=$('manualClass').value;const all=classes();const selected=override||old;$('manualClass').innerHTML='<option value="">Automatique (horaire)</option>'+optionHTML(all,selected);$('manualClass').value=override||'';for(const id of ['linkClass','reportClass']){const prev=$(id).value;$(id).innerHTML='<option value="">Choisir une classe</option>'+optionHTML(all,prev);$(id).value=all.includes(prev)?prev:'';}
 updateHeader();if($('classSettings')&&!$('classSettings').hidden)syncClassReportForm(current());document.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===tab?'true':'false'));renderView();
 }
-// Export annuel disponible directement depuis la carte de l'accueil.
-$('adminJournalExport').addEventListener('click',()=>{
- try{
-  if(!window.TopMathJournalPdf)throw Error('Le générateur PDF est indisponible. Recharge la page.');
-  let raw;
-  try{raw=JSON.parse(localStorage.getItem('topmath-journal-v1')||'{}');}
-  catch{throw Error('Les données enregistrées du journal sont illisibles sur cet appareil.');}
-  const entries=raw&&raw.entries&&typeof raw.entries==='object'?raw.entries:{};
-  const d=new Date(),today=[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
-  window.TopMathJournalPdf.exportSchoolYear(today,entries);
- }catch(e){alert('PDF du journal : '+(e.message||e));}
-});
+
+function renderCourseLog(view, slot, scheduleClasses){
+  const journalKey='topmath-journal-v1', attendanceKey='topmath-presences-v1';
+  const today=new Date();
+  const dateValue=[today.getFullYear(),String(today.getMonth()+1).padStart(2,'0'),String(today.getDate()).padStart(2,'0')].join('-');
+  const marks={P:'✓',A:'✕',S:'S',R:'R'};
+  const selectors=[['P','Présent'],['A','Absent'],['S','Stage']];
+  view.innerHTML='<section id="courseLog"><h2>Carnet de bord</h2>'+
+    '<div class="actions"><label>Date <input type="date" id="courseDate" required></label>'+
+    '<label>Période <select id="coursePeriod"></select></label></div>'+
+    '<div id="courseClasses" class="actions" role="group" aria-label="Classes"></div>'+
+    '<div class="actions"><button id="courseJournalPdf" type="button">Télécharger le journal de classe en PDF</button>'+
+    '<button id="courseRegister" type="button" disabled>Registre des présences</button></div>'+
+    '<form id="courseEntry" hidden><h3 id="courseTitle"></h3>'+
+    '<label for="courseLesson">Leçon du jour</label><textarea id="courseLesson" rows="2" required></textarea>'+
+    '<div class="actions"><button type="button" id="courseAllPresent">Tous présents</button></div>'+
+    '<div class="attendance-table-wrap" id="courseStudents"></div>'+
+    '<div class="actions"><button type="submit" class="btn-primary">Valider le cours</button></div></form>'+
+    '<p id="courseFeedback" role="status" aria-live="polite"></p>'+
+    '<dialog id="registerDialog" aria-labelledby="registerTitle"><h3 id="registerTitle"></h3>'+
+    '<div class="actions"><label>Du <input type="date" id="registerFrom"></label>'+
+    '<label>Au <input type="date" id="registerTo"></label>'+
+    '<button type="button" id="registerPdf">Télécharger les présences en PDF</button>'+
+    '<button type="button" id="registerClose">Fermer</button></div>'+
+    '<div class="attendance-table-wrap" id="registerTable"></div></dialog></section>';
+  const date=$('courseDate'),period=$('coursePeriod'),entry=$('courseEntry'),lesson=$('courseLesson');
+  const feedback=$('courseFeedback'), rows=$('courseStudents'),buttons=$('courseClasses');
+  const register=$('registerDialog'), from=$('registerFrom'),to=$('registerTo');
+  let selected=null, students=[], roster=[], dirty=false;
+  const read=key=>{
+    const value=JSON.parse(localStorage.getItem(key)||'{}');
+    if(!value||typeof value!=='object'||Array.isArray(value))throw Error('Données locales illisibles.');
+    return value;
+  };
+  const keyFor=()=>JSON.stringify([date.value,period.value,selected.name]);
+  const normalized=name=>String(name||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/OBSERVATION/g,'OBS').replace(/HORTICULTURE/g,'HORT').replace(/MACONNERIE/g,'MAC').replace(/[^A-Z0-9]/g,'').replace(/^P(?=[123])/,'');
+  date.value=dateValue;
+  for(let i=1;i<=9;i++)period.add(new Option(String(i),String(i)));
+  period.value=String(slot?.period||1);
+
+  function loadEntry(){
+    if(!selected)return;
+    feedback.textContent='';
+    $('courseRegister').disabled=false;
+    entry.hidden=!date.value;
+    if(entry.hidden)return;
+    $('courseTitle').textContent=selected.label+' · '+date.value.split('-').reverse().join('/')+' · Période '+period.value;
+    try{
+      const key=keyFor(), journal=read(journalKey), saved=read(attendanceKey).sessions?.[key];
+      const records=saved?.entries||[];
+      lesson.value=journal.entries?.[key]?.title||journal.entries?.[key]?.text||'';
+      students=saved
+        ? records.map(person=>({id:person.student_id,name:person.name,status:person.status||''}))
+        : roster.filter(person=>String(person.class_id)===String(selected.id))
+          .map(person=>({id:person.student_id,name:[person.last_name,person.first_name].filter(Boolean).join(' '),status:''}));
+      rows.innerHTML=students.length?'<table class="attendance-table"><thead><tr><th scope="col">Élève</th>'+
+        selectors.map(([,label])=>'<th scope="col">'+label+'</th>').join('')+'</tr></thead><tbody>'+
+        students.map((person,i)=>'<tr><th scope="row">'+esc(person.name)+'</th>'+
+          selectors.map(([code,label])=>'<td><label class="course-status"><input type="radio" name="course-pupil-'+i+'" value="'+code+'" aria-label="'+esc(label+' : '+person.name)+'"'+(person.status===code?' checked':'')+'><span aria-hidden="true">'+marks[code]+'</span></label></td>').join('')+
+          '</tr>').join('')+'</tbody></table>':'<p>Aucun élève dans cette classe pour cette fiche.</p>';
+      $('courseAllPresent').disabled=!students.length;
+      if(students.some(person=>person.status==='R'))feedback.textContent='Les retards déjà enregistrés sont conservés si tu laisses leur ligne inchangée.';
+      dirty=false;
+    }catch(error){entry.hidden=true;feedback.textContent='Impossible de lire la fiche : '+error.message;}
+  }
+  function discard(){return !dirty||confirm('Quitter cette fiche sans enregistrer les modifications ?');}
+  let previousDate=date.value,previousPeriod=period.value;
+  for(const control of [date,period])control.addEventListener('change',()=>{
+    if(!discard()){date.value=previousDate;period.value=previousPeriod;return;}
+    previousDate=date.value;previousPeriod=period.value;loadEntry();
+  });
+  entry.addEventListener('input',()=>{dirty=true;});
+  $('courseAllPresent').onclick=()=>{rows.querySelectorAll('input[value="P"]').forEach(input=>{input.checked=true;});dirty=true;};
+  entry.onsubmit=event=>{
+    event.preventDefault();
+    if(!selected||!date.value||!lesson.value.trim()){feedback.textContent='Renseigne la date et la leçon.';return;}
+    const entries=students.map((person,i)=>{
+      const status=rows.querySelector('input[name="course-pupil-'+i+'"]:checked')?.value||person.status;
+      return {name:person.name,status,...(person.id?{student_id:person.id}:{})};
+    });
+    if(entries.some(person=>!person.status)){feedback.textContent='Choisis un statut pour chaque élève.';return;}
+    if(isSimulation){feedback.textContent='Simulation terminée. Aucune fiche enregistrée.';dirty=false;return;}
+    try{
+      const previous=localStorage.getItem(journalKey);
+      const journal=read(journalKey),attendance=read(attendanceKey),key=keyFor(),updated=new Date().toISOString();
+      journal.entries??={};attendance.sessions??={};
+      journal.entries[key]={...journal.entries[key],date:date.value,period:period.value,classe:selected.name,title:lesson.value.trim(),updated};
+      attendance.sessions[key]={date:date.value,period:period.value,classe:selected.name,entries,updated};
+      const journalData=JSON.stringify(journal),attendanceData=JSON.stringify(attendance);
+      localStorage.setItem(journalKey,journalData);
+      try{localStorage.setItem(attendanceKey,attendanceData);}
+      catch(error){if(previous===null)localStorage.removeItem(journalKey);else localStorage.setItem(journalKey,previous);throw error;}
+      dirty=false;feedback.textContent='Cours validé. Leçon et présences enregistrées sur cet appareil.';
+    }catch(error){feedback.textContent='Impossible d’enregistrer le cours : '+error.message;}
+  };
+  $('courseJournalPdf').onclick=()=>{
+    try{window.TopMathJournalPdf.exportSchoolYear(date.value||dateValue,read(journalKey).entries||{});}
+    catch(error){feedback.textContent='PDF du journal : '+error.message;}
+  };
+  function filteredSessions(){
+    return Object.values(read(attendanceKey).sessions||{}).filter(session=>session?.classe===selected.name&&Array.isArray(session.entries)&&
+      (!from.value||session.date>=from.value)&&(!to.value||session.date<=to.value))
+      .sort((a,b)=>a.date.localeCompare(b.date)||Number(a.period)-Number(b.period));
+  }
+  function renderRegister(){
+    const table=$('registerTable');
+    try{
+      const sessions=filteredSessions();
+      const names=[...new Set(sessions.flatMap(session=>session.entries.map(person=>person.name)))].sort((a,b)=>a.localeCompare(b,'fr'));
+      table.innerHTML=sessions.length?'<table class="attendance-table"><thead><tr><th scope="col">Élève</th>'+
+        sessions.map(session=>'<th scope="col">'+esc(session.date.split('-').reverse().join('/')+' · P'+session.period)+'</th>').join('')+
+        '</tr></thead><tbody>'+names.map(name=>'<tr><th scope="row">'+esc(name)+'</th>'+sessions.map(session=>'<td>'+
+          (marks[session.entries.find(person=>person.name===name)?.status]||'—')+'</td>').join('')+'</tr>').join('')+
+        '</tbody></table>':'<p>Aucune présence enregistrée pour cette période.</p>';
+    }catch(error){table.textContent='Registre indisponible : '+error.message;}
+  }
+  for(const input of [from,to])input.onchange=renderRegister;
+  $('courseRegister').onclick=()=>{$('registerTitle').textContent='Registre des présences · '+selected.label;renderRegister();register.showModal();};
+  $('registerClose').onclick=()=>register.close();
+  $('registerPdf').onclick=()=>{
+    try{window.TopMathAttendancePdf.download(selected.name,[],filteredSessions());}
+    catch(error){$('registerTable').textContent='PDF des présences : '+error.message;}
+  };
+  function showClasses(items){
+    buttons.replaceChildren();
+    for(const item of items){
+      const button=document.createElement('button');
+      button.type='button';button.textContent=item.label;button.setAttribute('aria-pressed','false');
+      button.onclick=()=>{
+        if(selected===item||!discard())return;
+        selected=item;
+        for(const control of buttons.children){control.classList.toggle('btn-primary',control===button);control.setAttribute('aria-pressed',String(control===button));}
+        loadEntry();
+      };
+      buttons.append(button);
+    }
+    const active=items.findIndex(item=>item.name===slot?.classe||normalized(item.label)===normalized(slot?.classe));
+    if(active>=0)buttons.children[active].click();
+    else feedback.textContent=items.length?'Choisis ta classe.':'Aucune classe disponible.';
+  }
+  if(isSimulation){
+    const name=slot?.classe||scheduleClasses[0]||'Classe test';
+    roster=['Élève A','Élève B','Élève C'].map((first_name,i)=>({first_name,student_id:String(i),class_id:'demo'}));
+    showClasses([{id:'demo',name,label:name}]);
+    return;
+  }
+  feedback.textContent='Chargement des classes…';
+  fetch('/api/roster',{credentials:'same-origin',cache:'no-store'})
+    .then(async response=>{
+      const data=await response.json();
+      if(!response.ok||!data.ok)throw Error(data.error||'Liste indisponible.');
+      roster=data.students;
+      const storedLabels=new Set([
+        ...Object.values(read(journalKey).entries||{}).map(course=>course?.classe),
+        ...Object.values(read(attendanceKey).sessions||{}).map(course=>course?.classe)
+      ]);
+      showClasses(data.classes.map(cls=>{
+        const matches=scheduleClasses.filter(label=>normalized(label)===normalized(cls.name));
+        const stored=[...storedLabels].filter(label=>label&&normalized(label)===normalized(cls.name));
+        return {id:cls.id,label:cls.name,name:stored.length===1?stored[0]:matches.length===1?matches[0]:cls.name};
+      }));
+    }).catch(error=>{feedback.textContent='Impossible de charger les classes : '+error.message;});
+}
 document.querySelectorAll('[data-section-link]').forEach(a=>{const url=new URL(a.href);if(isSimulation){url.searchParams.set('testDay',String(simulatedDay));url.searchParams.set('testTime',simulatedTime);}a.href=url.pathname.split('/').pop()+url.search;});
-if(pagePanel){document.body.classList.add('section-page');document.title='Top’Math — '+({journal:'Journal de classe',presences:'Présences',rapports:'Rapports'})[pagePanel];}
+if(pagePanel){document.body.classList.add('section-page');document.title='Top’Math — '+({carnet:'Carnet de bord',journal:'Journal de classe',presences:'Présences',rapports:'Rapports'})[pagePanel];}
 
 $('manualClass').addEventListener('change',e=>{selectedSlot=null;try{sessionStorage.removeItem(SELECTION_KEY);}catch{}override=e.target.value;render();});
 $('settingsClassChoice').addEventListener('change',e=>{selectedSlot=null;try{sessionStorage.removeItem(SELECTION_KEY);}catch{}override=e.target.value;render();});
@@ -590,6 +741,6 @@ $('topSettingsBtn').addEventListener('click',()=>{
   setClassSettingsOpen($('classSettings').hidden);
  }
 });
-if(pagePanel){const title=({journal:'Journal de classe',presences:'Présences',rapports:'Rapports'})[pagePanel];document.getElementById('topbarTitle').textContent='TOP’MATH · '+title.toUpperCase();document.querySelector('header a').setAttribute('aria-label','Retour à Administratif');document.querySelector('header a').title='Retour à Administratif';document.querySelector('header a').target='_top';document.querySelector('header a').href='administratif.html'+(isSimulation?'?testDay='+simulatedDay+'&testTime='+encodeURIComponent(simulatedTime):'');}
+if(pagePanel){const title=({carnet:'Carnet de bord',journal:'Journal de classe',presences:'Présences',rapports:'Rapports'})[pagePanel];document.getElementById('topbarTitle').textContent='TOP’MATH · '+title.toUpperCase();document.querySelector('header a').setAttribute('aria-label','Retour à Administratif');document.querySelector('header a').title='Retour à Administratif';document.querySelector('header a').target='_top';document.querySelector('header a').href='administratif.html'+(isSimulation?'?testDay='+simulatedDay+'&testTime='+encodeURIComponent(simulatedTime):'');}
 render();clock();setInterval(clock,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)clock();});
 </script></body></html>
