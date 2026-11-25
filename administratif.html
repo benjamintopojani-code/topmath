@@ -670,7 +670,7 @@ function renderCourseLog(view, scheduleClasses){
     rows.innerHTML=students.length?students.slice(firstStudent,firstStudent+pageSize).map((person,index)=>{
       const i=firstStudent+index;
       return '<div class="course-pupil" role="group" aria-label="'+esc(person.name)+'"><span class="course-pupil-name" title="'+esc(person.name)+'">'+esc(person.name)+'</span>'+
-        selectors.map(([code,label])=>'<label class="course-status"><input type="radio" data-attendance-index="'+i+'" name="course-pupil-'+i+'" value="'+code+'" aria-label="'+esc(label+' : '+person.name)+'"'+(person.status===code?' checked':'')+'><span aria-hidden="true">'+marks[code]+'</span></label>').join('')+'</div>';
+        selectors.map(([code,label])=>'<label class="course-status"><input type="checkbox" data-attendance-index="'+i+'" name="course-pupil-'+i+'" value="'+code+'" aria-label="'+esc(label+' : '+person.name)+'"'+(person.status===code?' checked':'')+'><span aria-hidden="true">'+marks[code]+'</span></label>').join('')+'</div>';
     }).join(''):'<p>Aucun élève dans cette classe pour cette fiche.</p>';
     $('courseAttendancePages').hidden=students.length<=pageSize;
     previousPage.disabled=firstStudent===0;
@@ -682,8 +682,12 @@ function renderCourseLog(view, scheduleClasses){
   nextPage.onclick=()=>{firstStudent+=pageSize;renderAttendance();};
   rows.addEventListener('change',event=>{
     const input=event.target;
-    if(!input.matches('[data-attendance-index]')||!input.checked)return;
-    students[Number(input.dataset.attendanceIndex)].status=input.value;
+    if(!input.matches('[data-attendance-index]'))return;
+    const student=students[Number(input.dataset.attendanceIndex)];
+    student.status=input.checked?input.value:'';
+    for(const control of input.closest('.course-pupil').querySelectorAll('[data-attendance-index]')){
+      control.checked=control.value===student.status;
+    }
     dirty=true;
     const filled=students.filter(person=>person.status).length;
     $('courseAttendancePage').textContent=(firstStudent+1)+'–'+Math.min(firstStudent+pageSize,students.length)+' / '+students.length+' · '+filled+' renseignés';
