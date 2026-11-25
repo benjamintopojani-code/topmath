@@ -265,7 +265,7 @@
     <button type="button" data-settings-tab="security"><span class="settings-icon">🛡️</span><span><strong>Sécurité enseignant</strong><small>Mot de passe et récupération</small></span></button>
   </div>
 </div><button id="lockTeacher" class="ghost">🔒 Verrouiller</button></div></div></header><main>
-<div class="tabs"><button class="active" data-tab="classes">Mes classes</button><button data-tab="due">Évaluations à prévoir</button><button data-tab="tracking">Suivi des compétences</button><button data-tab="open">Ouvrir une évaluation</button></div>
+<div class="tabs"><button class="active" data-tab="classes">Mes classes</button><button data-tab="due">Évaluations à prévoir</button><button data-tab="tracking">Suivi des compétences</button><button data-tab="open">Ouvrir une évaluation</button><button type="button" id="openAdministrative">Administratif</button></div>
 
 <section id="classes" class="panel active">
   <div class="card">
@@ -826,6 +826,7 @@ function showTab(id){
 }
 
 document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
+document.getElementById('openAdministrative').onclick=()=>window.location.assign('administratif.html');
 
 const settingsBtn=document.getElementById('settingsBtn');
 const settingsMenu=document.getElementById('settingsMenu');
