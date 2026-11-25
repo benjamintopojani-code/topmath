@@ -361,7 +361,7 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
 #courseWeekPanel>.course-heading{background:#122742;color:white;padding:8px 10px;border-radius:9px}
 #courseWeekPanel>.course-heading button{min-height:34px;padding:4px 9px}
 #courseWeekMessage:empty{display:none}
-#courseWeekPanel[hidden],#courseRegister[hidden],#courseBack[hidden]{display:none!important}
+#courseWeekPanel[hidden],#courseBack[hidden]{display:none!important}
 #courseBack{flex:0 0 40px;min-width:40px;min-height:40px;padding:4px;font-size:1.25rem;line-height:1}#courseLog .course-top-actions{align-items:center}
 #courseWeekPanel .attendance-table-wrap{overflow-x:auto}
 #adminClassBanner,#selectedClassActions{display:none!important}
@@ -408,7 +408,6 @@ body:not(.section-page) #adminNav .tile small{font-size:.95rem}
 @media(max-width:480px){#courseStudents{grid-template-columns:1fr}}
 .course-sheet-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px}
 #courseTitle{font-size:clamp(1.35rem,3.4vw,2rem);line-height:1.08;color:#173d72;text-align:right;margin:0;overflow-wrap:anywhere}
-.course-sheet-footer{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:4px}
 #courseFeedback{margin:0}
 #courseJournalPdf{display:grid;place-items:center;flex:0 0 40px;min-height:40px;padding:4px;margin-left:auto}
 </style></head><body>
@@ -632,18 +631,19 @@ function renderCourseLog(view, scheduleClasses){
     '<div id="courseWeekGrid" class="attendance-table-wrap"></div><p id="courseWeekMessage" role="status"></p></div>'+
     '<div class="actions course-top-actions"><button id="courseBack" type="button" aria-label="Retour à l’horaire" title="Retour à l’horaire" hidden>←</button>'+
 
-    '<button id="courseRegister" type="button" hidden>Registre des présences</button></div>'+
+    '</div>'+
     '<form id="courseEntry" hidden>'+
     '<div class="course-sheet-heading"><p id="courseTime" class="muted"></p><h2 id="courseTitle" tabindex="-1"></h2></div>'+
     '<div class="course-lesson"><label for="courseLesson">Leçon du jour</label><textarea id="courseLesson" rows="1" required></textarea>'+
-    '<button type="button" id="courseAllPresent">Tous présents</button></div>'+
+    '<button id="courseJournalPdf" type="button" aria-label="Télécharger le journal de classe en PDF" title="Télécharger le journal de classe en PDF">'+
+    '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M4 17v3h16v-3"/></svg></button></div>'+
     '<p class="course-attendance-legend">✓ Présent · ✕ Absent · S Stage</p>'+
     '<div id="courseStudents" class="course-attendance-grid"></div>'+
     '<p id="courseAttendanceCount" aria-live="polite"></p>'+
-    '<div class="actions"><button type="submit" class="btn-primary">Valider le cours</button></div></form>'+
-    '<div class="course-sheet-footer"><p id="courseFeedback" role="status" aria-live="polite"></p>'+
-    '<button id="courseJournalPdf" type="button" aria-label="Télécharger le journal de classe en PDF" title="Télécharger le journal de classe en PDF">'+
-    '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M4 17v3h16v-3"/></svg></button></div>'+
+    '<div class="actions"><button type="submit" class="btn-primary">Valider le cours</button>'+
+    '<button id="courseRegister" type="button">Registre des présences</button>'+
+    '<button id="courseAttendancePdf" type="button">Télécharger les présences en PDF</button></div></form>'+
+    '<p id="courseFeedback" role="status" aria-live="polite"></p>'+
     '<dialog id="registerDialog" aria-labelledby="registerTitle"><h3 id="registerTitle"></h3>'+
     '<div class="actions"><label>Du <input type="date" id="registerFrom"></label>'+
     '<label>Au <input type="date" id="registerTo"></label>'+
@@ -704,14 +704,12 @@ function renderCourseLog(view, scheduleClasses){
         : roster.filter(person=>(selected.ids||[selected.id]).some(id=>String(person.class_id)===String(id)))
           .map(person=>({id:person.student_id,name:[person.last_name,person.first_name].filter(Boolean).join(' '),status:''}));
       renderAttendance();
-      $('courseAllPresent').disabled=!students.length;
       if(students.some(person=>person.status==='R'))feedback.textContent='Les retards déjà enregistrés sont conservés si tu laisses leur ligne inchangée.';
       dirty=false;
     }catch(error){entry.hidden=true;feedback.textContent='Impossible de lire la fiche : '+error.message;}
   }
   function discard(){return !dirty||confirm('Quitter cette fiche sans enregistrer les modifications ?');}
   entry.addEventListener('input',()=>{dirty=true;});
-  $('courseAllPresent').onclick=()=>{for(const person of students)person.status='P';dirty=true;renderAttendance();};
   entry.onsubmit=event=>{
     event.preventDefault();
     if(!selected||!courseDate||!coursePeriod||!lesson.value.trim()){feedback.textContent='Renseigne la date, la période et la leçon.';return;}
@@ -740,9 +738,9 @@ function renderCourseLog(view, scheduleClasses){
     try{window.TopMathJournalPdf.exportSchoolYear(courseDate||dateValue,read(journalKey).entries||{});}
     catch(error){feedback.textContent='PDF du journal : '+error.message;}
   };
-  function filteredSessions(){
+  function filteredSessions(applyDates=true){
     return Object.values(read(attendanceKey).sessions||{}).filter(session=>session?.classe===selected.name&&Array.isArray(session.entries)&&
-      (!from.value||session.date>=from.value)&&(!to.value||session.date<=to.value))
+      (!applyDates||((!from.value||session.date>=from.value)&&(!to.value||session.date<=to.value))))
       .sort((a,b)=>a.date.localeCompare(b.date)||Number(a.period)-Number(b.period));
   }
   function renderRegister(){
@@ -760,10 +758,12 @@ function renderCourseLog(view, scheduleClasses){
   for(const input of [from,to])input.onchange=renderRegister;
   $('courseRegister').onclick=()=>{$('registerTitle').textContent='Registre des présences · '+selected.label;renderRegister();register.showModal();};
   $('registerClose').onclick=()=>register.close();
-  $('registerPdf').onclick=()=>{
-    try{window.TopMathAttendancePdf.download(selected.name,[],filteredSessions());}
-    catch(error){$('registerTable').textContent='PDF des présences : '+error.message;}
-  };
+  function downloadAttendance(applyDates,message){
+    try{window.TopMathAttendancePdf.download(selected.name,[],filteredSessions(applyDates));}
+    catch(error){message.textContent='PDF des présences : '+error.message;}
+  }
+  $('registerPdf').onclick=()=>downloadAttendance(true,$('registerTable'));
+  $('courseAttendancePdf').onclick=()=>downloadAttendance(false,feedback);
   const weekPanel=$('courseWeekPanel'),weekGrid=$('courseWeekGrid');
   let weekStart, classItems=[], rosterLoading=!isSimulation;
   const isoDay=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
@@ -821,7 +821,6 @@ function renderCourseLog(view, scheduleClasses){
       for(const control of weekGrid.querySelectorAll('[data-course-slot]'))control.dataset.selected=String(control===button);
       weekPanel.hidden=true;
       loadEntry();
-      $('courseRegister').hidden=entry.hidden;
       $('courseBack').hidden=entry.hidden;
       if(entry.hidden)weekPanel.hidden=false;
       else $('courseTitle').focus();
@@ -831,7 +830,6 @@ function renderCourseLog(view, scheduleClasses){
     if(!discard())return;
     dirty=false;
     entry.hidden=true;
-    $('courseRegister').hidden=true;
     $('courseBack').hidden=true;
     feedback.textContent='';
     weekPanel.hidden=false;
