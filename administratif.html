@@ -643,20 +643,19 @@ function renderCourseLog(view, scheduleClasses){
     '<div id="courseStudents" class="course-attendance-grid"></div>'+
     '<p id="courseAttendanceCount" aria-live="polite"></p>'+
     '<div class="actions"><button type="submit" class="btn-primary">Valider le cours</button>'+
-    '<button id="courseRegister" type="button">Registre des présences</button>'+
-    '<button id="courseAttendancePdf" type="button">Télécharger les présences en PDF</button></div></form>'+
+    '<button id="courseRegister" type="button">Ouvrir le registre des présences</button>'+
+    '</div></form>'+
     '<p id="courseFeedback" role="status" aria-live="polite"></p>'+
     '<dialog id="registerDialog" aria-labelledby="registerTitle"><h3 id="registerTitle"></h3>'+
     '<div class="actions"><label for="registerStudent">Élève</label><select id="registerStudent"></select>'+
-    '<label>Du <input type="date" id="registerFrom"></label>'+
-    '<label>Au <input type="date" id="registerTo"></label>'+
-    '<button type="button" id="registerPdf">Télécharger les présences en PDF</button>'+
+    '<button type="button" id="registerPdf">Télécharger depuis le début de l’année scolaire (PDF)</button>'+
     '<button type="button" id="registerClose">Fermer</button></div>'+
     '<div class="attendance-table-wrap" id="registerTable"></div></dialog></section>';
   const entry=$('courseEntry'),lesson=$('courseLesson');
   const feedback=$('courseFeedback'), rows=$('courseStudents');
   let courseDate='',coursePeriod='';
-  const register=$('registerDialog'), from=$('registerFrom'),to=$('registerTo');
+  const register=$('registerDialog');
+  const schoolYearStart=(today.getFullYear()-(today.getMonth()<8?1:0))+'-09-01';
   let selected=null, students=[], roster=[], dirty=false;
   const read=key=>{
     const value=JSON.parse(localStorage.getItem(key)||'{}');
@@ -778,7 +777,7 @@ function renderCourseLog(view, scheduleClasses){
     const all=savedSessions(),individual=studentFilter.value;
     const {people,keyForEntry}=attendancePeople(all);
     const sessions=all.filter(session=>
-      (!from.value||session.date>=from.value)&&(!to.value||session.date<=to.value)&&
+      session.date>=schoolYearStart&&session.date<=dateValue&&
       (individual?session.entries.some(person=>keyForEntry(person)===individual):!individualHistory&&selected&&matchesSelectedClass(session)));
     return {sessions,people,keyForEntry,individual};
   }
@@ -806,15 +805,15 @@ function renderCourseLog(view, scheduleClasses){
     renderRegister();
     register.showModal();
   }
-  for(const input of [from,to,studentFilter])input.onchange=renderRegister;
+  studentFilter.onchange=renderRegister;
   $('courseRegister').onclick=()=>openRegister(false);
   $('courseOpenHistory').onclick=()=>openRegister(true);
   $('registerClose').onclick=()=>register.close();
-  function downloadAttendance(fromRegister,message){
+  function downloadAttendance(message){
     try{
-      const result=fromRegister?registerData():{sessions:savedSessions().filter(matchesSelectedClass)};
+      const result=registerData();
       const label=result.individual?result.people.get(result.individual):selected?.label;
-      if(!label||(fromRegister&&individualHistory&&!result.individual))throw Error('Choisis un élève.');
+      if(!label||(individualHistory&&!result.individual))throw Error('Choisis un élève.');
       const identity=result.keyForEntry?result:attendancePeople(savedSessions());
       const sessions=result.sessions.map(session=>({...session,classe:label,
         originalClass:result.individual?session.classe:'',
@@ -823,8 +822,7 @@ function renderCourseLog(view, scheduleClasses){
       window.TopMathAttendancePdf.download(label,[],sessions);
     }catch(error){message.textContent='PDF des présences : '+error.message;}
   }
-  $('registerPdf').onclick=()=>downloadAttendance(true,$('registerTable'));
-  $('courseAttendancePdf').onclick=()=>downloadAttendance(false,feedback);
+  $('registerPdf').onclick=()=>downloadAttendance($('registerTable'));
   const weekPanel=$('courseWeekPanel'),weekGrid=$('courseWeekGrid');
   let weekStart, classItems=[], rosterLoading=false, rosterError='';
   const isoDay=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
