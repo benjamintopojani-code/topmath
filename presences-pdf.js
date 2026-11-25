@@ -39,7 +39,7 @@ function generate(classe,names,allSessions){
  const totalPages=pagesX*pagesY;
  const objects=['<< /Type /Catalog /Pages 2 0 R >>','', '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>','<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>'];
  const pageIds=[];
- const T=(x,y,str,size=9,bold=false)=>'BT /F'+(bold?'2':'1')+' '+size+' Tf '+x.toFixed(2)+' '+(H-y).toFixed(2)+' Td ('+pdfEscape(str)+') Tj ET\n';
+ const T=(x,y,str,size=9,bold=false)=>'0 0 0 rg\nBT /F'+(bold?'2':'1')+' '+size+' Tf '+x.toFixed(2)+' '+(H-y).toFixed(2)+' Td ('+pdfEscape(str)+') Tj ET\n';
  const L=(x1,y1,x2,y2)=>x1.toFixed(2)+' '+(H-y1).toFixed(2)+' m '+x2.toFixed(2)+' '+(H-y2).toFixed(2)+' l S\n';
  const F=(x,y,w,h,r,g,b)=>r+' '+g+' '+b+' rg '+x.toFixed(2)+' '+(H-y-h).toFixed(2)+' '+w.toFixed(2)+' '+h.toFixed(2)+' re f\n0 0 0 RG\n';
  const truncate=(str,max)=>str.length>max?str.slice(0,max-3)+'...':str;
