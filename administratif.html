@@ -389,6 +389,15 @@ body:not(.section-page) #adminNav .tile small{font-size:.95rem}
 #adminTodayList input{width:20px;height:20px;margin:0;flex:none;accent-color:#1b6b48}
 #adminTodayList input:checked+span{text-decoration:line-through;color:#516983}
 #adminTodayStatus:empty{display:none}
+#adminAgendaDate.has-tasks,#adminMonthDays .has-tasks{background:#e1efff;border-color:#5594d1;color:#17467e}
+#adminMonthDialog{width:min(390px,calc(100% - 24px));box-sizing:border-box;padding:12px;border:1px solid #c1d6ed;border-radius:12px}
+#adminMonthDialog::backdrop{background:#102c5466}
+#adminMonthTitle{flex:1;text-transform:capitalize;text-align:center}
+#adminMonthDays{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px;margin-top:10px;text-align:center}
+#adminMonthDays button{box-sizing:border-box;min-height:38px;width:100%;max-width:42px;aspect-ratio:1;margin:auto;padding:0;border-radius:50%}
+#adminMonthDays button[aria-pressed="true"]{outline:2px solid #17467e;outline-offset:-3px;font-weight:800}
+.admin-month-legend{display:flex;align-items:center;gap:6px;margin-bottom:0;font-size:.85rem}
+.admin-month-legend span{width:16px;height:16px;border-radius:50%;background:#e1efff;border:1px solid #5594d1}
 </style></head><body>
 <header><strong id="topbarTitle">TOP'MATH <span class="topbar-divider">·</span> ADMINISTRATIF</strong><div class="topbar-controls"><button id="topSettingsBtn" type="button" aria-label="Ouvrir les réglages" aria-expanded="false" title="Réglages">⚙️</button><a class="topbar-back" href="enseignant.html" aria-label="Retour à l’espace enseignant" title="Retour à l’espace enseignant">←</a></div></header>
 <main>
@@ -458,7 +467,7 @@ body:not(.section-page) #adminNav .tile small{font-size:.95rem}
   <div><h2 id="adminTodayTitle">Aujourd’hui</h2><time id="adminTodayDate"></time></div>
   <div class="admin-agenda-nav" role="group" aria-label="Naviguer dans l’agenda">
    <button id="adminAgendaPrev" type="button" aria-label="Jour précédent">←</button>
-   <input id="adminAgendaDate" type="date" aria-label="Choisir une date dans l’agenda" required>
+   <button id="adminAgendaDate" type="button" aria-haspopup="dialog" aria-controls="adminMonthDialog">Calendrier</button>
    <button id="adminAgendaNext" type="button" aria-label="Jour suivant">→</button>
    <button id="adminAgendaToday" type="button" hidden>Revenir à aujourd’hui</button>
   </div>
@@ -467,6 +476,16 @@ body:not(.section-page) #adminNav .tile small{font-size:.95rem}
   <label for="adminTodayText">À faire</label>
   <div><input id="adminTodayText" placeholder="Une tâche importante…" maxlength="180" required><button type="submit" class="btn-primary">Ajouter</button></div>
  </form>
+ <dialog id="adminMonthDialog" aria-labelledby="adminMonthTitle">
+  <div class="admin-agenda-nav">
+   <button id="adminMonthPrev" type="button" aria-label="Mois précédent">←</button>
+   <strong id="adminMonthTitle" aria-live="polite"></strong>
+   <button id="adminMonthNext" type="button" aria-label="Mois suivant">→</button>
+   <form method="dialog"><button type="submit">Fermer</button></form>
+  </div>
+  <div id="adminMonthDays"></div>
+  <p class="muted admin-month-legend"><span aria-hidden="true"></span> Tâches prévues</p>
+ </dialog>
  <ul id="adminTodayList"></ul>
  <p id="adminTodayEmpty" class="muted">Rien de prévu pour aujourd’hui.</p>
  <p id="adminTodayStatus" role="status"></p>
@@ -886,7 +905,7 @@ function setupTodayAgenda(){
  const storageKey=day=>'topmath-agenda-jour-v1:'+day;
  let displayedDay=dateKey(), observedToday=displayedDay;
  function navigate(day){
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(day)||!Number.isFinite(Date.parse(day))){picker.value=displayedDay;return;}
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(day)||!Number.isFinite(Date.parse(day)))return;
   displayedDay=day;status.textContent='';show();
  }
  function step(delta){
@@ -894,7 +913,40 @@ function setupTodayAgenda(){
   day.setUTCDate(day.getUTCDate()+delta);
   navigate(day.toISOString().slice(0,10));
  }
- picker.onchange=()=>navigate(picker.value);
+ const dialog=$('adminMonthDialog'),grid=$('adminMonthDays');
+ const monthFormat=new Intl.DateTimeFormat('fr-BE',{month:'long',year:'numeric',timeZone:'UTC'});
+ let month;
+ function renderMonth(){
+  $('adminMonthTitle').textContent=monthFormat.format(month);
+  grid.replaceChildren();
+  for(const day of ['Lu','Ma','Me','Je','Ve','Sa','Di']){
+   const label=document.createElement('span');
+   label.textContent=day;grid.append(label);
+  }
+  const offset=(month.getUTCDay()+6)%7;
+  for(let i=0;i<offset;i++)grid.append(document.createElement('span'));
+  const year=month.getUTCFullYear(),index=month.getUTCMonth();
+  const last=new Date(Date.UTC(year,index+1,0)).getUTCDate();
+  for(let i=1;i<=last;i++){
+   const date=new Date(Date.UTC(year,index,i)),key=date.toISOString().slice(0,10);
+   const button=document.createElement('button');
+   let count=0;
+   try{count=load(key).length;}catch{}
+   button.type='button';button.textContent=i;
+   button.classList.toggle('has-tasks',count>0);
+   button.setAttribute('aria-label',format.format(date)+(count?' · '+count+(count===1?' tâche':' tâches'):''));
+   button.setAttribute('aria-pressed',String(key===displayedDay));
+   if(key===dateKey())button.setAttribute('aria-current','date');
+   button.onclick=()=>{navigate(key);dialog.close();};
+   grid.append(button);
+  }
+ }
+ picker.onclick=()=>{
+  month=new Date(displayedDay.slice(0,7)+'-01T00:00:00Z');
+  renderMonth();dialog.showModal();
+ };
+ $('adminMonthPrev').onclick=()=>{month.setUTCMonth(month.getUTCMonth()-1);renderMonth();};
+ $('adminMonthNext').onclick=()=>{month.setUTCMonth(month.getUTCMonth()+1);renderMonth();};
  $('adminAgendaPrev').onclick=()=>step(-1);
  $('adminAgendaNext').onclick=()=>step(1);
  $('adminAgendaToday').onclick=()=>navigate(dateKey());
@@ -905,7 +957,8 @@ function setupTodayAgenda(){
  }
  function show(){
   const day=displayedDay,today=day===dateKey();
-  picker.value=day;
+  picker.textContent=day.split('-').reverse().join('/');
+  picker.classList.remove('has-tasks');
   $('adminTodayTitle').textContent=today?'Aujourd’hui':'Agenda';
   $('adminAgendaToday').hidden=today;
   empty.textContent=today?'Rien de prévu pour aujourd’hui.':'Rien de prévu pour cette date.';
@@ -914,6 +967,7 @@ function setupTodayAgenda(){
   try{
    const entries=load(day);
    empty.hidden=entries.length>0;
+   picker.classList.toggle('has-tasks',entries.length>0);
    entries.forEach((entry,index)=>{
     const row=document.createElement('li'),label=document.createElement('label');
     const check=document.createElement('input'),title=document.createElement('span');
@@ -943,7 +997,7 @@ function setupTodayAgenda(){
   observedToday=today;show();
  }
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshToday();});
- window.addEventListener('storage',event=>{if(event.key===storageKey(displayedDay))show();});
+ window.addEventListener('storage',event=>{if(event.key===storageKey(displayedDay))show();if(dialog.open&&(!event.key||event.key.startsWith('topmath-agenda-jour-v1:')))renderMonth();});
  setInterval(refreshToday,30000);
  show();card.hidden=false;
 }
