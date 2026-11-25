@@ -372,6 +372,20 @@ body:not(.section-page) #adminNav .tile{min-height:clamp(190px,28vh,270px);paddi
 body:not(.section-page) #adminNav .tile strong{font-size:clamp(1.15rem,3vw,1.55rem)}
 body:not(.section-page) #adminNav .tile small{font-size:.95rem}
 @media(max-width:520px){body:not(.section-page) #adminNav{grid-template-columns:1fr;margin-top:24px}body:not(.section-page) #adminNav .tile{min-height:130px}}
+#adminToday{box-sizing:border-box;width:min(900px,100%);margin:20px auto 28px;padding:clamp(14px,3vw,26px)}
+#adminToday[hidden],#adminToday [hidden]{display:none!important}
+.admin-today-heading{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;border-bottom:1px solid #dbe5f1;padding-bottom:10px}
+.admin-today-heading h2{margin:0;color:#173d72}
+.admin-today-heading time{font-size:.9rem;color:#516983}
+#adminTodayForm{margin-top:14px}
+#adminTodayForm>div{display:flex;align-items:center;gap:8px;margin-top:4px}
+#adminTodayText{flex:1;min-width:0;margin:0}
+#adminTodayList{list-style:none;padding:0;margin:12px 0 0}
+#adminTodayList li{display:flex;align-items:center;gap:8px;border-top:1px solid #e2e9f2;padding:8px 0}
+#adminTodayList label{display:flex;align-items:center;gap:10px;flex:1;min-width:0;margin:0;overflow-wrap:anywhere}
+#adminTodayList input{width:20px;height:20px;margin:0;flex:none;accent-color:#1b6b48}
+#adminTodayList input:checked+span{text-decoration:line-through;color:#516983}
+#adminTodayStatus:empty{display:none}
 </style></head><body>
 <header><strong id="topbarTitle">TOP'MATH <span class="topbar-divider">·</span> ADMINISTRATIF</strong><div class="topbar-controls"><button id="topSettingsBtn" type="button" aria-label="Ouvrir les réglages" aria-expanded="false" title="Réglages">⚙️</button><a class="topbar-back" href="enseignant.html" aria-label="Retour à l’espace enseignant" title="Retour à l’espace enseignant">←</a></div></header>
 <main>
@@ -436,6 +450,16 @@ body:not(.section-page) #adminNav .tile small{font-size:.95rem}
  <a class="tile" href="administratif.html?panel=carnet">📖<strong>Carnet de bord</strong><small>Leçon du jour et présences</small></a>
  <a class="tile" data-section-link="rapports" href="rapports.html">📋<strong>Rapports</strong><small>Ouvrir les suivis</small></a>
 </div>
+<section id="adminToday" class="card" aria-labelledby="adminTodayTitle" hidden>
+ <div class="admin-today-heading"><h2 id="adminTodayTitle">Aujourd’hui</h2><time id="adminTodayDate"></time></div>
+ <form id="adminTodayForm">
+  <label for="adminTodayText">À faire aujourd’hui</label>
+  <div><input id="adminTodayText" placeholder="Une tâche importante…" maxlength="180" required><button type="submit" class="btn-primary">Ajouter</button></div>
+ </form>
+ <ul id="adminTodayList"></ul>
+ <p id="adminTodayEmpty" class="muted">Rien de prévu pour aujourd’hui.</p>
+ <p id="adminTodayStatus" role="status"></p>
+</section>
 <section id="view" class="card" style="margin-top:16px" aria-live="polite"></section>
 
 </main>
@@ -841,5 +865,55 @@ $('topSettingsBtn').addEventListener('click',()=>{
  }
 });
 if(pagePanel){const title=({carnet:'Carnet de bord',journal:'Journal de classe',presences:'Présences',rapports:'Rapports'})[pagePanel];document.getElementById('topbarTitle').textContent='TOP’MATH · '+title.toUpperCase();document.querySelector('header a').setAttribute('aria-label','Retour à Administratif');document.querySelector('header a').title='Retour à Administratif';document.querySelector('header a').target='_top';document.querySelector('header a').href='administratif.html'+(isSimulation?'?testDay='+simulatedDay+'&testTime='+encodeURIComponent(simulatedTime):'');}
+
+function setupTodayAgenda(){
+ const card=$('adminToday'),field=$('adminTodayText'),list=$('adminTodayList'),status=$('adminTodayStatus');
+ const dateLabel=$('adminTodayDate'),empty=$('adminTodayEmpty');
+ const format=new Intl.DateTimeFormat('fr-BE',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:'Europe/Brussels'});
+ const iso=new Intl.DateTimeFormat('sv-SE',{year:'numeric',month:'2-digit',day:'2-digit',timeZone:'Europe/Brussels'});
+ const dateKey=()=>iso.format(new Date());
+ const storageKey=day=>'topmath-agenda-jour-v1:'+day;
+ let displayedDay='';
+ function load(day){
+  const entries=JSON.parse(localStorage.getItem(storageKey(day))||'[]');
+  if(!Array.isArray(entries))throw Error('Agenda illisible.');
+  return entries;
+ }
+ function show(){
+  const now=new Date(),day=iso.format(now);
+  displayedDay=day;dateLabel.dateTime=day;dateLabel.textContent=format.format(now);
+  list.replaceChildren();empty.hidden=true;
+  try{
+   const entries=load(day);
+   empty.hidden=entries.length>0;
+   entries.forEach((entry,index)=>{
+    const row=document.createElement('li'),label=document.createElement('label');
+    const check=document.createElement('input'),title=document.createElement('span');
+    check.type='checkbox';check.checked=entry.done;title.textContent=entry.title;
+    check.onchange=()=>{if(!change(day,items=>{if(items[index]?.title===entry.title)items[index].done=check.checked;}))check.checked=entry.done;};
+    const remove=document.createElement('button');
+    remove.type='button';remove.textContent='Retirer';remove.setAttribute('aria-label','Retirer '+entry.title);
+    remove.onclick=()=>change(day,items=>{if(items[index]?.title===entry.title)items.splice(index,1);});
+    label.append(check,title);row.append(label,remove);list.append(row);
+   });
+  }catch{status.textContent='Impossible de charger les tâches sur cet appareil.';}
+ }
+ function change(day,update){
+  try{
+   const items=load(day);update(items);localStorage.setItem(storageKey(day),JSON.stringify(items));status.textContent='';show();return true;
+  }catch{status.textContent='Impossible d’enregistrer les tâches sur cet appareil.';return false;}
+ }
+ $('adminTodayForm').onsubmit=event=>{
+  event.preventDefault();
+  const title=field.value.trim();
+  if(title&&change(dateKey(),items=>items.push({title,done:false})))field.value='';
+ };
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&displayedDay!==dateKey())show();});
+ window.addEventListener('storage',event=>{if(event.key===storageKey(dateKey()))show();});
+ setInterval(()=>{if(displayedDay!==dateKey())show();},30000);
+ show();card.hidden=false;
+}
+
+if(!pagePanel)setupTodayAgenda();
 render();clock();setInterval(clock,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)clock();});
 </script></body></html>
