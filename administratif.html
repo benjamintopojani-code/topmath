@@ -361,8 +361,8 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
 #courseWeekPanel>.course-heading{background:#122742;color:white;padding:8px 10px;border-radius:9px}
 #courseWeekPanel>.course-heading button{min-height:34px;padding:4px 9px}
 #courseWeekMessage:empty{display:none}
-#courseWeekPanel[hidden],#courseRegister[hidden]{display:none!important}
-#courseBack{margin-bottom:8px}
+#courseWeekPanel[hidden],#courseRegister[hidden],#courseBack[hidden]{display:none!important}
+#courseBack{flex:0 0 40px;min-width:40px;min-height:40px;padding:4px;font-size:1.25rem;line-height:1}#courseLog .course-top-actions{align-items:center}
 #courseWeekPanel .attendance-table-wrap{overflow-x:auto}
 #adminClassBanner,#selectedClassActions{display:none!important}
 body:not(.section-page) #adminNav{width:min(900px,100%);margin:clamp(30px,10vh,100px) auto 0;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(12px,2.5vw,24px)}
@@ -625,9 +625,10 @@ function renderCourseLog(view, scheduleClasses){
     '<strong id="courseWeekLabel" aria-live="polite"></strong><button id="courseNextWeek" type="button" aria-label="Semaine suivante">→</button>'+
     '<button id="courseThisWeek" type="button">Cette semaine</button></div>'+
     '<div id="courseWeekGrid" class="attendance-table-wrap"></div><p id="courseWeekMessage" role="status"></p></div>'+
-    '<div class="actions"><button id="courseJournalPdf" type="button">Télécharger le journal de classe en PDF</button>'+
+    '<div class="actions course-top-actions"><button id="courseBack" type="button" aria-label="Retour à l’horaire" title="Retour à l’horaire" hidden>←</button>'+
+    '<button id="courseJournalPdf" type="button">Télécharger le journal de classe en PDF</button>'+
     '<button id="courseRegister" type="button" hidden>Registre des présences</button></div>'+
-    '<form id="courseEntry" hidden><button id="courseBack" type="button">← Retour à l’horaire</button>'+
+    '<form id="courseEntry" hidden>'+
     '<h2 id="courseTitle" tabindex="-1"></h2><p id="courseTime" class="muted"></p>'+
     '<div class="course-lesson"><label for="courseLesson">Leçon du jour</label><textarea id="courseLesson" rows="1" required></textarea>'+
     '<button type="button" id="courseAllPresent">Tous présents</button></div>'+
@@ -815,6 +816,7 @@ function renderCourseLog(view, scheduleClasses){
       weekPanel.hidden=true;
       loadEntry();
       $('courseRegister').hidden=entry.hidden;
+      $('courseBack').hidden=entry.hidden;
       if(entry.hidden)weekPanel.hidden=false;
       else $('courseTitle').focus();
     };
@@ -824,6 +826,7 @@ function renderCourseLog(view, scheduleClasses){
     dirty=false;
     entry.hidden=true;
     $('courseRegister').hidden=true;
+    $('courseBack').hidden=true;
     feedback.textContent='';
     weekPanel.hidden=false;
     const courseButton=Array.from(weekGrid.querySelectorAll('[data-course-slot]')).find(button=>button.dataset.selected==='true');
