@@ -377,6 +377,9 @@ body:not(.section-page) #adminNav .tile small{font-size:.95rem}
 .admin-today-heading{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;border-bottom:1px solid #dbe5f1;padding-bottom:10px}
 .admin-today-heading h2{margin:0;color:#173d72}
 .admin-today-heading time{font-size:.9rem;color:#516983}
+.admin-agenda-nav{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.admin-agenda-nav button,.admin-agenda-nav input{min-height:44px;margin:0}
+.admin-agenda-nav input{width:155px;max-width:100%}
 #adminTodayForm{margin-top:14px}
 #adminTodayForm>div{display:flex;align-items:center;gap:8px;margin-top:4px}
 #adminTodayText{flex:1;min-width:0;margin:0}
@@ -451,9 +454,17 @@ body:not(.section-page) #adminNav .tile small{font-size:.95rem}
  <a class="tile" data-section-link="rapports" href="rapports.html">📋<strong>Rapports</strong><small>Ouvrir les suivis</small></a>
 </div>
 <section id="adminToday" class="card" aria-labelledby="adminTodayTitle" hidden>
- <div class="admin-today-heading"><h2 id="adminTodayTitle">Aujourd’hui</h2><time id="adminTodayDate"></time></div>
+ <div class="admin-today-heading">
+  <div><h2 id="adminTodayTitle">Aujourd’hui</h2><time id="adminTodayDate"></time></div>
+  <div class="admin-agenda-nav" role="group" aria-label="Naviguer dans l’agenda">
+   <button id="adminAgendaPrev" type="button" aria-label="Jour précédent">←</button>
+   <input id="adminAgendaDate" type="date" aria-label="Choisir une date dans l’agenda" required>
+   <button id="adminAgendaNext" type="button" aria-label="Jour suivant">→</button>
+   <button id="adminAgendaToday" type="button" hidden>Revenir à aujourd’hui</button>
+  </div>
+ </div>
  <form id="adminTodayForm">
-  <label for="adminTodayText">À faire aujourd’hui</label>
+  <label for="adminTodayText">À faire</label>
   <div><input id="adminTodayText" placeholder="Une tâche importante…" maxlength="180" required><button type="submit" class="btn-primary">Ajouter</button></div>
  </form>
  <ul id="adminTodayList"></ul>
@@ -868,20 +879,37 @@ if(pagePanel){const title=({carnet:'Carnet de bord',journal:'Journal de classe',
 
 function setupTodayAgenda(){
  const card=$('adminToday'),field=$('adminTodayText'),list=$('adminTodayList'),status=$('adminTodayStatus');
- const dateLabel=$('adminTodayDate'),empty=$('adminTodayEmpty');
- const format=new Intl.DateTimeFormat('fr-BE',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:'Europe/Brussels'});
+ const dateLabel=$('adminTodayDate'),empty=$('adminTodayEmpty'),picker=$('adminAgendaDate');
+ const format=new Intl.DateTimeFormat('fr-BE',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:'UTC'});
  const iso=new Intl.DateTimeFormat('sv-SE',{year:'numeric',month:'2-digit',day:'2-digit',timeZone:'Europe/Brussels'});
  const dateKey=()=>iso.format(new Date());
  const storageKey=day=>'topmath-agenda-jour-v1:'+day;
- let displayedDay='';
+ let displayedDay=dateKey(), observedToday=displayedDay;
+ function navigate(day){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(day)||!Number.isFinite(Date.parse(day))){picker.value=displayedDay;return;}
+  displayedDay=day;status.textContent='';show();
+ }
+ function step(delta){
+  const day=new Date(displayedDay+'T12:00:00Z');
+  day.setUTCDate(day.getUTCDate()+delta);
+  navigate(day.toISOString().slice(0,10));
+ }
+ picker.onchange=()=>navigate(picker.value);
+ $('adminAgendaPrev').onclick=()=>step(-1);
+ $('adminAgendaNext').onclick=()=>step(1);
+ $('adminAgendaToday').onclick=()=>navigate(dateKey());
  function load(day){
   const entries=JSON.parse(localStorage.getItem(storageKey(day))||'[]');
   if(!Array.isArray(entries))throw Error('Agenda illisible.');
   return entries;
  }
  function show(){
-  const now=new Date(),day=iso.format(now);
-  displayedDay=day;dateLabel.dateTime=day;dateLabel.textContent=format.format(now);
+  const day=displayedDay,today=day===dateKey();
+  picker.value=day;
+  $('adminTodayTitle').textContent=today?'Aujourd’hui':'Agenda';
+  $('adminAgendaToday').hidden=today;
+  empty.textContent=today?'Rien de prévu pour aujourd’hui.':'Rien de prévu pour cette date.';
+  dateLabel.dateTime=day;dateLabel.textContent=format.format(new Date(day+'T12:00:00Z'));
   list.replaceChildren();empty.hidden=true;
   try{
    const entries=load(day);
@@ -906,11 +934,17 @@ function setupTodayAgenda(){
  $('adminTodayForm').onsubmit=event=>{
   event.preventDefault();
   const title=field.value.trim();
-  if(title&&change(dateKey(),items=>items.push({title,done:false})))field.value='';
+  if(title&&change(displayedDay,items=>items.push({title,done:false})))field.value='';
  };
- document.addEventListener('visibilitychange',()=>{if(!document.hidden&&displayedDay!==dateKey())show();});
- window.addEventListener('storage',event=>{if(event.key===storageKey(dateKey()))show();});
- setInterval(()=>{if(displayedDay!==dateKey())show();},30000);
+ function refreshToday(){
+  const today=dateKey();
+  if(today===observedToday)return;
+  if(displayedDay===observedToday)displayedDay=today;
+  observedToday=today;show();
+ }
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshToday();});
+ window.addEventListener('storage',event=>{if(event.key===storageKey(displayedDay))show();});
+ setInterval(refreshToday,30000);
  show();card.hidden=false;
 }
 
