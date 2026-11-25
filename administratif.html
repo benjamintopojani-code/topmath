@@ -334,7 +334,25 @@ header .topbar-back:focus-visible{outline:3px solid #e39c22;outline-offset:2px}
 #adminNav .admin-journal-export:hover{background:#dceeff;border-color:#7eaddf}
 #adminNav .admin-journal-export svg{width:21px;height:21px}
 @media(max-width:650px){#adminNav .admin-journal-tile>.tile{min-height:105px}}
-#courseLog textarea{width:100%;min-height:68px}#courseLog .course-status{display:inline-grid;place-items:center;min-width:44px;min-height:44px;cursor:pointer}#courseLog .course-status input{position:absolute;opacity:0;width:1px;height:1px}#courseLog .course-status span{display:grid;place-items:center;width:40px;height:40px;border:1px solid #b4c9e1;border-radius:9px;font-size:1.28rem;font-weight:800;color:#46627e}#courseLog .course-status input:checked+span{background:#195ba5;color:white;border-color:#195ba5}#courseLog .course-status input:focus-visible+span{outline:3px solid #4488d1;outline-offset:2px}#registerDialog{box-sizing:border-box;width:min(950px,calc(100% - 24px));max-height:85vh;border:1px solid #c1d6ed;border-radius:14px}#registerDialog::backdrop{background:#102c5477}#courseLog .actions{flex-wrap:wrap;margin-block:12px}#courseLog form[hidden]{display:none}
+#courseLog textarea{width:100%;min-height:42px;resize:vertical;margin:0}#courseLog .course-status{display:inline-grid;place-items:center;min-width:44px;min-height:44px;cursor:pointer}#courseLog .course-status input{position:absolute;opacity:0;width:1px;height:1px}#courseLog .course-status span{display:grid;place-items:center;width:34px;height:34px;border:1px solid #b4c9e1;border-radius:9px;font-size:1.28rem;font-weight:800;color:#46627e}#courseLog .course-status input:checked+span{color:#fff;border-color:transparent}
+#courseLog .course-status input[value="P"]:checked+span{background:#177044}
+#courseLog .course-status input[value="A"]:checked+span{background:#b42318}
+#courseLog .course-status input[value="S"]:checked+span{background:#195ba5}#courseLog .course-status input:focus-visible+span{outline:3px solid #4488d1;outline-offset:2px}#registerDialog{box-sizing:border-box;width:min(950px,calc(100% - 24px));max-height:85vh;border:1px solid #c1d6ed;border-radius:14px}#registerDialog::backdrop{background:#102c5477}#courseLog .actions{flex-wrap:wrap;margin-block:6px}#courseLog form[hidden]{display:none}
+.course-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.course-heading h2,#courseTitle{margin:0 0 3px}
+#courseTime{margin:0;font-size:.88rem}
+.course-calendar{position:relative}
+.course-calendar summary{cursor:pointer;display:grid;place-items:center;min-width:44px;min-height:44px;border:1px solid #b4c9e1;border-radius:9px;list-style:none}
+.course-calendar summary::-webkit-details-marker{display:none}
+.course-calendar-fields{position:absolute;right:0;top:calc(100% + 4px);width:195px;z-index:3;background:#fff;border:1px solid #ccd9e9;border-radius:10px;padding:8px;box-shadow:0 5px 16px #193c7026}
+.course-calendar:not([open]) .course-calendar-fields{display:none}
+.course-calendar-fields input,.course-calendar-fields select{width:100%;margin:2px 0 5px}
+.course-lesson{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 8px;align-items:center}
+.course-lesson label{grid-column:1/-1;margin:0}
+#courseStudents .attendance-table th,#courseStudents .attendance-table td{padding-block:0}
+#courseStudents .attendance-table thead th{padding-block:5px}
+#courseLog .attendance-table-wrap{margin-top:6px}
+
 </style></head><body>
 <header><strong id="topbarTitle">TOP'MATH <span class="topbar-divider">·</span> ADMINISTRATIF</strong><div class="topbar-controls"><button id="topSettingsBtn" type="button" aria-label="Ouvrir les réglages" aria-expanded="false" title="Réglages">⚙️</button><a class="topbar-back" href="enseignant.html" aria-label="Retour à l’espace enseignant" title="Retour à l’espace enseignant">←</a></div></header>
 <main>
@@ -520,15 +538,16 @@ function renderCourseLog(view, slot, scheduleClasses){
   const dateValue=[today.getFullYear(),String(today.getMonth()+1).padStart(2,'0'),String(today.getDate()).padStart(2,'0')].join('-');
   const marks={P:'✓',A:'✕',S:'S',R:'R'};
   const selectors=[['P','Présent'],['A','Absent'],['S','Stage']];
-  view.innerHTML='<section id="courseLog"><h2>Carnet de bord</h2>'+
-    '<div class="actions"><label>Date <input type="date" id="courseDate" required></label>'+
-    '<label>Période <select id="coursePeriod"></select></label></div>'+
+  view.innerHTML='<section id="courseLog"><div class="course-heading"><div><h2>Carnet de bord</h2><p id="courseTime" class="muted"></p></div>'+
+    '<details class="course-calendar"><summary aria-label="Modifier la date ou la période" title="Modifier la date ou la période">📅</summary>'+
+    '<div class="course-calendar-fields"><label for="courseDate">Date</label><input type="date" id="courseDate" required>'+
+    '<label for="coursePeriod">Période</label><select id="coursePeriod"></select></div></details></div>'+
     '<div id="courseClasses" class="actions" role="group" aria-label="Classes"></div>'+
     '<div class="actions"><button id="courseJournalPdf" type="button">Télécharger le journal de classe en PDF</button>'+
     '<button id="courseRegister" type="button" disabled>Registre des présences</button></div>'+
     '<form id="courseEntry" hidden><h3 id="courseTitle"></h3>'+
-    '<label for="courseLesson">Leçon du jour</label><textarea id="courseLesson" rows="2" required></textarea>'+
-    '<div class="actions"><button type="button" id="courseAllPresent">Tous présents</button></div>'+
+    '<div class="course-lesson"><label for="courseLesson">Leçon du jour</label><textarea id="courseLesson" rows="1" required></textarea>'+
+    '<button type="button" id="courseAllPresent">Tous présents</button></div>'+
     '<div class="attendance-table-wrap" id="courseStudents"></div>'+
     '<div class="actions"><button type="submit" class="btn-primary">Valider le cours</button></div></form>'+
     '<p id="courseFeedback" role="status" aria-live="polite"></p>'+
@@ -551,15 +570,28 @@ function renderCourseLog(view, slot, scheduleClasses){
   const normalized=name=>String(name||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/OBSERVATION/g,'OBS').replace(/HORTICULTURE/g,'HORT').replace(/MACONNERIE/g,'MAC').replace(/[^A-Z0-9]/g,'').replace(/^P(?=[123])/,'');
   date.value=dateValue;
   for(let i=1;i<=9;i++)period.add(new Option(String(i),String(i)));
-  period.value=String(slot?.period||1);
+  period.add(new Option('Choisir…',''),0);
+  period.value=String(slot?.period||'');
+  function showDateAndTime(){
+    const day=date.value?new Date(date.value+'T12:00:00').getDay():null;
+    const course=data.slots.find(item=>Number(item.day)===day&&String(item.period)===period.value&&
+      normalized(item.classe)===normalized(selected?.name||slot?.classe));
+    $('courseTime').textContent=[
+      date.value.split('-').reverse().join('/'),
+      period.value?'Période '+period.value:'Période à choisir',
+      course?.start&&course.end?course.start+' – '+course.end:''
+    ].filter(Boolean).join(' · ');
+  }
+  showDateAndTime();
 
   function loadEntry(){
+    showDateAndTime();
     if(!selected)return;
     feedback.textContent='';
     $('courseRegister').disabled=false;
-    entry.hidden=!date.value;
-    if(entry.hidden)return;
-    $('courseTitle').textContent=selected.label+' · '+date.value.split('-').reverse().join('/')+' · Période '+period.value;
+    entry.hidden=!date.value||!period.value;
+    if(entry.hidden){feedback.textContent='Choisis la date et la période avec le calendrier.';return;}
+    $('courseTitle').textContent=selected.label;
     try{
       const key=keyFor(), journal=read(journalKey), saved=read(attendanceKey).sessions?.[key];
       const records=saved?.entries||[];
@@ -588,7 +620,7 @@ function renderCourseLog(view, slot, scheduleClasses){
   $('courseAllPresent').onclick=()=>{rows.querySelectorAll('input[value="P"]').forEach(input=>{input.checked=true;});dirty=true;};
   entry.onsubmit=event=>{
     event.preventDefault();
-    if(!selected||!date.value||!lesson.value.trim()){feedback.textContent='Renseigne la date et la leçon.';return;}
+    if(!selected||!date.value||!period.value||!lesson.value.trim()){feedback.textContent='Renseigne la date, la période et la leçon.';return;}
     const entries=students.map((person,i)=>{
       const status=rows.querySelector('input[name="course-pupil-'+i+'"]:checked')?.value||person.status;
       return {name:person.name,status,...(person.id?{student_id:person.id}:{})};
